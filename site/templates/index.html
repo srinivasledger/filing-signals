@@ -4,7 +4,7 @@
 <section class="hero">
   <div class="hero-grid">
     <div class="hero-copy">
-      <p class="eyebrow">Daily record &middot; SEC EDGAR</p>
+      <p class="eyebrow"><span>Daily record</span><span>{{ last_run or "—" }}</span></p>
       <h1>{{ site_tagline }}</h1>
       <p class="lede">
         Every weekday this site reads new SEC filings and reports six things
@@ -28,12 +28,12 @@
 </section>
 
 {% if activity_chart %}
-<p class="eyebrow">Activity by filing day</p>
+<p class="eyebrow"><span>Activity by filing day</span><span>{{ days_covered }} days</span></p>
 {{ activity_chart|safe }}
 {% endif %}
 
 {% if events %}
-<p class="eyebrow">The record</p>
+<p class="eyebrow"><span>The record</span><span>{{ total_events }} entries</span></p>
 <section class="controls">
   <label class="search">
     <span class="visually-hidden">Filter events</span>
