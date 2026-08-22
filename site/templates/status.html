@@ -4,6 +4,9 @@
 <h1>Pipeline status</h1>
 <p class="lede">This page is written by the pipeline itself on every run. It is
 the evidence that the site maintains itself.</p>
+<p class="muted">One row per run. A day can appear more than once: re-running a
+date is safe and writes nothing new, which is what a repeated day with zero new
+events means.</p>
 
 <div class="stats">
   <div><b>{{ last_run or '—' }}</b><span>last filing day processed</span></div>
@@ -24,7 +27,7 @@ analysis with no code change.</p>
 <table>
   <thead><tr>
     <th>Filing day</th><th>Index rows</th><th>Candidates</th>
-    <th>Operating cos.</th><th>Events</th><th>Mode</th><th>Completed (UTC)</th>
+    <th>Operating cos.</th><th>New events</th><th>Mode</th><th>Completed (UTC)</th>
   </tr></thead>
   <tbody>
   {% for r in runs %}
