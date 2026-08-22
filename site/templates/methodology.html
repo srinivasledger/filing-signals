@@ -4,6 +4,19 @@
 <h1>Methodology</h1>
 <p class="lede">How each signal is produced, and what it does and does not mean.</p>
 
+<h2>How much is flagged</h2>
+<p>A count of events means little without the population it came from. Across
+the filing days processed so far:</p>
+<div class="stats">
+  <div><b>{{ '{:,}'.format(filings_scanned) }}</b><span>filings in the daily index</span></div>
+  <div><b>{{ '{:,}'.format(candidates_scanned) }}</b><span>read in full</span></div>
+  <div><b>{{ total_events }}</b><span>events published</span></div>
+  <div><b>{{ flag_rate }}</b><span>of scanned filings flagged</span></div>
+</div>
+<p class="muted">Most filings are never candidates: fund and securitisation
+paperwork makes up the bulk of daily volume and cannot carry these signals.
+The flag rate is deliberately low &mdash; these are meant to be rare events.</p>
+
 <h2>Where the data comes from</h2>
 <p>Every weekday the pipeline reads the SEC's EDGAR daily index &mdash; the
 official list of everything filed that day. It keeps 8-K, 10-K, 10-Q, 20-F and
@@ -18,10 +31,29 @@ Financial Statements"; <strong>Item 4.01</strong> is "Changes in Registrant's
 Certifying Accountant". Because the filer selects these codes themselves, a
 match is a fact about what was disclosed, not an inference. These are labelled
 <em>SEC item code</em>.</p>
+<p><strong>The sub-classification is the signal.</strong> The same item code
+covers materially different events, so the filing itself is read to separate
+them. Under <strong>Item 4.02(a)</strong> management or the board reached the
+conclusion; under <strong>4.02(b)</strong> the auditor told them, which is more
+serious because the company did not find it itself. For Item 4.01, an auditor
+<em>resigning</em> is a stronger signal than a company <em>dismissing</em> one,
+a disclosed disagreement stronger still, and a move from a large firm to a much
+smaller one is ranked above a rotation between equals.</p>
+
 <p><strong>What Item 4.02 does not mean.</strong> It means the company told
 investors that earlier figures should no longer be relied upon. It is not by
 itself evidence of fraud or misconduct. Restatements frequently arise from
 technical accounting corrections.</p>
+
+<h2>Late filings</h2>
+<p>A company that cannot file on time is often the earliest public warning, and
+it usually <em>precedes</em> a restatement rather than following it. These come
+from <strong>Form 12b-25</strong> (filed as NT 10-K or NT 10-Q).</p>
+<p>Beyond the fact of lateness, the form asks whether the company anticipates a
+significant change in results of operations, answered as a checkbox. A "yes" is
+the company pre-announcing that the delayed numbers will look materially
+different, and those are marked <em>elevated</em>. So are late annual reports,
+and companies that are also behind on their other periodic reports.</p>
 
 <h2>Going concern</h2>
 <p>This is the signal most often done badly, so it is worth being precise.</p>

@@ -14,6 +14,8 @@
     <div><b>{{ total_events }}</b><span>events recorded</span></div>
     <div><b>{{ companies }}</b><span>companies</span></div>
     <div><b>{{ days_covered }}</b><span>filing days covered</span></div>
+    <div><b>{{ '{:,}'.format(filings_scanned) }}</b><span>filings scanned</span></div>
+    <div><b>{{ flag_rate }}</b><span>flagged</span></div>
     <div><b>{{ last_run or '—' }}</b><span>last updated</span></div>
   </div>
 </section>

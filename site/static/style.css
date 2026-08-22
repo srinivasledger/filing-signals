@@ -1,7 +1,7 @@
 :root{
   --bg:#fbfaf8; --surface:#fff; --line:#e6e2dc; --ink:#1a1a19; --muted:#6b6862;
   --accent:#8a3324; --accent-soft:#f6ece9;
-  --restatement:#a8321f; --auditor:#8a5a1a; --gc:#7a3d8f; --policy:#1f5f7a; --revenue:#2a6b4a;
+  --restatement:#a8321f; --auditor:#8a5a1a; --gc:#7a3d8f; --policy:#1f5f7a; --revenue:#2a6b4a; --late:#b0532a;
   --radius:10px; --wrap:940px;
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
@@ -9,7 +9,7 @@
 @media (prefers-color-scheme:dark){
   :root{--bg:#14140f;--surface:#1c1c18;--line:#33322c;--ink:#eceae4;--muted:#9d998f;
         --accent:#e0785f;--accent-soft:#2a1f1a;
-        --restatement:#e8735c;--auditor:#d9a04a;--gc:#c08ad6;--policy:#6fb6d6;--revenue:#6fc296;}
+        --restatement:#e8735c;--auditor:#d9a04a;--gc:#c08ad6;--policy:#6fb6d6;--revenue:#6fc296;--late:#e0925c;}
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -136,3 +136,19 @@ main p{max-width:70ch}
 }
 .caveat{font-size:.86rem;color:var(--muted);background:var(--accent-soft);
   border-left:3px solid var(--accent);padding:9px 13px;border-radius:0 6px 6px 0;margin:0 0 12px}
+.tag-late_filing{color:var(--late)}
+.tag-sev-high{color:var(--restatement);border-style:solid;font-weight:700}
+.subclass{font-size:.88rem;margin:0 0 10px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.firms{font-weight:650}
+.chain{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:8px}
+.chain li{display:flex;gap:11px;align-items:center;flex-wrap:wrap;padding-left:17px;position:relative}
+.chain li::before{content:"";position:absolute;left:3px;top:9px;width:7px;height:7px;
+  border-radius:50%;background:var(--accent)}
+.chain li:not(:last-child)::after{content:"";position:absolute;left:6px;top:18px;
+  bottom:-10px;width:1px;background:var(--line)}
+.chain time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.85rem;flex:none}
+.chain-note{color:var(--muted);font-size:.83rem}
+.chain-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 20px;margin:0 0 20px}
+.chain-box h2{margin:0;font-size:1rem}
+.net-pos{color:var(--revenue)}.net-neg{color:var(--restatement)}

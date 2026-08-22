@@ -18,16 +18,83 @@ from xml.sax.saxutils import escape as xml_escape
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import config, publish
-from .models import (AUDITOR_CHANGE, GOING_CONCERN, POLICY_CHANGE,
+from .models import (AUDITOR_CHANGE, GOING_CONCERN, LATE_FILING, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_BLURBS,
                      SIGNAL_LABELS, Event)
 
 log = logging.getLogger(__name__)
 
 SIGNAL_ORDER = [
-    RESTATEMENT, AUDITOR_CHANGE, GOING_CONCERN, POLICY_CHANGE, REVENUE_RECOGNITION,
+    RESTATEMENT, AUDITOR_CHANGE, LATE_FILING, GOING_CONCERN, POLICY_CHANGE,
+    REVENUE_RECOGNITION,
 ]
 MAX_HOME_EVENTS = 300
+
+# A company reaching several of these signals in sequence is the thing a raw
+# EDGAR feed cannot show. Ordered by how far along the progression they sit.
+PROGRESSION_ORDER = [LATE_FILING, AUDITOR_CHANGE, GOING_CONCERN,
+                     POLICY_CHANGE, REVENUE_RECOGNITION, RESTATEMENT]
+
+
+# Late filings are far more numerous than the rest - a single quarter-end day
+# produced 122 of them - so a purely chronological feed buries the rare events
+# under routine ones. Within a day, rank by how unusual the signal is.
+_SIGNAL_WEIGHT = {
+    RESTATEMENT: 0, AUDITOR_CHANGE: 1, GOING_CONCERN: 2,
+    POLICY_CHANGE: 3, REVENUE_RECOGNITION: 4, LATE_FILING: 5,
+}
+
+
+def _rank(event) -> tuple:
+    """Sort key: newest first, then elevated, then by signal rarity."""
+    elevated = 0 if event.evidence.get("severity") == "high" else 1
+    return (event.filed, -elevated, -_SIGNAL_WEIGHT.get(event.signal_type, 9),
+            event.company)
+
+
+def _scan_totals(runs):
+    """Denominator for the flag rate. Counts each filing day once, since a day
+    may be re-run and would otherwise be double counted."""
+    per_day = {}
+    for r in runs:
+        day = r.get("date")
+        if not day:
+            continue
+        prev = per_day.get(day, {})
+        per_day[day] = {
+            "index_rows": max(prev.get("index_rows", 0), r.get("index_rows") or 0),
+            "candidates": max(prev.get("candidates", 0), r.get("candidates") or 0),
+        }
+    return (sum(v["index_rows"] for v in per_day.values()),
+            sum(v["candidates"] for v in per_day.values()))
+
+
+def _company_sequence(events):
+    """Distinct signals for one company, oldest first, as a progression."""
+    seen, ordered = set(), []
+    for e in sorted(events, key=lambda x: x.filed):
+        if e.signal_type not in seen:
+            seen.add(e.signal_type)
+            ordered.append(e)
+    return ordered if len(ordered) > 1 else []
+
+
+def _auditor_stats(events):
+    """Which audit firms appear across the flagged population, and how."""
+    leaving, arriving, downgrades = Counter(), Counter(), Counter()
+    for e in events:
+        ev = e.evidence
+        if ev.get("predecessor_auditor"):
+            leaving[ev["predecessor_auditor"]] += 1
+        if ev.get("successor_auditor"):
+            arriving[ev["successor_auditor"]] += 1
+        if ev.get("tier_downgrade") and ev.get("predecessor_auditor"):
+            downgrades[ev["predecessor_auditor"]] += 1
+    firms = sorted(set(leaving) | set(arriving),
+                   key=lambda f: -(leaving[f] + arriving[f]))
+    return [{"firm": f, "left": leaving[f], "joined": arriving[f],
+             "net": arriving[f] - leaving[f], "downgrades_from": downgrades[f]}
+            for f in firms]
 
 
 def _env() -> Environment:
@@ -95,8 +162,12 @@ def build() -> None:
         "blurbs": SIGNAL_BLURBS,
     }
 
+    scanned, candidates = _scan_totals(state.get("runs", []))
+    flag_rate = (f"{len(events) / candidates * 100:.1f}%"
+                 if candidates else "—")
+
     # --- home ---
-    home_events = events[:MAX_HOME_EVENTS]
+    home_events = sorted(events, key=_rank, reverse=True)[:MAX_HOME_EVENTS]
     _write(
         config.PUBLIC / "index.html",
         env.get_template("index.html").render(
@@ -105,6 +176,8 @@ def build() -> None:
             companies=len({e.cik for e in events}),
             days_covered=len({e.filed for e in events}),
             last_run=state.get("last_processed"),
+            filings_scanned=scanned, candidates_scanned=candidates,
+            flag_rate=flag_rate,
             **common,
         ),
     )
@@ -126,21 +199,41 @@ def build() -> None:
     for e in events:
         by_company[e.cik].append(e)
     company_tpl = env.get_template("company.html")
+    sequences = []
     for cik, evs in by_company.items():
         newest = evs[0]
+        seq = _company_sequence(evs)
+        if seq:
+            sequences.append({"cik": cik, "company": newest.company,
+                              "ticker": next((e.ticker for e in evs if e.ticker), ""),
+                              "steps": seq})
         _write(
             config.PUBLIC / "company" / f"{cik}.html",
             company_tpl.render(
                 rel="../", cik=cik, company=newest.company,
                 ticker=next((e.ticker for e in evs if e.ticker), ""),
                 sic_desc=next((e.sic_desc for e in evs if e.sic_desc), ""),
-                events=evs, **common,
+                events=sorted(evs, key=_rank, reverse=True), sequence=seq, **common,
             ),
         )
+    sequences.sort(key=lambda s: (-len(s["steps"]), s["company"]))
+
+    # --- sequences + auditor concentration ---
+    _write(config.PUBLIC / "sequences.html",
+           env.get_template("sequences.html").render(
+               rel="", sequences=sequences, history=publish.load_history(),
+               **common))
+    _write(config.PUBLIC / "auditors.html",
+           env.get_template("auditors.html").render(
+               rel="", firms=_auditor_stats(events),
+               changes=[e for e in events if e.signal_type == AUDITOR_CHANGE],
+               **common))
 
     # --- static pages ---
     _write(config.PUBLIC / "methodology.html",
-           env.get_template("methodology.html").render(rel="", **common))
+           env.get_template("methodology.html").render(
+               rel="", filings_scanned=scanned, candidates_scanned=candidates,
+               total_events=len(events), flag_rate=flag_rate, **common))
     _write(config.PUBLIC / "status.html",
            env.get_template("status.html").render(
                rel="", runs=runs, last_run=state.get("last_processed"),

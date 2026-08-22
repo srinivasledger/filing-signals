@@ -11,6 +11,7 @@ import re
 import unicodedata
 from typing import List, Optional
 
+from . import auditor as auditor_mod
 from .enrich import ITEM_TITLES
 from .models import (AUDITOR_CHANGE, CONFIRMED, RESTATEMENT, SIGNAL_BLURBS,
                      Event)
@@ -40,12 +41,74 @@ def classify_items(items: List[str]) -> List[str]:
     return signals
 
 
-def _headline(signal: str, company: str, form: str) -> str:
+def _headline(signal: str, company: str, form: str, detail: dict) -> str:
+    """Headline reflects the sub-classification, which is the real signal."""
     if signal == RESTATEMENT:
-        return f"{company} said previously issued financial statements should no longer be relied upon"
+        if detail.get("limb") == "b":
+            return (f"{company}'s auditor told it that previously issued financial "
+                    "statements should no longer be relied upon")
+        return (f"{company} said previously issued financial statements should no "
+                "longer be relied upon")
+
     if signal == AUDITOR_CHANGE:
+        direction = detail.get("direction")
+        outgoing = detail.get("predecessor_auditor") or "its auditor"
+        incoming = detail.get("successor_auditor")
+        if detail.get("disagreements_disclosed") is True:
+            return f"{company} disclosed a disagreement with {outgoing}"
+        named = detail.get("predecessor_auditor")
+        if direction == "resigned":
+            return (f"{named} resigned as {company}'s auditor" if named
+                    else f"{company}'s auditor resigned")
+        if direction == "declined_reappointment":
+            return (f"{named} declined to stand for reappointment at {company}" if named
+                    else f"{company}'s auditor declined to stand for reappointment")
+        if detail.get("tier_downgrade") and incoming:
+            return f"{company} moved from {outgoing} to {incoming}"
+        if incoming:
+            return f"{company} dismissed {outgoing} and engaged {incoming}"
         return f"{company} reported a change in its independent accounting firm"
+
     return f"{company} filed {form}"
+
+
+def _auditor_evidence(detail: dict) -> dict:
+    """Build the 4.01 evidence explicitly.
+
+    A dict comprehension that filtered falsey values silently deleted
+    `disagreements_disclosed: False` - which is the informative common case,
+    since a formal "there were no disagreements" statement is exactly what a
+    reader wants to see stated rather than omitted.
+    """
+    out: dict = {}
+    if detail.get("direction"):
+        out["direction"] = detail["direction"]
+        out["direction_label"] = auditor_mod.DIRECTION_LABELS.get(detail["direction"], "")
+    if detail.get("disagreements_disclosed") is not None:
+        out["disagreements_disclosed"] = detail["disagreements_disclosed"]
+    for key in ("predecessor_auditor", "successor_auditor",
+                "predecessor_tier", "successor_tier"):
+        if detail.get(key):
+            out[key] = detail[key]
+    if detail.get("tier_downgrade"):
+        out["tier_downgrade"] = True
+    return out
+
+
+def _subclassify(signal: str, filing) -> dict:
+    """Read the 8-K itself. The item code says an event happened; only the
+    document says which kind, and the kind is what matters."""
+    from . import compare                       # local import avoids a cycle
+    try:
+        url = compare.current_document(filing.cik, filing.accession)
+        text = compare.load_text(url) if url else None
+    except Exception:                            # noqa: BLE001
+        text = None
+    if not text:
+        return {}
+    if signal == RESTATEMENT:
+        return auditor_mod.classify_402(text)
+    return auditor_mod.classify_401(text)
 
 
 def events_from_filing(filing) -> List[Event]:
@@ -56,6 +119,12 @@ def events_from_filing(filing) -> List[Event]:
     events: List[Event] = []
     for signal in classify_items(filing.items):
         code = ITEM_RESTATEMENT if signal == RESTATEMENT else ITEM_AUDITOR
+        detail = _subclassify(signal, filing)
+        severity = (
+            "high" if (signal == RESTATEMENT and detail.get("limb") == "b")
+            else auditor_mod.rank_401(detail) if signal == AUDITOR_CHANGE
+            else "normal"
+        )
         events.append(
             Event(
                 signal_type=signal,
@@ -66,13 +135,19 @@ def events_from_filing(filing) -> List[Event]:
                 filed=filing.filed,
                 accession=filing.accession,
                 filing_url=filing.index_url,
-                headline=_headline(signal, filing.company, filing.form),
+                headline=_headline(signal, filing.company, filing.form, detail),
                 sic_desc=filing.sic_desc,
                 evidence={
                     "source": "SEC 8-K item code",
                     "item_code": code,
                     "item_title": ITEM_TITLES.get(code, ""),
+                    "severity": severity,
                     "why": SIGNAL_BLURBS[signal],
+                    **({"limb": detail["limb"],
+                        "limb_label": auditor_mod.LIMB_LABELS.get(detail["limb"], ""),
+                        "limb_basis": detail.get("basis", "")}
+                       if signal == RESTATEMENT and detail.get("limb") else {}),
+                    **(_auditor_evidence(detail) if signal == AUDITOR_CHANGE else {}),
                 },
             )
         )

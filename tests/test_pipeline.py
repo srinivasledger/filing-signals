@@ -13,7 +13,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline import compare, enrich, ingest, models, publish, sections, triage, universe
+from pipeline import (auditor, compare, enrich, ingest, late, models, publish,
+                      sections, triage, universe)
 from pipeline.run import business_days, days_to_process
 
 FIX = Path(__file__).parent / "fixtures"
@@ -163,6 +164,48 @@ def test_actual_adoption_is_detected():
     assert asus["2023-08"]["status"] == "adopted"
 
 
+# --- revenue policy isolation -------------------------------------------------
+# Three real false positives drove these: Certiplex and CVD Equipment reported
+# MD&A performance commentary as policy changes, and Avnet reported the
+# auditor's critical-audit-matter paragraph.
+_ASC606_NOTE = (
+    "Revenue Recognition\n"
+    "In accordance with ASC 606 - Revenue from Contracts with Customers, the "
+    "Company records revenue in an amount reflecting the consideration it "
+    "expects. The Company identifies each performance obligation and allocates "
+    "the transaction price using the standalone selling price. Revenue is "
+    "recognized when control of the goods transfers to the customer. "
+) * 4
+
+
+def test_mda_commentary_is_not_a_policy_note():
+    doc = ("Management's Discussion and Analysis\n"
+           "Revenue Recognition\n"
+           "The increase in 2026 was due principally to higher professional fees. "
+           "The increased losses were primarily attributable to lower gross profit. " * 12)
+    assert sections.revenue_section(doc) == ""
+
+
+def test_critical_audit_matter_is_not_a_policy_note():
+    doc = ("Report of Independent Registered Public Accounting Firm\n"
+           "Critical Audit Matters\n"
+           "Revenue Recognition\n"
+           "The principal consideration for our determination that performing "
+           "procedures relating to revenue recognition is a critical audit matter "
+           "is a high degree of auditor effort. " * 12)
+    assert sections.revenue_section(doc) == ""
+
+
+def test_genuine_asc606_note_is_found():
+    assert sections._asc606_score(_ASC606_NOTE) >= sections.MIN_ASC606_MARKERS
+    assert "performance obligation" in sections.revenue_section(_ASC606_NOTE)
+
+
+def test_policy_note_requires_asc606_vocabulary():
+    thin = "Revenue Recognition\n" + ("The Company sells products to customers. " * 40)
+    assert sections.revenue_section(thin) == ""
+
+
 # --- similarity --------------------------------------------------------------
 def test_similarity_ignores_figures_and_dates():
     a = "Revenue is recognized when control transfers, as of March 31, 2026, totaling 1,234."
@@ -214,3 +257,89 @@ def test_pipeline_backfills_missed_days():
 
 def test_no_work_when_current():
     assert days_to_process({"last_processed": "2026-08-21"}, dt.date(2026, 8, 22)) == []
+
+
+# --- late filings (Form 12b-25) ----------------------------------------------
+def test_checkbox_read_in_either_order():
+    # Filers render the question both ways; handling one order silently
+    # returned "unknown" for half the population.
+    before = ("is it anticipated that any significant change in results of "
+              "operations will be reflected? \u2610 Yes \u2612 No")
+    after = ("is it anticipated that any significant change in results of "
+             "operations will be reflected? Yes \u2612 No \u2610")
+    assert late._answer_near(before, late._ANTICIPATED_Q) is False
+    assert late._answer_near(after, late._ANTICIPATED_Q) is True
+
+
+def test_checkbox_unreadable_returns_none():
+    both = ("significant change in results of operations? "
+            "\u2612 Yes \u2612 No")
+    assert late._answer_near(both, late._ANTICIPATED_Q) is None
+
+
+def test_late_reason_strips_form_instructions():
+    # html_to_text keeps single newlines, so the form's own instructions arrive
+    # broken across lines and previously slipped past the boilerplate filter.
+    doc = ("PART III\n\u2014 NARRATIVE State below\nin reasonable detail the "
+           "reasons why Form 10-Q could not be filed within the prescribed time "
+           "period. The Company is unable to file its Quarterly Report because "
+           "its auditors have not completed their review of the interim "
+           "financial statements.\nPART IV")
+    reason = late.extract_reason(doc)
+    assert "State below" not in reason
+    assert "auditors have not completed" in reason
+
+
+def test_late_severity_promotes_expected_change():
+    high = late._severity("NT 10-Q", {"anticipates_significant_change": True})
+    normal = late._severity("NT 10-Q", {"anticipates_significant_change": False})
+    annual = late._severity("NT 10-K", {"anticipates_significant_change": False})
+    assert high == "high" and annual == "high" and normal == "normal"
+
+
+# --- 8-K sub-classification ---------------------------------------------------
+def test_402_limb_b_is_the_auditor_telling_the_company():
+    b = ("On August 1, 2026 the Company was advised by its independent "
+         "registered public accounting firm that the statements should not be relied upon.")
+    a = ("On August 1, 2026 the Audit Committee of the Board concluded that the "
+         "financial statements should no longer be relied upon.")
+    assert auditor.classify_402(b)["limb"] == "b"
+    assert auditor.classify_402(a)["limb"] == "a"
+    assert auditor.classify_402("this Item 4.02(a) was discussed")["limb"] == "a"
+
+
+def test_401_direction_and_disagreements():
+    text = ("Dismissal of BDO USA, P.C. On August 10, 2026, the Registrant notified "
+            "BDO USA, P.C. that it will no longer be retaining BDO. There were no (i) "
+            "disagreements with BDO on any matter of accounting principles. "
+            "Engagement of Schneider Downs & Co., Inc. The Registrant engaged "
+            "Schneider Downs & Co., Inc. as its new accounting firm.")
+    d = auditor.classify_401(text)
+    assert d["direction"] == "dismissed"
+    assert d["disagreements_disclosed"] is False
+    assert d["predecessor_auditor"] == "BDO"
+    assert d["tier_downgrade"] is True
+    assert auditor.rank_401(d) == "high"
+
+
+def test_401_resignation_outranks_rotation():
+    resigned = auditor.classify_401("The auditor resigned effective August 1, 2026.")
+    assert auditor.rank_401(resigned) == "high"
+    routine = {"direction": "dismissed", "disagreements_disclosed": False,
+               "tier_downgrade": False}
+    assert auditor.rank_401(routine) == "normal"
+
+
+def test_same_firm_both_sides_is_treated_as_unresolved():
+    # "dismissed PwC and engaged PwC" is an extraction failure, not an event.
+    text = ("dismissed PricewaterhouseCoopers LLP ... engaged "
+            "PricewaterhouseCoopers LLP as its accounting firm")
+    d = auditor.classify_401(text)
+    assert d["predecessor_auditor"] == "" and d["successor_auditor"] == ""
+
+
+def test_firm_tiers():
+    assert auditor.firm_tier("KPMG LLP") == auditor.TIER_BIG4
+    assert auditor.firm_tier("BDO USA, P.C.") == auditor.TIER_NATIONAL
+    assert auditor.firm_tier("Smith & Co CPAs PLLC") == auditor.TIER_OTHER
+    assert auditor.canonical_firm("Ernst & Young LLP") == "EY"

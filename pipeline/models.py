@@ -17,6 +17,7 @@ AUDITOR_CHANGE = "auditor_change"
 GOING_CONCERN = "going_concern"
 POLICY_CHANGE = "policy_change"
 REVENUE_RECOGNITION = "revenue_recognition"
+LATE_FILING = "late_filing"
 
 SIGNAL_LABELS = {
     RESTATEMENT: "Restatement",
@@ -24,6 +25,7 @@ SIGNAL_LABELS = {
     GOING_CONCERN: "Going concern",
     POLICY_CHANGE: "Accounting policy change",
     REVENUE_RECOGNITION: "Revenue recognition change",
+    LATE_FILING: "Late filing",
 }
 
 SIGNAL_BLURBS = {
@@ -43,6 +45,10 @@ SIGNAL_BLURBS = {
     REVENUE_RECOGNITION: (
         "The revenue recognition policy disclosure changed materially from "
         "the previous comparable filing."
+    ),
+    LATE_FILING: (
+        "The company told the SEC it could not file a periodic report on time, "
+        "using Form 12b-25."
     ),
 }
 

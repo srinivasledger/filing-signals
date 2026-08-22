@@ -19,6 +19,7 @@ from .models import Event
 log = logging.getLogger(__name__)
 
 STATE_FILE = config.STATE_DIR / "pipeline.json"
+HISTORY_FILE = config.STATE_DIR / "history.json"
 MAX_RUN_HISTORY = 60
 
 
@@ -93,3 +94,18 @@ def load_all_events(limit: Optional[int] = None) -> List[Event]:
             break
     events.sort(key=lambda e: (e.filed, e.company), reverse=True)
     return events[:limit] if limit else events
+
+
+# --- historical sequence rates ------------------------------------------------
+def save_history(stats: Dict) -> None:
+    config.STATE_DIR.mkdir(parents=True, exist_ok=True)
+    HISTORY_FILE.write_text(json.dumps(stats, indent=2, sort_keys=True) + "\n")
+
+
+def load_history() -> Dict:
+    if HISTORY_FILE.exists():
+        try:
+            return json.loads(HISTORY_FILE.read_text())
+        except ValueError:
+            log.warning("history file corrupt; ignoring")
+    return {}

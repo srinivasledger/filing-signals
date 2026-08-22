@@ -22,7 +22,14 @@ PERIODIC_FORMS = {
     "20-F", "20-F/A", "40-F", "40-F/A",
 }
 
-CANDIDATE_FORMS = EVENT_FORMS | PERIODIC_FORMS
+# Form 12b-25 notifications. The form type alone is the signal; the document
+# then grades it. Fund equivalents (NT NPORT-P, NT N-CEN) are excluded.
+LATE_FORMS = {
+    "NT 10-K", "NT 10-K/A", "NT 10-Q", "NT 10-Q/A",
+    "NT 20-F", "NT 20-F/A", "NT 11-K",
+}
+
+CANDIDATE_FORMS = EVENT_FORMS | PERIODIC_FORMS | LATE_FORMS
 
 # SIC ranges that are pooled-investment or securitisation vehicles rather than
 # operating companies. They file constantly and never carry these signals.

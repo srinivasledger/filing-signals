@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Auditors &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<h1>Audit firm movement</h1>
+<p class="lede">Which audit firms appear across the companies flagged here, and
+in which direction. Derived from Item 4.01 filings only.</p>
+<p class="muted">This counts firms named in auditor-change filings that this
+tracker flagged &mdash; it is not a market-share measure, and the population is
+small and skewed toward smaller issuers. <strong>Net</strong> is arrivals minus
+departures. Read it as a description of this dataset, nothing wider.</p>
+
+{% if firms %}
+<div class="table-scroll">
+<table>
+  <thead><tr>
+    <th>Firm</th><th>Departed</th><th>Engaged</th><th>Net</th>
+    <th>Replaced by a smaller firm</th>
+  </tr></thead>
+  <tbody>
+  {% for f in firms %}
+  <tr>
+    <td>{{ f.firm }}</td>
+    <td>{{ f.left }}</td>
+    <td>{{ f.joined }}</td>
+    <td class="{{ 'net-pos' if f.net > 0 else ('net-neg' if f.net < 0 else '') }}">
+      {{ '+' if f.net > 0 else '' }}{{ f.net }}
+    </td>
+    <td>{{ f.downgrades_from or '—' }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="empty">No auditor changes with identifiable firms recorded yet.</p>
+{% endif %}
+
+<h2>Every auditor change recorded</h2>
+<ul class="mini">
+  {% for e in changes %}
+  <li><time>{{ e.filed }}</time>
+    <a href="{{ rel }}company/{{ e.cik }}.html">{{ e.company }}</a>
+    <span class="muted">
+      {% if e.evidence.predecessor_auditor and e.evidence.successor_auditor %}
+        {{ e.evidence.predecessor_auditor }} &rarr; {{ e.evidence.successor_auditor }}
+      {% else %}firms not identified{% endif %}
+      {% if e.evidence.direction %}&middot; {{ e.evidence.direction }}{% endif %}
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

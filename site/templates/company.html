@@ -12,6 +12,19 @@
   <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={{ '%010d' % cik }}&type=&dateb=&owner=include&count=40"
      rel="nofollow noopener">All EDGAR filings &nearr;</a>
 </p>
+{% if sequence %}
+<section class="chain-box">
+  <h2>Progression</h2>
+  <ol class="chain">
+    {% for e in sequence %}
+    <li><time datetime="{{ e.filed }}">{{ e.filed }}</time>
+      <span class="tag tag-{{ e.signal_type }}">{{ e.label }}</span>
+      <span class="chain-note">{{ e.form }}</span></li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
 <div class="feed">
   {% for e in events %}{{ card(e, rel, show_company=False) }}{% endfor %}
 </div>

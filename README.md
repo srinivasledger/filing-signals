@@ -5,12 +5,18 @@
 A self-updating public tracker that reads new SEC filings every weekday and
 publishes four things that are otherwise hard to see:
 
-| Signal | Source | Precision |
+| Signal | Source | Sub-classification |
 |---|---|---|
-| **Restatements** | 8-K Item 4.02 — "Non-Reliance on Previously Issued Financial Statements" | SEC's own item code |
-| **Auditor changes** | 8-K Item 4.01 — "Changes in Registrant's Certifying Accountant" | SEC's own item code |
-| **Going concern** | ASC 205-40 note, compared against the company's previous filing | Derived |
-| **Accounting policy / revenue recognition** | Newly *adopted* accounting standards; revenue-note rewrites | Derived (revenue marked beta) |
+| **Restatements** | 8-K Item 4.02 | **(a)** management concluded vs **(b)** the auditor told them |
+| **Auditor changes** | 8-K Item 4.01 | resigned vs dismissed; disagreements disclosed; predecessor → successor firm and whether that is a tier downgrade |
+| **Late filings** | Form 12b-25 (NT 10-K / NT 10-Q) | whether the company anticipates a significant change in results; whether other reports are also outstanding |
+| **Going concern** | ASC 205-40 note vs the previous filing | ladder: no conclusion → doubt alleviated → substantial doubt |
+| **Accounting policy** | Newly *adopted* accounting standards (ASU) | adoption vs merely-issued |
+| **Revenue recognition** | ASC 606 policy note vs the previous filing | beta |
+
+The item code says an event happened; the sub-classification says which kind,
+and the kind is usually the signal. An auditor resigning is not a company
+rotating firms, and 4.02(b) — where the auditor raised it — is not 4.02(a).
 
 The whole thing runs on GitHub Actions and GitHub Pages. There is no server, no
 database, and **no API key required** — the default configuration produces the
@@ -130,11 +136,42 @@ changed the implementation:
   `formerNames` and reported as new disclosures, not changes.
 - **Listing an issued standard is not adopting it.** Diffing ASU mentions
   flagged 8 of 18 filings in one day; requiring actual adoption language fixed it.
+- **Any passage can mention revenue.** The revenue extractor was lifting MD&A
+  performance commentary and the auditor's critical-audit-matter paragraph and
+  reporting them as policy changes. It now requires a heading-shaped match,
+  outside MD&A and the audit report, whose body carries at least three distinct
+  ASC 606 terms. That took the signal from 13 events to 2 over the same days.
+- **Form 12b-25 checkboxes render in two orders** (`Yes ☐ No ☒` and
+  `☐ Yes ☒ No`) with several glyphs; handling one order silently returned
+  "unknown" for half the population.
+- **`html_to_text` preserves single newlines**, so form instruction text arrives
+  broken across lines and boilerplate filters fail to match it.
+- **A dict comprehension filtering falsey values** deleted
+  `disagreements_disclosed: False` — the informative common case.
+
+## What the derived pages do and don't claim
+
+**Sequences** shows companies that reached more than one signal, in order. A
+recognisable progression runs late filing → auditor change → going concern →
+non-reliance, but reaching one step does not imply the next.
+
+**Follow-on rates** are computed from each company's full EDGAR history —
+`submissions/CIK*.json` returns up to a thousand filings with 8-K `items`
+populated, so one request per company buys a decade of history rather than
+walking the daily index back years. They are **conditional rates inside a
+population this tracker already flagged**, not population base rates: there is
+no matched control group, so they cannot show that one event makes another more
+likely, only how often one followed the other here.
+
+**Audit firm movement** counts firms named in flagged Item 4.01 filings. It is
+not a market-share measure and the population is small and skewed small-cap.
 
 ## Caveats
 
-Not investment advice. Every entry links to its source filing — verify there
-before relying on anything. Reports only what companies disclosed; an Item 4.02
+Not investment advice, and deliberately so: the site reports what was
+disclosed, links the source, and declines to interpret. It carries no view on
+what any signal means for a share price. Every entry links to its source
+filing — verify there before relying on anything. Reports only what companies disclosed; an Item 4.02
 means previously issued statements should not be relied upon, which is not by
 itself evidence of misconduct.
 

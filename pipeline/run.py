@@ -19,7 +19,8 @@ try:
 except Exception:                                # pragma: no cover
     EASTERN = dt.timezone(dt.timedelta(hours=-5))
 
-from . import analyze, compare, config, enrich, fetch, ingest, publish, triage, universe
+from . import (analyze, compare, config, enrich, fetch, history, ingest, late,
+               publish, triage, universe)
 from .models import Event
 
 log = logging.getLogger("pipeline")
@@ -96,6 +97,16 @@ def process_day(day: dt.date) -> tuple:
     for filing in operating:
         if filing.form.upper() in universe.EVENT_FORMS:
             events.extend(triage.events_from_filing(filing))
+
+    # Late-filing notifications: one document read, no comparison needed.
+    for filing in operating:
+        if filing.form.upper() in universe.LATE_FORMS:
+            try:
+                events.extend(late.analyse_late_filing(filing))
+            except fetch.SECBlocked:
+                raise
+            except Exception as exc:                 # noqa: BLE001
+                log.warning("  late-filing parse failed for %s: %s", filing.company, exc)
 
     # Periodic reports: needs the previous filing, so it is the expensive path.
     periodic = [f for f in operating if f.form.upper() in universe.PERIODIC_FORMS]
@@ -181,6 +192,22 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     publish.save_state(state)
     log.info("run complete: %d new event(s) recorded", total_new)
+
+    # Follow-on rates across every company recorded so far. One submissions
+    # request per company buys its full item-coded history, so this is cheap
+    # even though it reaches back years.
+    if not blocked:
+        try:
+            ciks = sorted({e.cik for e in publish.load_all_events()})
+            if ciks:
+                stats = history.sequence_rates(ciks)
+                publish.save_history(stats)
+                log.info("history: %d companies, %d historical events",
+                         stats["companies"], stats["total_historical_events"])
+        except fetch.SECBlocked:
+            log.warning("history pass skipped: SEC access blocked")
+        except Exception as exc:                 # noqa: BLE001
+            log.warning("history pass failed: %s", exc)
 
     if not args.no_render:
         from . import render

@@ -124,6 +124,64 @@ _REVENUE_HEADING = re.compile(
     re.I,
 )
 
+# Regions that discuss revenue at length but contain no accounting policy.
+# Without excluding them the extractor lifted MD&A performance commentary
+# ("The increase in 2026 was due principally to higher professional fees") and
+# the auditor's critical-audit-matter paragraph, and reported both as policy
+# changes.
+_MDA_HEADING = re.compile(r"Management[\u2019']s\s+Discussion\s+and\s+Analysis", re.I)
+_AUDIT_REPORT_HEADING = re.compile(
+    r"Report\s+of\s+Independent\s+Registered\s+Public\s+Accounting\s+Firm", re.I)
+
+# A genuine ASC 606 policy note uses this vocabulary. Requiring several
+# distinct markers separates a policy note from any passage mentioning revenue.
+_ASC606_MARKERS = [
+    re.compile(r"performance obligation", re.I),
+    re.compile(r"transaction price", re.I),
+    re.compile(r"(?:ASC|Topic)\s*606", re.I),
+    re.compile(r"standalone selling price", re.I),
+    re.compile(r"contracts?\s+with\s+customers?", re.I),
+    re.compile(r"(?:recognize[sd]?|recognition of)\s+revenue", re.I),
+    re.compile(r"control\s+(?:of|over)[^.]{0,80}transfer", re.I),
+]
+MIN_ASC606_MARKERS = 3
+
+
+def _bounded_span(text: str, start: int, terminator: str, default: int):
+    nxt = re.search(terminator, text[start:], re.I)
+    return start + (nxt.start() if nxt else default)
+
+
+def excluded_regions(text: str) -> List[Tuple[int, int]]:
+    """Character ranges that must not supply an accounting-policy note."""
+    spans: List[Tuple[int, int]] = []
+    rf = find_risk_factor_span(text)
+    if rf:
+        spans.append(rf)
+    for m in _MDA_HEADING.finditer(text):
+        spans.append((m.start(), min(len(text),
+                     _bounded_span(text, m.end(), r"\n\s*Item\s*\d", 80_000))))
+    for m in _AUDIT_REPORT_HEADING.finditer(text):
+        spans.append((m.start(), min(len(text), _bounded_span(
+            text, m.end(),
+            r"\n\s*(?:Note\s+\d|Item\s*\d|CONSOLIDATED\s+(?:BALANCE|STATEMENT))",
+            25_000))))
+    return spans
+
+
+def _inside(pos: int, spans: List[Tuple[int, int]]) -> bool:
+    return any(a <= pos < b for a, b in spans)
+
+
+def _line_at(text: str, pos: int) -> str:
+    start = text.rfind("\n", 0, pos) + 1
+    end = text.find("\n", pos)
+    return text[start: end if end != -1 else len(text)].strip()
+
+
+def _asc606_score(body: str) -> int:
+    return sum(1 for pat in _ASC606_MARKERS if pat.search(body))
+
 # Notes to financial statements are numbered, and the next number is where the
 # current note ends. Without this the extractor runs past the policy note into
 # income-tax and revenue tables, and the "change" it measures is just different
@@ -350,16 +408,37 @@ def _section_after(text: str, heading: re.Pattern, max_chars: int = 30_000) -> s
     return best.strip()
 
 
-def accounting_policy_section(text: str) -> str:
-    return _section_after(strip_risk_factors(text), _POLICY_HEADING)
-
-
 REVENUE_MAX_CHARS = 20_000
 
 
 def revenue_section(text: str) -> str:
-    return _section_after(strip_risk_factors(text), _REVENUE_HEADING,
-                          max_chars=REVENUE_MAX_CHARS)
+    """Isolate the ASC 606 revenue policy note, or return nothing.
+
+    Three gates, all required. Any passage can mention revenue; only a policy
+    note satisfies all three:
+      1. The match sits on a line that reads like a heading, not mid-paragraph.
+      2. It is outside MD&A, the auditor's report and Risk Factors.
+      3. Its body carries at least MIN_ASC606_MARKERS distinct ASC 606 terms.
+
+    Returning "" is the normal outcome for filings whose note we cannot isolate
+    confidently, and is strongly preferred to reporting the wrong passage.
+    """
+    spans = excluded_regions(text)
+    best, best_score = "", 0
+    for m in _REVENUE_HEADING.finditer(text):
+        if _inside(m.start(), spans):
+            continue
+        if not _looks_like_heading(_line_at(text, m.start())):
+            continue
+        body = _bound_to_note(text[m.end(): m.end() + REVENUE_MAX_CHARS])
+        if len(body) < 400:
+            continue
+        score = _asc606_score(body)
+        if score < MIN_ASC606_MARKERS:
+            continue
+        if score > best_score or (score == best_score and len(body) > len(best)):
+            best, best_score = body, score
+    return best.strip()
 
 
 # --- accounting standard adoptions -------------------------------------------

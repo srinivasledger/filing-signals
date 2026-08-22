@@ -2,6 +2,7 @@
 <article class="event" data-signal="{{ e.signal_type }}" data-confidence="{{ e.confidence }}">
   <div class="event-head">
     <span class="tag tag-{{ e.signal_type }}">{{ e.label }}</span>
+    {% if e.evidence.severity == 'high' %}<span class="tag tag-sev-high">elevated</span>{% endif %}
     {% if e.beta %}<span class="tag tag-beta" title="Derived from comparing two filings; higher chance of noise">beta</span>{% endif %}
     <span class="tag tag-conf tag-conf-{{ e.confidence }}">
       {{ 'SEC item code' if e.confidence == 'confirmed' else 'Filing comparison' }}
@@ -33,6 +34,42 @@
     <span class="from">{{ e.evidence.prior_state_label }}</span>
     <span class="arrow" aria-label="changed to">&rarr;</span>
     <span class="to">{{ e.evidence.current_state_label }}</span>
+  </p>
+  {% endif %}
+
+  {% if e.evidence.limb_label %}
+  <p class="subclass">{{ e.evidence.limb_label }}</p>
+  {% endif %}
+
+  {% if e.evidence.predecessor_auditor or e.evidence.direction_label %}
+  <p class="subclass">
+    {% if e.evidence.direction_label %}{{ e.evidence.direction_label }}.{% endif %}
+    {% if e.evidence.predecessor_auditor and e.evidence.successor_auditor %}
+      <span class="firms">{{ e.evidence.predecessor_auditor }}
+      <span class="arrow">&rarr;</span> {{ e.evidence.successor_auditor }}</span>
+      {% if e.evidence.tier_downgrade %}<span class="tag tag-sev-high">tier downgrade</span>{% endif %}
+    {% endif %}
+    {% if e.evidence.disagreements_disclosed is defined %}
+      {% if e.evidence.disagreements_disclosed %}
+        <span class="tag tag-sev-high">disagreement disclosed</span>
+      {% else %}
+        <span class="muted">No disagreements disclosed.</span>
+      {% endif %}
+    {% endif %}
+  </p>
+  {% endif %}
+
+  {% if e.evidence.anticipates_significant_change is defined
+        and e.evidence.anticipates_significant_change is not none %}
+  <p class="subclass">
+    {% if e.evidence.anticipates_significant_change %}
+      <span class="tag tag-sev-high">expects significant change in results</span>
+    {% else %}
+      <span class="muted">Does not expect a significant change in results.</span>
+    {% endif %}
+    {% if e.evidence.other_periodic_reports_filed is false %}
+      <span class="tag tag-sev-high">other reports also outstanding</span>
+    {% endif %}
   </p>
   {% endif %}
 
