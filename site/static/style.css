@@ -327,10 +327,39 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 .theme-toggle button:first-child{border-left:none}
 .theme-toggle button:hover{color:var(--ink)}
 .theme-toggle button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
-.theme-toggle-foot{display:none;margin:0 0 16px}
+/* On a phone the three-button group costs more width than the nav can spare,
+   and burying it in the footer put it several hundred entries away. One
+   compact button in the header cycles instead: same three states, ~34px. */
+.theme-cycle{display:none}
 @media (max-width:620px){
-  /* Navigation is used constantly, the theme picked once. On a phone the
-     header keeps the nav and the toggle moves to the footer. */
   .site-head .theme-toggle{display:none}
-  .theme-toggle-foot{display:inline-flex}
+  .theme-cycle{display:inline-flex;align-items:center;justify-content:center;
+    flex:none;width:34px;min-height:44px;border:none;background:transparent;
+    color:var(--muted);font-size:1rem;cursor:pointer;padding:0;line-height:1}
+  .theme-cycle:hover,.theme-cycle:focus-visible{color:var(--ink)}
 }
+
+/* ── size filter ──────────────────────────────────────────── */
+.controls-size{margin-top:-4px;margin-bottom:16px;gap:10px}
+.filter-label{font-family:var(--mono);font-size:.64rem;text-transform:uppercase;
+  letter-spacing:.11em;color:var(--muted);font-weight:600}
+.filter-note{font-family:var(--mono);font-size:.62rem;color:var(--muted);
+  letter-spacing:.05em}
+.float{font-family:var(--mono);font-weight:650;color:var(--ink-2)}
+@media (max-width:620px){ .filter-note{display:none} }
+
+/* ── self-checks ──────────────────────────────────────────── */
+.checks{list-style:none;padding:0;margin:14px 0 18px;border-top:1px solid var(--line)}
+.check{display:grid;grid-template-columns:12px 1fr auto;gap:10px 12px;align-items:baseline;
+  padding:10px 2px;border-bottom:1px solid var(--line)}
+.check-dot{width:8px;height:8px;border-radius:50%;align-self:center;background:var(--muted)}
+.check-ok .check-dot{background:var(--series-6)}
+.check-warn .check-dot{background:var(--series-4)}
+.check-fail .check-dot{background:var(--alert)}
+.check-name{font-weight:650;font-size:.9rem}
+.check-detail{grid-column:2;color:var(--muted);font-family:var(--mono);font-size:.74rem;
+  letter-spacing:.02em}
+.check-status{font-family:var(--mono);font-size:.62rem;text-transform:uppercase;
+  letter-spacing:.11em;color:var(--muted);grid-row:1;grid-column:3}
+.check-fail .check-status{color:var(--alert);font-weight:700}
+.check-warn .check-status{color:var(--series-4);font-weight:700}

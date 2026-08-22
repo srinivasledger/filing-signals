@@ -77,6 +77,8 @@ class Event:
     quote: str = ""
     ticker: str = ""
     sic_desc: str = ""
+    size_tier: str = ""
+    public_float: float = 0.0
     prior_accession: str = ""
     prior_url: str = ""
     beta: bool = False
@@ -102,6 +104,8 @@ class Event:
             "cik": self.cik,
             "ticker": self.ticker,
             "sic_desc": self.sic_desc,
+            "size_tier": self.size_tier,
+            "public_float": self.public_float,
             "form": self.form,
             "filed": self.filed,
             "accession": self.accession,
@@ -122,5 +126,6 @@ class Event:
             "signal_type", "confidence", "company", "cik", "form", "filed",
             "accession", "filing_url", "headline", "evidence", "quote",
             "ticker", "sic_desc", "prior_accession", "prior_url", "beta", "ai",
+            "size_tier", "public_float",
         }
         return cls(**{k: v for k, v in d.items() if k in known})

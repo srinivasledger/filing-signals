@@ -1,5 +1,6 @@
 {% macro card(e, rel, show_company=True) %}
-<article class="event" data-signal="{{ e.signal_type }}" data-confidence="{{ e.confidence }}">
+<article class="event" data-signal="{{ e.signal_type }}"
+  data-size="{{ e.size_tier }}" data-confidence="{{ e.confidence }}">
   <div class="event-head">
     <span class="tag tag-{{ e.signal_type }}">{{ e.label }}</span>
     {% if e.evidence.severity == 'high' %}<span class="tag tag-sev-high">elevated</span>{% endif %}
@@ -18,6 +19,8 @@
     {% if e.ticker %}<span class="ticker">{{ e.ticker }}</span>{% endif %}
     <span class="sep">&middot;</span>{{ e.form }}
     {% if e.sic_desc %}<span class="sep">&middot;</span><span class="muted">{{ e.sic_desc|title }}</span>{% endif %}
+    {% if e.public_float %}<span class="sep">&middot;</span><span class="float"
+      title="Public float reported on the latest 10-K cover">{{ e.public_float|floatformat }}</span>{% endif %}
   </p>
   {% endif %}
 

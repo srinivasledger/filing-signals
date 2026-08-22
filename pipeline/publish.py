@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 
 STATE_FILE = config.STATE_DIR / "pipeline.json"
 HISTORY_FILE = config.STATE_DIR / "history.json"
+HEALTH_FILE = config.STATE_DIR / "health.json"
 MAX_RUN_HISTORY = 60
 
 
@@ -108,4 +109,18 @@ def load_history() -> Dict:
             return json.loads(HISTORY_FILE.read_text())
         except ValueError:
             log.warning("history file corrupt; ignoring")
+    return {}
+
+
+def save_health(report: Dict) -> None:
+    config.STATE_DIR.mkdir(parents=True, exist_ok=True)
+    HEALTH_FILE.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+
+
+def load_health() -> Dict:
+    if HEALTH_FILE.exists():
+        try:
+            return json.loads(HEALTH_FILE.read_text())
+        except ValueError:
+            log.warning("health file corrupt; ignoring")
     return {}

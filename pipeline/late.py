@@ -89,11 +89,34 @@ def extract_reason(text: str) -> str:
     # Collapse newlines first. html_to_text preserves single line breaks, so
     # the form's instruction text arrives as "State below\nin reasonable\ndetail"
     # and every boilerplate pattern silently fails to match across the breaks.
+    # Collapse newlines first. html_to_text preserves single line breaks, so
+    # the form's instruction text arrives as "State below\nin reasonable\ndetail"
+    # and every boilerplate pattern silently fails to match across the breaks.
     body = " ".join(body.split())
     body = re.sub(rf"[{_BOX}]", " ", body)
     body = re.sub(r"\(\s*[a-d]\s*\)", " ", body)
-    sentences = [x.strip() for x in re.split(r"(?<=[.;])\s+", body) if x.strip()]
+    # The Part III heading reads "PART III - NARRATIVE"; the dash and the word
+    # survive the heading match and were being quoted as part of the reason.
+    body = re.sub(r"^\s*[\u2013\u2014-]?\s*NARRATIVE\b[:\s-]*", " ", body, flags=re.I)
+
+    pieces = [x.strip() for x in re.split(r"(?<=[.;])\s+", body) if x.strip()]
+    # Company names end in abbreviations, so a naive split cuts
+    # "GridAI Technologies Corp. is unable to file" in two and leaves a
+    # fragment starting with a verb. Anything not starting like a sentence
+    # belongs to the piece before it.
+    sentences = []
+    for piece in pieces:
+        if sentences and not re.match(r'[A-Z\u201c("]', piece):
+            sentences[-1] = sentences[-1] + " " + piece
+        else:
+            sentences.append(piece)
+
     kept = [x for x in sentences if len(x) > 45 and not _BOILERPLATE.search(x)]
+    # "PART III" also occurs mid-sentence ("the disclosure in Part III is framed
+    # around..."), so the body can genuinely begin part-way through a sentence.
+    # A leading fragment has nothing to attach to; drop it rather than quote it.
+    while kept and not re.match(r'[A-Z\u201c("]', kept[0]):
+        kept.pop(0)
     return " ".join(" ".join(kept).split())[:700]
 
 

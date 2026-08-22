@@ -17,7 +17,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import charts, config, publish
+from . import charts, config, publish, size as size_mod
 from .models import (AUDITOR_CHANGE, GOING_CONCERN, LATE_FILING, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_BLURBS,
                      SIGNAL_LABELS, Event)
@@ -98,12 +98,14 @@ def _auditor_stats(events):
 
 
 def _env() -> Environment:
-    return Environment(
+    env = Environment(
         loader=FileSystemLoader(str(config.TEMPLATES)),
         autoescape=select_autoescape(["html", "xml"]),
         trim_blocks=True,
         lstrip_blocks=True,
     )
+    env.filters["floatformat"] = size_mod.format_float
+    return env
 
 
 def _write(path, content: str) -> None:
@@ -242,7 +244,7 @@ def build() -> None:
     _write(config.PUBLIC / "status.html",
            env.get_template("status.html").render(
                rel="", runs=runs, last_run=state.get("last_processed"),
-               analysis_on=analysis_on, **common))
+               analysis_on=analysis_on, health=publish.load_health(), **common))
 
     # --- machine-readable ---
     _write(config.PUBLIC / "events.json",

@@ -297,6 +297,35 @@ def test_late_severity_promotes_expected_change():
     assert high == "high" and annual == "high" and normal == "normal"
 
 
+def test_reason_survives_abbreviation_in_company_name():
+    # A naive sentence split cuts after "Corp." and orphans the verb, so the
+    # published quote began "is unable to file...".
+    doc = ("PART III\n\u2014 NARRATIVE GridAI Technologies Corp. is unable, without "
+           "unreasonable effort or expense, to timely file its Quarterly Report on "
+           "Form 10-Q for the quarter ended June 30, 2026.\nPART IV")
+    reason = late.extract_reason(doc)
+    assert reason.startswith("GridAI Technologies Corp."), reason[:60]
+    assert "NARRATIVE" not in reason
+
+
+def test_reason_strips_narrative_heading():
+    doc = ("PART III - NARRATIVE The Registrant could not complete the filing of its "
+           "Quarterly Report on Form 10-Q for the period ended June 30, 2026 due to "
+           "delays in obtaining information.\nPART IV")
+    assert not late.extract_reason(doc).lstrip().startswith(("-", "\u2014", "NARRATIVE"))
+
+
+def test_leading_fragment_is_dropped_not_quoted():
+    # "PART III" appears mid-sentence too, so the extracted body can start
+    # part-way through one. That fragment has nothing to attach to.
+    doc = ("the disclosure in PART III is framed around the Company's own review "
+           "process and internal timetable. The Company could not file its Quarterly "
+           "Report on Form 10-Q because its auditors have not finished.\nPART IV")
+    reason = late.extract_reason(doc)
+    assert not reason.startswith("is framed"), reason[:60]
+    assert "could not file" in reason
+
+
 # --- 8-K sub-classification ---------------------------------------------------
 def test_402_limb_b_is_the_auditor_telling_the_company():
     b = ("On August 1, 2026 the Company was advised by its independent "

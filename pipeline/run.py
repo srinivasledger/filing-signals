@@ -19,8 +19,8 @@ try:
 except Exception:                                # pragma: no cover
     EASTERN = dt.timezone(dt.timedelta(hours=-5))
 
-from . import (analyze, compare, config, enrich, fetch, history, ingest, late,
-               publish, triage, universe)
+from . import (analyze, compare, config, enrich, fetch, health, history, ingest,
+               late, publish, size, triage, universe)
 from .models import Event
 
 log = logging.getLogger("pipeline")
@@ -161,6 +161,33 @@ def main(argv: Optional[List[str]] = None) -> int:
         log.info("processing %d day(s): %s to %s", len(targets), targets[0], targets[-1])
 
     analyzer = analyze.get_analyzer()
+
+    # Company size, from the SEC's own public-float test. Refreshed weekly and
+    # cached, so a failed refresh leaves the previous index in place.
+    try:
+        float_by_cik = size.load_or_refresh(
+            config.STATE_DIR / "company_size.json", today_et)
+    except fetch.SECBlocked:
+        log.warning("size index skipped: SEC access blocked")
+        float_by_cik = {}
+    except Exception as exc:                     # noqa: BLE001
+        log.warning("size index unavailable (%s); continuing without", exc)
+        float_by_cik = {}
+
+    def tag_size(events):
+        for e in events:
+            val = float_by_cik.get(str(e.cik))
+            if not val:
+                continue
+            try:
+                tier, checked = size.verified_tier(e.cik, val)
+            except fetch.SECBlocked:
+                raise
+            except Exception:                    # noqa: BLE001
+                tier, checked = size.tier_for(val), val
+            if tier and checked:
+                e.size_tier, e.public_float = tier, checked
+        return events
     total_new = 0
     blocked = False
 
@@ -178,6 +205,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         if stats is None:
             continue
 
+        events = tag_size(events)
         if events:
             events = analyzer.enrich(events)
         written = publish.append_events(day.isoformat(), events)
@@ -210,6 +238,19 @@ def main(argv: Optional[List[str]] = None) -> int:
             log.warning("history pass skipped: SEC access blocked")
         except Exception as exc:                 # noqa: BLE001
             log.warning("history pass failed: %s", exc)
+
+    # Self-checks last, so they see the finished state.
+    try:
+        report = health.run_checks(publish.load_all_events(), state, today_et)
+        publish.save_health(report)
+        s = report["summary"]
+        log.info("health: %s (%d ok, %d warn, %d fail)",
+                 s["overall"].upper(), s["ok"], s["warn"], s["fail"])
+        for c in report["checks"]:
+            if c["status"] in ("warn", "fail"):
+                log.warning("  %s: %s — %s", c["status"].upper(), c["name"], c["detail"])
+    except Exception as exc:                     # noqa: BLE001
+        log.warning("health checks did not run: %s", exc)
 
     if not args.no_render:
         from . import render

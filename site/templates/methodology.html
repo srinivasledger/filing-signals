@@ -7,12 +7,12 @@
 <h2>How much is flagged</h2>
 <p>A count of events means little without the population it came from. Across
 the filing days processed so far:</p>
-<div class="stats">
-  <div><b>{{ '{:,}'.format(filings_scanned) }}</b><span>filings in the daily index</span></div>
-  <div><b>{{ '{:,}'.format(candidates_scanned) }}</b><span>read in full</span></div>
-  <div><b>{{ total_events }}</b><span>events published</span></div>
-  <div><b>{{ flag_rate }}</b><span>of scanned filings flagged</span></div>
-</div>
+<dl class="figures">
+  <div><dt>Filings in the daily index</dt><dd>{{ '{:,}'.format(filings_scanned) }}</dd></div>
+  <div><dt>Read in full</dt><dd>{{ '{:,}'.format(candidates_scanned) }}</dd></div>
+  <div><dt>Events published</dt><dd>{{ total_events }}</dd></div>
+  <div><dt>Flagged</dt><dd>{{ flag_rate }}</dd></div>
+</dl>
 <p class="muted">Most filings are never candidates: fund and securitisation
 paperwork makes up the bulk of daily volume and cannot carry these signals.
 The flag rate is deliberately low &mdash; these are meant to be rare events.</p>

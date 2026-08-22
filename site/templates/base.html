@@ -36,6 +36,8 @@
       <button type="button" data-theme-set="dark">Dark</button>
       <button type="button" data-theme-set="system">Auto</button>
     </div>
+    <button type="button" class="theme-cycle" data-theme-cycle
+            aria-label="Change colour theme"><span data-theme-icon>◐</span></button>
     <p class="statusline">
       <span>Source: SEC EDGAR</span>
       <span>Compiled {{ built_at }}</span>
@@ -48,11 +50,6 @@
 </main>
 <footer class="site-foot">
   <div class="wrap">
-    <div class="theme-toggle theme-toggle-foot" role="group" aria-label="Colour theme">
-      <button type="button" data-theme-set="light">Light</button>
-      <button type="button" data-theme-set="dark">Dark</button>
-      <button type="button" data-theme-set="system">Auto</button>
-    </div>
     <p class="colophon">Source: SEC EDGAR &middot; compiled {{ built_at }}
     &middot; unattended &middot; no analyst intervention</p>
     <p><strong>Not investment advice.</strong> This site reports what companies

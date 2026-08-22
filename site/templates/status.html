@@ -8,18 +8,39 @@ the evidence that the site maintains itself.</p>
 date is safe and writes nothing new, which is what a repeated day with zero new
 events means.</p>
 
-<div class="stats">
-  <div><b>{{ last_run or '—' }}</b><span>last filing day processed</span></div>
-  <div><b>{{ runs|length }}</b><span>runs recorded</span></div>
-  <div><b>{{ 'Claude' if analysis_on else 'Deterministic' }}</b><span>analysis mode</span></div>
-  <div><b>{{ built_at }}</b><span>site built</span></div>
-</div>
+<dl class="figures">
+  <div><dt>Last filing day</dt><dd class="dd-date">{{ last_run or '—' }}</dd></div>
+  <div><dt>Runs recorded</dt><dd>{{ runs|length }}</dd></div>
+  <div><dt>Analysis mode</dt><dd class="dd-date">{{ 'Claude' if analysis_on else 'Deterministic' }}</dd></div>
+  <div><dt>Overall</dt><dd class="dd-date">{{ (health.summary.overall if health and health.summary else '—')|upper }}</dd></div>
+</dl>
 
 {% if not analysis_on %}
 <p class="notice">Running in <strong>deterministic mode</strong> &mdash; no AI
 commentary. Signals come from SEC item codes and filing comparison only, at
 zero cost. Adding an <code>ANTHROPIC_API_KEY</code> secret enables plain-English
 analysis with no code change.</p>
+{% endif %}
+
+{% if health and health.checks %}
+<p class="eyebrow"><span>Self-checks</span>
+  <span>{{ health.summary.ok }} ok
+    {%- if health.summary.warn %} · {{ health.summary.warn }} warning{% endif %}
+    {%- if health.summary.fail %} · {{ health.summary.fail }} failing{% endif %}</span></p>
+<p>These run automatically at the end of every pipeline run and assert the
+properties this site depends on. They are published here rather than logged,
+because nothing else is watching.</p>
+<ul class="checks">
+  {% for c in health.checks %}
+  <li class="check check-{{ c.status }}">
+    <span class="check-dot" aria-hidden="true"></span>
+    <span class="check-name">{{ c.name }}</span>
+    <span class="check-detail">{{ c.detail }}</span>
+    <span class="check-status">{{ c.status }}</span>
+  </li>
+  {% endfor %}
+</ul>
+<p class="muted">Last checked {{ health.generated_at }}.</p>
 {% endif %}
 
 <h2>Recent runs</h2>

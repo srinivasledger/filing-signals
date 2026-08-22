@@ -19,16 +19,31 @@
     sync();
   }
 
+  var ORDER = ["light", "dark", "system"];
+  var ICON = {light: "\u2600", dark: "\u263E", system: "\u25D0"};
+  var NAME = {light: "Light", dark: "Dark", system: "Auto"};
+
   function sync() {
     var choice = current();
     document.querySelectorAll("[data-theme-set]").forEach(function (btn) {
       btn.setAttribute("aria-pressed", String(btn.dataset.themeSet === choice));
     });
+    var icon = document.querySelector("[data-theme-icon]");
+    if (icon) icon.textContent = ICON[choice] || ICON.system;
+    var cycle = document.querySelector("[data-theme-cycle]");
+    if (cycle) {
+      var next = ORDER[(ORDER.indexOf(choice) + 1) % ORDER.length];
+      cycle.setAttribute("aria-label",
+        "Colour theme: " + NAME[choice] + ". Activate for " + NAME[next] + ".");
+    }
   }
 
   document.addEventListener("click", function (e) {
     var btn = e.target.closest("[data-theme-set]");
-    if (btn) apply(btn.dataset.themeSet);
+    if (btn) { apply(btn.dataset.themeSet); return; }
+    if (e.target.closest("[data-theme-cycle]")) {
+      apply(ORDER[(ORDER.indexOf(current()) + 1) % ORDER.length]);
+    }
   });
 
   sync();

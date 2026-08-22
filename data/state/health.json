@@ -1,0 +1,63 @@
+{
+  "checks": [
+    {
+      "detail": "last complete filing day 2026-08-21, today",
+      "name": "Pipeline is current",
+      "status": "ok"
+    },
+    {
+      "detail": "8 runs recorded, 47,722 index rows read",
+      "name": "Recent runs completed",
+      "status": "ok"
+    },
+    {
+      "detail": "251/251 link to sec.gov",
+      "name": "Every entry links to its filing",
+      "status": "ok"
+    },
+    {
+      "detail": "251/251 carry a detection method",
+      "name": "Every entry states how it was found",
+      "status": "ok"
+    },
+    {
+      "detail": "16 entries from SEC item codes, 0 without one",
+      "name": "Item-code entries carry an item code",
+      "status": "ok"
+    },
+    {
+      "detail": "55/55 cite what they were compared against",
+      "name": "Comparisons name the prior filing",
+      "status": "ok"
+    },
+    {
+      "detail": "251 unique entries",
+      "name": "No duplicated entries",
+      "status": "ok"
+    },
+    {
+      "detail": "0 of 211 quoted passages begin mid-sentence",
+      "name": "Quotes start at a sentence",
+      "status": "ok"
+    },
+    {
+      "detail": "5,156 companies, refreshed 0 day(s) ago",
+      "name": "Company size index",
+      "status": "ok"
+    },
+    {
+      "detail": "224 companies, 4,048 historical events",
+      "name": "Follow-on rates computed",
+      "status": "ok"
+    }
+  ],
+  "generated_at": "2026-08-22T18:08:59+00:00",
+  "summary": {
+    "fail": 0,
+    "ok": 10,
+    "overall": "ok",
+    "total": 10,
+    "unknown": 0,
+    "warn": 0
+  }
+}
