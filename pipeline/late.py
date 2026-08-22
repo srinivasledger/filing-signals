@@ -165,3 +165,37 @@ def analyse_late_filing(filing) -> List[Event]:
         evidence=evidence,
         quote=parsed["reason"],
     )]
+
+
+def merge_same_day(events: List[Event]) -> List[Event]:
+    """Collapse multiple late notices from one company on one day into one.
+
+    A company catching up on overdue filings files several Form 12b-25s at
+    once - one issuer filed seven on a single day - and each was becoming its
+    own card. That is one story told seven times. The most severe notice is
+    kept and the rest are recorded on it.
+    """
+    groups: Dict[tuple, List[Event]] = {}
+    passthrough: List[Event] = []
+    for e in events:
+        if e.signal_type != LATE_FILING:
+            passthrough.append(e)
+            continue
+        groups.setdefault((e.cik, e.filed), []).append(e)
+
+    merged: List[Event] = []
+    for (_, _), group in groups.items():
+        if len(group) == 1:
+            merged.append(group[0])
+            continue
+        group.sort(key=lambda e: (e.evidence.get("severity") != "high", e.form))
+        lead = group[0]
+        others = group[1:]
+        lead.evidence["filings_in_batch"] = len(group)
+        lead.evidence["other_forms"] = sorted({e.form for e in others})
+        lead.headline = (
+            f"{lead.company} told the SEC it could not file {len(group)} "
+            "periodic reports on time")
+        merged.append(lead)
+
+    return passthrough + merged

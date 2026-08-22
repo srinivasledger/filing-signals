@@ -17,7 +17,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import config, publish
+from . import charts, config, publish
 from .models import (AUDITOR_CHANGE, GOING_CONCERN, LATE_FILING, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_BLURBS,
                      SIGNAL_LABELS, Event)
@@ -154,6 +154,9 @@ def build() -> None:
     runs = list(reversed(state.get("runs", [])))
     analysis_on = any(r.get("analysis") == "claude" for r in runs[:5])
 
+    activity_svg = charts.activity_chart(events)
+    mix_svg = charts.mix_bar(events)
+
     common = {
         "site_title": config.SITE_TITLE,
         "site_tagline": config.SITE_TAGLINE,
@@ -177,7 +180,7 @@ def build() -> None:
             days_covered=len({e.filed for e in events}),
             last_run=state.get("last_processed"),
             filings_scanned=scanned, candidates_scanned=candidates,
-            flag_rate=flag_rate,
+            flag_rate=flag_rate, activity_chart=activity_svg, mix_bar=mix_svg,
             **common,
         ),
     )
@@ -222,6 +225,8 @@ def build() -> None:
     _write(config.PUBLIC / "sequences.html",
            env.get_template("sequences.html").render(
                rel="", sequences=sequences, history=publish.load_history(),
+               rates_chart=charts.rates_chart(
+                   publish.load_history().get("rows", [])),
                **common))
     _write(config.PUBLIC / "auditors.html",
            env.get_template("auditors.html").render(

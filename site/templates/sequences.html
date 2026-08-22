@@ -15,18 +15,22 @@ and reaching one step does not imply the next. Dates are filing dates.</p>
 their full filing history from SEC EDGAR &mdash;
 <b>{{ '{:,}'.format(history.total_historical_events) }}</b> historical events
 in total, within a {{ history.window_days }}-day window.</p>
-<div class="table-scroll">
-<table>
-  <thead><tr><th>Sequence</th><th>Companies with the first event</th>
-    <th>Followed by the second</th><th>Rate</th></tr></thead>
-  <tbody>
-  {% for r in history.rows %}
-  <tr><td>{{ r.label }}</td><td>{{ r.eligible }}</td>
-      <td>{{ r.followed }}</td><td><b>{{ r.rate }}</b></td></tr>
-  {% endfor %}
-  </tbody>
-</table>
-</div>
+{{ rates_chart|safe }}
+<details class="evidence">
+  <summary>View as a table</summary>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Sequence</th><th>Companies with the first event</th>
+      <th>Followed by the second</th><th>Rate</th></tr></thead>
+    <tbody>
+    {% for r in history.rows %}
+    <tr><td>{{ r.label }}</td><td>{{ r.eligible }}</td>
+        <td>{{ r.followed }}</td><td><b>{{ r.rate }}</b></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</details>
 <p class="notice"><strong>Read this narrowly.</strong> These are conditional
 rates inside a population this tracker already flagged, not population base
 rates. There is no matched control group, so they cannot tell you that one

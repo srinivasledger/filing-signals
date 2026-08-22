@@ -108,6 +108,8 @@ def process_day(day: dt.date) -> tuple:
             except Exception as exc:                 # noqa: BLE001
                 log.warning("  late-filing parse failed for %s: %s", filing.company, exc)
 
+    events = late.merge_same_day(events)
+
     # Periodic reports: needs the previous filing, so it is the expensive path.
     periodic = [f for f in operating if f.form.upper() in universe.PERIODIC_FORMS]
     if len(periodic) > MAX_PERIODIC_PER_DAY:

@@ -67,6 +67,10 @@
     {% else %}
       <span class="muted">Does not expect a significant change in results.</span>
     {% endif %}
+    {% if e.evidence.filings_in_batch %}
+      <span class="muted">{{ e.evidence.filings_in_batch }} notices filed the same day
+      ({{ e.evidence.other_forms|join(', ') }}).</span>
+    {% endif %}
     {% if e.evidence.other_periodic_reports_filed is false %}
       <span class="tag tag-sev-high">other reports also outstanding</span>
     {% endif %}

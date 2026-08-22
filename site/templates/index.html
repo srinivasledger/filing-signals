@@ -2,25 +2,38 @@
 {% from "_event.html" import card %}
 {% block content %}
 <section class="hero">
-  <h1>{{ site_tagline }}</h1>
-  <p class="lede">
-    Every weekday this site reads new SEC filings and reports four things that
-    are otherwise hard to see: companies withdrawing reliance on past financial
-    statements, auditors changing, going-concern conclusions appearing or
-    lifting, and accounting-policy language being rewritten. It runs on a
-    schedule with no one at the controls.
-  </p>
-  <div class="stats">
-    <div><b>{{ total_events }}</b><span>events recorded</span></div>
-    <div><b>{{ companies }}</b><span>companies</span></div>
-    <div><b>{{ days_covered }}</b><span>filing days covered</span></div>
-    <div><b>{{ '{:,}'.format(filings_scanned) }}</b><span>filings scanned</span></div>
-    <div><b>{{ flag_rate }}</b><span>flagged</span></div>
-    <div><b>{{ last_run or '—' }}</b><span>last updated</span></div>
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Daily record &middot; SEC EDGAR</p>
+      <h1>{{ site_tagline }}</h1>
+      <p class="lede">
+        Every weekday this site reads new SEC filings and reports six things
+        that are otherwise hard to see: companies withdrawing reliance on past
+        financial statements, auditors resigning or being dismissed, periodic
+        reports filed late, going-concern conclusions appearing or lifting, and
+        accounting-policy language being rewritten. It runs on a schedule with
+        no one at the controls.
+      </p>
+    </div>
+    <dl class="figures">
+      <div><dt>Events recorded</dt><dd>{{ total_events }}</dd></div>
+      <div><dt>Companies</dt><dd>{{ companies }}</dd></div>
+      <div><dt>Filing days</dt><dd>{{ days_covered }}</dd></div>
+      <div><dt>Filings scanned</dt><dd>{{ '{:,}'.format(filings_scanned) }}</dd></div>
+      <div><dt>Flagged</dt><dd>{{ flag_rate }}</dd></div>
+      <div><dt>Through</dt><dd class="dd-date">{{ last_run or '—' }}</dd></div>
+    </dl>
   </div>
+  {{ mix_bar|safe }}
 </section>
 
+{% if activity_chart %}
+<p class="eyebrow">Activity by filing day</p>
+{{ activity_chart|safe }}
+{% endif %}
+
 {% if events %}
+<p class="eyebrow">The record</p>
 <section class="controls">
   <label class="search">
     <span class="visually-hidden">Filter events</span>
