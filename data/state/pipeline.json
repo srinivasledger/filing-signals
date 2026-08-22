@@ -90,6 +90,26 @@
       "finished_at": "2026-08-22T10:17:24+00:00",
       "index_rows": 4183,
       "operating": 227
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 247,
+      "date": "2026-08-20",
+      "events": 3,
+      "events_written": 0,
+      "finished_at": "2026-08-22T16:29:35+00:00",
+      "index_rows": 4183,
+      "operating": 227
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 202,
+      "date": "2026-08-21",
+      "events": 3,
+      "events_written": 0,
+      "finished_at": "2026-08-22T16:30:28+00:00",
+      "index_rows": 4983,
+      "operating": 187
     }
   ]
 }
