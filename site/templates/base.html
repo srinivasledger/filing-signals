@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ site_title }}{% endblock %}</title>
+<meta name="description" content="{{ site_tagline }}">
+<link rel="stylesheet" href="{{ rel }}static/style.css">
+<link rel="alternate" type="application/rss+xml" title="{{ site_title }}" href="{{ rel }}feed.xml">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="{{ rel }}index.html">
+      <span class="dot" aria-hidden="true"></span>{{ site_title }}
+    </a>
+    <nav>
+      <a href="{{ rel }}index.html">Latest</a>
+      <a href="{{ rel }}signals.html">Signals</a>
+      <a href="{{ rel }}methodology.html">Methodology</a>
+      <a href="{{ rel }}status.html">Status</a>
+      <a href="{{ rel }}feed.xml">RSS</a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+{% block content %}{% endblock %}
+</main>
+<footer class="site-foot">
+  <div class="wrap">
+    <p><strong>Not investment advice.</strong> This site reports what companies
+    disclosed in their own SEC filings. Every entry links to the source
+    document &mdash; always verify against the filing itself before relying on
+    anything here.</p>
+    <p class="muted">Data from SEC EDGAR. Updated automatically each weekday.
+    Last build {{ built_at }}. <a href="{{ rel }}methodology.html">How this works</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

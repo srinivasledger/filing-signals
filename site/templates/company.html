@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_event.html" import card %}
+{% block title %}{{ company }} &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<p class="crumb"><a href="{{ rel }}index.html">&larr; All events</a></p>
+<h1>{{ company }}</h1>
+<p class="event-meta">
+  CIK {{ cik }}
+  {% if ticker %}<span class="ticker">{{ ticker }}</span>{% endif %}
+  {% if sic_desc %}<span class="sep">&middot;</span>{{ sic_desc|title }}{% endif %}
+  <span class="sep">&middot;</span>
+  <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={{ '%010d' % cik }}&type=&dateb=&owner=include&count=40"
+     rel="nofollow noopener">All EDGAR filings &nearr;</a>
+</p>
+<div class="feed">
+  {% for e in events %}{{ card(e, rel, show_company=False) }}{% endfor %}
+</div>
+{% endblock %}

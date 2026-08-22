@@ -1,0 +1,95 @@
+{
+  "last_processed": "2026-08-21",
+  "runs": [
+    {
+      "analysis": "deterministic-only",
+      "candidates": 645,
+      "date": "2026-08-12",
+      "events": 8,
+      "events_written": 8,
+      "finished_at": "2026-08-22T10:15:07+00:00",
+      "index_rows": 5580,
+      "operating": 581
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 897,
+      "date": "2026-08-13",
+      "events": 8,
+      "events_written": 8,
+      "finished_at": "2026-08-22T10:15:18+00:00",
+      "index_rows": 7132,
+      "operating": 789
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 907,
+      "date": "2026-08-14",
+      "events": 21,
+      "events_written": 21,
+      "finished_at": "2026-08-22T10:15:27+00:00",
+      "index_rows": 11140,
+      "operating": 757
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 244,
+      "date": "2026-08-17",
+      "events": 11,
+      "events_written": 11,
+      "finished_at": "2026-08-22T10:15:30+00:00",
+      "index_rows": 4730,
+      "operating": 215
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 230,
+      "date": "2026-08-18",
+      "events": 2,
+      "events_written": 2,
+      "finished_at": "2026-08-22T10:15:33+00:00",
+      "index_rows": 5551,
+      "operating": 207
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 284,
+      "date": "2026-08-19",
+      "events": 22,
+      "events_written": 22,
+      "finished_at": "2026-08-22T10:15:38+00:00",
+      "index_rows": 4423,
+      "operating": 259
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 247,
+      "date": "2026-08-20",
+      "events": 3,
+      "events_written": 3,
+      "finished_at": "2026-08-22T10:15:40+00:00",
+      "index_rows": 4183,
+      "operating": 227
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 202,
+      "date": "2026-08-21",
+      "events": 3,
+      "events_written": 3,
+      "finished_at": "2026-08-22T10:15:42+00:00",
+      "index_rows": 4983,
+      "operating": 187
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 247,
+      "date": "2026-08-20",
+      "events": 3,
+      "events_written": 0,
+      "finished_at": "2026-08-22T10:17:24+00:00",
+      "index_rows": 4183,
+      "operating": 227
+    }
+  ]
+}

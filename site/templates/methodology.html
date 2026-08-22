@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Methodology &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<h1>Methodology</h1>
+<p class="lede">How each signal is produced, and what it does and does not mean.</p>
+
+<h2>Where the data comes from</h2>
+<p>Every weekday the pipeline reads the SEC's EDGAR daily index &mdash; the
+official list of everything filed that day. It keeps 8-K, 10-K, 10-Q, 20-F and
+40-F filings from operating companies, discarding fund and securitisation
+paperwork, which makes up the majority of daily volume and cannot carry these
+signals.</p>
+
+<h2>Restatements and auditor changes</h2>
+<p>These come from the SEC's own structured item codes, read from each filing's
+header. <strong>Item 4.02</strong> is "Non-Reliance on Previously Issued
+Financial Statements"; <strong>Item 4.01</strong> is "Changes in Registrant's
+Certifying Accountant". Because the filer selects these codes themselves, a
+match is a fact about what was disclosed, not an inference. These are labelled
+<em>SEC item code</em>.</p>
+<p><strong>What Item 4.02 does not mean.</strong> It means the company told
+investors that earlier figures should no longer be relied upon. It is not by
+itself evidence of fraud or misconduct. Restatements frequently arise from
+technical accounting corrections.</p>
+
+<h2>Going concern</h2>
+<p>This is the signal most often done badly, so it is worth being precise.</p>
+<p>Searching filings for the phrase "going concern" does not work. The phrase
+appears in the Risk Factors of most speculative issuers as standing boilerplate,
+unchanged for years. It also appears in forward-looking-statement disclaimers.
+None of that is news.</p>
+<p>Instead the pipeline locates the actual accounting note &mdash; the
+disclosure made under <strong>ASC 205-40</strong> &mdash; and reads its
+conclusion. That note always opens by reciting both possible outcomes as
+methodology, so the conclusion sentence, not nearby wording, decides the
+classification. Each filing is placed on a ladder:</p>
+<ol class="ladder">
+  <li><b>No going-concern disclosure</b></li>
+  <li><b>Risk-factor language only</b> &mdash; boilerplate, no accounting conclusion</li>
+  <li><b>Substantial doubt raised, alleviated</b> by management's plans</li>
+  <li><b>Substantial doubt</b> about the ability to continue as a going concern</li>
+</ol>
+<p>An event is published <em>only when a company moves between rungs</em>,
+compared against its own previous filing of the same type. A company that has
+disclosed substantial doubt for eight consecutive quarters generates no event,
+because nothing changed.</p>
+
+<h2>Accounting policy and revenue recognition <span class="tag tag-beta">beta</span></h2>
+<p>The pipeline extracts the significant-accounting-policies note and the
+revenue-recognition note, strips out figures, dates and quarter labels, and
+compares the wording against the same company's previous comparable filing.
+Comparisons are always like-for-like &mdash; a 10-Q against a 10-Q &mdash;
+because a quarterly note is far shorter than an annual one and comparing across
+them would flag every company every year.</p>
+<p>These are marked <strong>beta</strong>. They are derived from text
+comparison rather than a structured code, so they carry more noise. Treat them
+as a prompt to read the filing, not as a conclusion.</p>
+
+<h2>The role of AI</h2>
+<p>Detection is entirely deterministic: pattern matching, item codes and text
+comparison. No model decides whether something is a signal.</p>
+<p>When enabled, a language model adds a plain-English summary and screens beta
+text-diff findings for cosmetic rewrites. Anything it writes is labelled
+<em>AI summary</em> and always appears alongside the verbatim filing text and a
+link to the source. If the analysis layer is off or fails, events still
+publish &mdash; with evidence and quotes intact.</p>
+
+<h2>Limitations</h2>
+<ul>
+  <li>Only filings from the days the pipeline has processed. It is not a
+  historical database.</li>
+  <li>Section extraction depends on filing structure. Unusual formatting can
+  cause a note to be missed.</li>
+  <li>Companies with no prior comparable filing produce no comparison signals:
+  a change cannot be shown without a baseline.</li>
+  <li>Amended filings are compared against the original series, which can
+  surface wording differences that are procedural rather than substantive.</li>
+</ul>
+
+<h2>Corrections</h2>
+<p>Every entry links to its source. If an entry misreads a filing, open an issue
+on the project repository with the accession number and what it should say.</p>
+{% endblock %}

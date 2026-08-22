@@ -1,0 +1,3 @@
+# Only needed to enable the optional Claude analysis layer.
+-r requirements.txt
+anthropic>=0.40

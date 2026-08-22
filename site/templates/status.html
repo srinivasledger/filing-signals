@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Status &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<h1>Pipeline status</h1>
+<p class="lede">This page is written by the pipeline itself on every run. It is
+the evidence that the site maintains itself.</p>
+
+<div class="stats">
+  <div><b>{{ last_run or '—' }}</b><span>last filing day processed</span></div>
+  <div><b>{{ runs|length }}</b><span>runs recorded</span></div>
+  <div><b>{{ 'Claude' if analysis_on else 'Deterministic' }}</b><span>analysis mode</span></div>
+  <div><b>{{ built_at }}</b><span>site built</span></div>
+</div>
+
+{% if not analysis_on %}
+<p class="notice">Running in <strong>deterministic mode</strong> &mdash; no AI
+commentary. Signals come from SEC item codes and filing comparison only, at
+zero cost. Adding an <code>ANTHROPIC_API_KEY</code> secret enables plain-English
+analysis with no code change.</p>
+{% endif %}
+
+<h2>Recent runs</h2>
+<div class="table-scroll">
+<table>
+  <thead><tr>
+    <th>Filing day</th><th>Index rows</th><th>Candidates</th>
+    <th>Operating cos.</th><th>Events</th><th>Mode</th><th>Completed (UTC)</th>
+  </tr></thead>
+  <tbody>
+  {% for r in runs %}
+  <tr>
+    <td>{{ r.date }}</td>
+    <td>{{ '{:,}'.format(r.index_rows or 0) }}</td>
+    <td>{{ r.candidates or 0 }}</td>
+    <td>{{ r.operating or 0 }}</td>
+    <td>{{ r.events_written if r.events_written is defined else (r.events or 0) }}</td>
+    <td class="muted">{{ r.analysis or '—' }}</td>
+    <td class="muted">{{ r.finished_at or '—' }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="muted">No runs recorded yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

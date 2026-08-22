@@ -1,0 +1,96 @@
+name: Daily filing scan
+
+on:
+  schedule:
+    # 23:30 UTC on weekdays = 19:30 ET (18:30 in winter), comfortably after
+    # EDGAR's 17:30 ET filing cutoff, so the day's index is complete.
+    # GitHub may delay scheduled runs; that is fine, because a missed run is
+    # backfilled by the next one rather than leaving a hole.
+    - cron: "30 23 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Reprocess the last N business days (leave blank to catch up)"
+        required: false
+
+# Never let two runs write state at once.
+concurrency:
+  group: daily-scan
+  cancel-in-progress: false
+
+permissions:
+  contents: write      # commit the day's events
+  pages: write
+  id-token: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          # The analysis layer is optional. Install its SDK only when a key
+          # exists, so the default path stays dependency-light and free.
+          if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            pip install anthropic
+          fi
+
+      - name: Run pipeline
+        env:
+          # Required. SEC returns 403 to requests that do not identify a
+          # contact, so this must be a real "Name email@domain" string.
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          # Optional. Absent => deterministic-only, zero cost.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -n "${{ inputs.days }}" ]; then
+            python -m pipeline.run --days "${{ inputs.days }}"
+          else
+            python -m pipeline.run
+          fi
+
+      - name: Commit new events
+        run: |
+          git config user.name  "filing-signals-bot"
+          git config user.email "filing-signals-bot@users.noreply.github.com"
+          git add data/
+          if git diff --staged --quiet; then
+            echo "No new events today."
+          else
+            git commit -m "data: filings through $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "### Filing scan" >> $GITHUB_STEP_SUMMARY
+          python - <<'PY' >> $GITHUB_STEP_SUMMARY
+          import json, pathlib
+          p = pathlib.Path("data/state/pipeline.json")
+          if not p.exists():
+              print("No state recorded."); raise SystemExit
+          s = json.loads(p.read_text())
+          print(f"Processed through **{s.get('last_processed')}**\n")
+          print("| Day | Index rows | Candidates | Events |")
+          print("|---|---|---|---|")
+          for r in s.get("runs", [])[-5:]:
+              print(f"| {r.get('date')} | {r.get('index_rows')} | "
+                    f"{r.get('candidates')} | {r.get('events_written', 0)} |")
+          PY
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: deployment
+        uses: actions/deploy-pages@v4

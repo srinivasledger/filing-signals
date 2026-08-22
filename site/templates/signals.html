@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Signals &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<h1>What this tracks</h1>
+<p class="lede">Four signals, split by how much interpretation each requires.</p>
+{% for key, label in signal_labels %}
+<section class="signal-block">
+  <h2><span class="tag tag-{{ key }}">{{ label }}</span>
+    <span class="muted">{{ counts.get(key, 0) }} recorded</span></h2>
+  <p>{{ blurbs[key] }}</p>
+  {% if by_signal.get(key) %}
+  <ul class="mini">
+    {% for e in by_signal[key][:12] %}
+    <li><time>{{ e.filed }}</time>
+      <a href="{{ rel }}company/{{ e.cik }}.html">{{ e.company }}</a>
+      <span class="muted">{{ e.form }}</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">Nothing recorded yet.</p>{% endif %}
+</section>
+{% endfor %}
+{% endblock %}

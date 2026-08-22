@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_event.html" import card %}
+{% block content %}
+<section class="hero">
+  <h1>{{ site_tagline }}</h1>
+  <p class="lede">
+    Every weekday this site reads new SEC filings and reports four things that
+    are otherwise hard to see: companies withdrawing reliance on past financial
+    statements, auditors changing, going-concern conclusions appearing or
+    lifting, and accounting-policy language being rewritten. It runs on a
+    schedule with no one at the controls.
+  </p>
+  <div class="stats">
+    <div><b>{{ total_events }}</b><span>events recorded</span></div>
+    <div><b>{{ companies }}</b><span>companies</span></div>
+    <div><b>{{ days_covered }}</b><span>filing days covered</span></div>
+    <div><b>{{ last_run or '—' }}</b><span>last updated</span></div>
+  </div>
+</section>
+
+{% if events %}
+<section class="controls">
+  <label class="search">
+    <span class="visually-hidden">Filter events</span>
+    <input type="search" id="q" placeholder="Filter by company, ticker or text…" autocomplete="off">
+  </label>
+  <div class="chips" id="chips">
+    <button class="chip is-on" data-filter="all">All</button>
+    {% for key, label in signal_labels %}
+    <button class="chip" data-filter="{{ key }}">{{ label }}</button>
+    {% endfor %}
+  </div>
+</section>
+
+<p class="count" id="count" aria-live="polite"></p>
+<div class="feed" id="feed">
+  {% for e in events %}{{ card(e, rel) }}{% endfor %}
+</div>
+<p class="empty" id="noresults" hidden>No events match that filter.</p>
+{% else %}
+<section class="empty-state">
+  <h2>No events recorded yet</h2>
+  <p>The pipeline has not found any qualifying disclosures in the days
+  processed so far. This is normal: restatements and auditor changes are
+  genuinely rare, typically one to three per day across all US filers.</p>
+  <p class="muted">Check the <a href="{{ rel }}status.html">status page</a> to
+  confirm the pipeline is running.</p>
+</section>
+{% endif %}
+<script src="{{ rel }}static/filter.js" defer></script>
+{% endblock %}
