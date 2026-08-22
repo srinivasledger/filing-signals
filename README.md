@@ -1,5 +1,7 @@
 # Filing Signals
 
+**Live: <https://srini-gg.github.io/filing-signals>** · [RSS](https://srini-gg.github.io/filing-signals/feed.xml) · [JSON](https://srini-gg.github.io/filing-signals/events.json)
+
 A self-updating public tracker that reads new SEC filings every weekday and
 publishes four things that are otherwise hard to see:
 
@@ -66,15 +68,29 @@ daily index  →  filing headers  →  universe filter  →  deterministic triag
                                                         ↘  optional AI  →  site
 ```
 
-## Going live
+## Deployment
 
-1. Push to a public GitHub repository.
-2. Add repository secret **`SEC_USER_AGENT`** — a real `Name email@domain`.
-   Without it every request returns 403.
-3. Settings → Pages → Source: **GitHub Actions**.
-4. Optionally add repository variable `SITE_URL` for absolute RSS links.
-5. The workflow runs weekdays at 23:30 UTC, or on demand via
-   *Actions → Daily filing scan → Run workflow*.
+Already live on GitHub Pages. The workflow runs weekdays at **23:30 UTC**
+(after EDGAR's 17:30 ET cutoff), or on demand via
+*Actions → Daily filing scan → Run workflow*, which also accepts a `days` input
+to reprocess recent dates.
+
+Configured: secret `SEC_USER_AGENT`, variable `SITE_URL`, Pages source
+*GitHub Actions*, and Actions workflow permissions set to **write** so the run
+can commit each day's events back to `data/`.
+
+> GitHub disables scheduled workflows in repositories with no commit activity
+> for 60 days. This one commits on any day it finds events, which keeps it
+> alive on its own; a quiet stretch longer than that would need a manual run.
+
+### Hosting it elsewhere (e.g. Hostinger)
+
+The build output in `public/` is 87 files, ~816 KB, and uses only relative
+paths, so it works from any web root. To serve it from your own domain, keep
+GitHub Actions as the scheduler and replace the three `actions/*-pages` steps
+in `daily.yml` with an FTP upload of `public/` to your host's `public_html`.
+Running the pipeline on shared hosting is not recommended: SEC blocks abusive
+IPs, and a shared address is one you do not control.
 
 ### Optional: plain-English analysis
 
