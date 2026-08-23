@@ -1,7 +1,11 @@
 # Filing Signals
 
-Once deployed, the site lives at `https://<user>.github.io/<repo>/`, with an
-RSS feed at `/feed.xml` and the full record as JSON at `/events.json`.
+**Live: <https://nsrinivasa2001.github.io/filing-signals>** ·
+[RSS](https://nsrinivasa2001.github.io/filing-signals/feed.xml) ·
+[JSON](https://nsrinivasa2001.github.io/filing-signals/events.json)
+
+Deployed elsewhere it lives at `https://<user>.github.io/<repo>/` — nothing in
+the code is tied to an account or repository name.
 
 A self-updating public tracker that reads new SEC filings every weekday and
 publishes four things that are otherwise hard to see:
