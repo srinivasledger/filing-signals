@@ -312,9 +312,18 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 .statusline{width:100%;margin:9px 0 0;padding-top:8px;border-top:1px solid var(--line);
   display:flex;gap:20px;flex-wrap:wrap;font-family:var(--mono);font-size:.64rem;
   color:var(--muted);text-transform:uppercase;letter-spacing:.11em}
-.statusline .live{margin-left:auto;display:inline-flex;align-items:center;gap:6px}
+/* The dot reports the self-checks rather than being decorative, so a failing
+   check is visible on every page instead of only on /status. */
+.statusline .live{margin-left:auto;display:inline-flex;align-items:center;gap:6px;
+  color:var(--muted);text-decoration:none}
+.statusline .live:hover{color:var(--ink)}
 .statusline .live::before{content:"";width:5px;height:5px;border-radius:50%;
-  background:var(--series-6)}
+  background:var(--muted)}
+.statusline .live-ok::before{background:var(--series-6)}
+.statusline .live-warn::before{background:var(--series-4)}
+.statusline .live-fail::before{background:var(--alert)}
+.statusline .live-fail{color:var(--alert);font-weight:700}
+.statusline .live-warn{color:var(--series-4)}
 @media (max-width:620px){
   /* Must live after the base .statusline rule, or source order wins. */
   .statusline{display:none}

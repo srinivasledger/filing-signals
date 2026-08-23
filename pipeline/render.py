@@ -164,7 +164,25 @@ def build() -> None:
     activity_data = charts.chart_data(events)
     mix_svg = charts.mix_bar(events)
 
+    health = publish.load_health()
+    summary = health.get("summary") or {}
+    if not summary:
+        status_state, status_label = "unknown", "Status unknown"
+    elif summary.get("fail"):
+        n = summary["fail"]
+        status_state = "fail"
+        status_label = f"{n} check{'s' if n > 1 else ''} failing"
+    elif summary.get("warn"):
+        n = summary["warn"]
+        status_state = "warn"
+        status_label = f"{n} warning{'s' if n > 1 else ''}"
+    else:
+        status_state = "ok"
+        status_label = f"All {summary.get('total', 0)} checks passing"
+
     common = {
+        "status_state": status_state,
+        "status_label": status_label,
         "site_title": config.SITE_TITLE,
         "site_tagline": config.SITE_TAGLINE,
         "built_at": built_at,
@@ -253,7 +271,7 @@ def build() -> None:
     _write(config.PUBLIC / "status.html",
            env.get_template("status.html").render(
                rel="", runs=runs, last_run=state.get("last_processed"),
-               analysis_on=analysis_on, health=publish.load_health(), **common))
+               analysis_on=analysis_on, health=health, **common))
 
     # --- machine-readable ---
     _write(config.PUBLIC / "events.json",

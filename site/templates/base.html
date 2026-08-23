@@ -41,7 +41,8 @@
     <p class="statusline">
       <span>Source: SEC EDGAR</span>
       <span>Compiled {{ built_at }}</span>
-      <span class="live">Unattended</span>
+      <a class="live live-{{ status_state }}" href="{{ rel }}status.html"
+         title="Self-checks run after every update">{{ status_label }}</a>
     </p>
   </div>
 </header>
@@ -50,8 +51,8 @@
 </main>
 <footer class="site-foot">
   <div class="wrap">
-    <p class="colophon">Source: SEC EDGAR &middot; compiled {{ built_at }}
-    &middot; unattended &middot; no analyst intervention</p>
+    <p class="colophon">Source: SEC EDGAR &middot; compiled automatically
+    {{ built_at }} &middot; no analyst intervention</p>
     <p><strong>Not investment advice.</strong> This site reports what companies
     disclosed in their own SEC filings. Every entry links to the source
     document &mdash; always verify against the filing itself before relying on
