@@ -110,6 +110,21 @@ publish &mdash; with evidence and quotes intact.</p>
 </ul>
 
 <h2>Corrections</h2>
-<p>Every entry links to its source. If an entry misreads a filing, open an issue
-on the project repository with the accession number and what it should say.</p>
+<p>Every entry links to its source. If an entry misreads a filing &mdash; a
+mischaracterised disclosure, a quote taken out of context, a company matched to
+the wrong filing &mdash; it should be corrected, and corrections are welcome
+from anyone, including the filer.</p>
+{% if repo_url %}
+<p>Raise it at <a href="{{ repo_url }}/issues" rel="noopener">{{ repo_url }}/issues</a>
+with the accession number and what the entry should say. There is no editorial
+gatekeeping: the detection rules are open, and the fix lands in the next
+scheduled run.</p>
+{% else %}
+<p>Corrections can be raised on the project repository, with the accession
+number and what the entry should say.</p>
+{% endif %}
+<p>Entries are generated automatically and are not reviewed by a person before
+publication, so mistakes reach the page. That is the reason every entry carries
+the filing text it was derived from and a link to the original: the source is
+always checkable against the claim.</p>
 {% endblock %}

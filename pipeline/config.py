@@ -53,6 +53,11 @@ SITE_URL = os.getenv("SITE_URL", "").rstrip("/")
 # them are not copyrightable at all.
 SITE_OWNER = os.getenv("SITE_OWNER", "Filing Signals")
 
+# Where corrections go. The methodology page invited people to "open an issue"
+# without linking anywhere, which is worse than offering nothing: it implies a
+# route that does not exist.
+REPO_URL = os.getenv("REPO_URL", "").rstrip("/")
+
 # Serving from a custom domain. GitHub Pages stores the domain in repository
 # settings, but an Actions deploy replaces the whole site directory on every
 # run - and a deployed artifact without a CNAME file can clear that setting,

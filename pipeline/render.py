@@ -185,6 +185,7 @@ def build() -> None:
         "status_label": status_label,
         "site_title": config.SITE_TITLE,
         "site_owner": config.SITE_OWNER,
+        "repo_url": config.REPO_URL,
         "year": dt.datetime.now(dt.timezone.utc).year,
         "site_tagline": config.SITE_TAGLINE,
         "built_at": built_at,
