@@ -2,7 +2,8 @@
 {% block title %}Signals &middot; {{ site_title }}{% endblock %}
 {% block content %}
 <h1>What this tracks</h1>
-<p class="lede">Four signals, split by how much interpretation each requires.</p>
+<p class="lede">Six signals, split by how much interpretation each requires.
+These lists are complete &mdash; every entry ever recorded.</p>
 {% for key, label in signal_labels %}
 <section class="signal-block">
   <h2><span class="tag tag-{{ key }}">{{ label }}</span>
@@ -10,7 +11,7 @@
   <p>{{ blurbs[key] }}</p>
   {% if by_signal.get(key) %}
   <ul class="mini">
-    {% for e in by_signal[key][:12] %}
+    {% for e in by_signal[key] %}
     <li><time>{{ e.filed }}</time>
       <a href="{{ rel }}company/{{ e.cik }}.html">{{ e.company }}</a>
       <span class="muted">{{ e.form }}</span></li>

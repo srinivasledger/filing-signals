@@ -28,8 +28,10 @@
 </section>
 
 {% if activity_chart %}
-<p class="eyebrow"><span>Activity by filing day</span><span>{{ days_covered }} days</span></p>
+<p class="eyebrow"><span>Activity by filing day</span>
+  <span id="chart-scope">{{ days_covered }} days</span></p>
 {{ activity_chart|safe }}
+{{ activity_data|safe }}
 {% endif %}
 
 {% if events %}
@@ -72,5 +74,6 @@
   confirm the pipeline is running.</p>
 </section>
 {% endif %}
+<script src="{{ rel }}static/chart.js" defer></script>
 <script src="{{ rel }}static/filter.js" defer></script>
 {% endblock %}

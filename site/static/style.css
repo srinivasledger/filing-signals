@@ -55,7 +55,11 @@ a:hover{text-decoration-color:currentColor}
 .skip{position:absolute;left:-9999px}
 .skip:focus{left:8px;top:8px;background:var(--surface);padding:8px;z-index:10}
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-main{padding-bottom:70px}
+/* The last card was sitting hard against the footer rule. Note the selector:
+   <main> also carries .wrap, whose `padding: 0 clamp(...)` shorthand resets
+   padding-bottom to zero and outranks a bare element selector. Matching both
+   is what makes this apply. */
+main.wrap{padding-bottom:96px}
 main p{max-width:var(--reading)}
 
 /* ── masthead: a status bar, not a brand banner ───────────── */
@@ -136,20 +140,19 @@ h1{font-family:var(--sans);font-size:clamp(1.55rem,3.1vw,2.35rem);line-height:1.
   letter-spacing:.04em}
 
 /* ── controls ─────────────────────────────────────────────── */
-.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
 .search{flex:1 1 260px}
 .search input{width:100%;padding:9px 12px;border:1px solid var(--line-strong);
   border-radius:var(--radius);background:var(--surface);color:var(--ink);
   font-size:.9rem;font-family:var(--mono)}
 .search input:focus{outline:2px solid var(--ink);outline-offset:-1px}
-.chips{display:flex;gap:0;flex-wrap:wrap;border:1px solid var(--line-strong)}
-.chip{border:none;border-left:1px solid var(--line);background:var(--surface);
-  color:var(--muted);border-radius:0;padding:8px 13px;font-size:.7rem;cursor:pointer;
-  font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em}
-.chip:first-child{border-left:none}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line-strong);background:var(--surface);
+  color:var(--muted);border-radius:var(--radius);padding:8px 13px;font-size:.7rem;
+  cursor:pointer;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em}
 .chip:hover{color:var(--ink);background:var(--surface-2)}
 .chip.is-on{background:var(--ink);color:var(--surface)}
-.count{font-family:var(--mono);color:var(--muted);font-size:.72rem;margin:0 0 12px;
+.count{font-family:var(--mono);color:var(--muted);font-size:.72rem;margin:0 0 16px;
   letter-spacing:.06em;text-transform:uppercase}
 
 /* ── the register ─────────────────────────────────────────── */
@@ -268,8 +271,8 @@ td{font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
 h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing:-.018em;
   margin:36px 0 12px;font-weight:700}
-.site-foot{border-top:2px solid var(--rule);background:var(--surface);padding:26px 0;
-  font-size:.83rem}
+.site-foot{border-top:2px solid var(--rule);background:var(--surface);
+  padding:32px 0 40px;font-size:.83rem;margin-top:24px}
 .site-foot p{margin:0 0 8px;max-width:78ch}
 .colophon{font-family:var(--mono);font-size:.7rem;color:var(--muted);
   text-transform:uppercase;letter-spacing:.1em;margin:0 0 14px!important;
@@ -319,12 +322,11 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 
 
 /* ── theme toggle ─────────────────────────────────────────── */
-.theme-toggle{display:inline-flex;border:1px solid var(--line-strong);background:var(--surface);
-  margin-left:14px}
-.theme-toggle button{appearance:none;border:none;border-left:1px solid var(--line);
-  background:transparent;color:var(--muted);font-family:var(--mono);font-size:.62rem;
-  text-transform:uppercase;letter-spacing:.09em;padding:6px 9px;cursor:pointer;line-height:1}
-.theme-toggle button:first-child{border-left:none}
+.theme-toggle{display:inline-flex;gap:5px;margin-left:16px}
+.theme-toggle button{appearance:none;border:1px solid var(--line-strong);
+  border-radius:var(--radius);background:var(--surface);color:var(--muted);
+  font-family:var(--mono);font-size:.62rem;text-transform:uppercase;
+  letter-spacing:.09em;padding:6px 10px;cursor:pointer;line-height:1}
 .theme-toggle button:hover{color:var(--ink)}
 .theme-toggle button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 /* On a phone the three-button group costs more width than the nav can spare,
@@ -340,7 +342,7 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 }
 
 /* ── size filter ──────────────────────────────────────────── */
-.controls-size{margin-top:-4px;margin-bottom:16px;gap:10px}
+.controls-size{margin-top:2px;margin-bottom:22px;gap:12px}
 .filter-label{font-family:var(--mono);font-size:.64rem;text-transform:uppercase;
   letter-spacing:.11em;color:var(--muted);font-weight:600}
 .filter-note{font-family:var(--mono);font-size:.62rem;color:var(--muted);

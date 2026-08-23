@@ -28,7 +28,11 @@ SIGNAL_ORDER = [
     RESTATEMENT, AUDITOR_CHANGE, LATE_FILING, GOING_CONCERN, POLICY_CHANGE,
     REVENUE_RECOGNITION,
 ]
-MAX_HOME_EVENTS = 300
+# The home page holds a recent window, not the whole record. At ~31 events a
+# weekday the full set outgrows a single page quickly, and a 600KB page is
+# already large. What matters is that the truncation is stated rather than
+# silent: a filter applied to a quietly-truncated set gives wrong answers.
+MAX_HOME_EVENTS = 400
 
 # A company reaching several of these signals in sequence is the thing a raw
 # EDGAR feed cannot show. Ordered by how far along the progression they sit.
@@ -157,6 +161,7 @@ def build() -> None:
     analysis_on = any(r.get("analysis") == "claude" for r in runs[:5])
 
     activity_svg = charts.activity_chart(events)
+    activity_data = charts.chart_data(events)
     mix_svg = charts.mix_bar(events)
 
     common = {
@@ -172,7 +177,9 @@ def build() -> None:
                  if candidates else "—")
 
     # --- home ---
-    home_events = sorted(events, key=_rank, reverse=True)[:MAX_HOME_EVENTS]
+    ranked = sorted(events, key=_rank, reverse=True)
+    home_events = ranked[:MAX_HOME_EVENTS]
+    truncated = len(events) - len(home_events)
     _write(
         config.PUBLIC / "index.html",
         env.get_template("index.html").render(
@@ -182,7 +189,9 @@ def build() -> None:
             days_covered=len({e.filed for e in events}),
             last_run=state.get("last_processed"),
             filings_scanned=scanned, candidates_scanned=candidates,
-            flag_rate=flag_rate, activity_chart=activity_svg, mix_bar=mix_svg,
+            flag_rate=flag_rate, truncated=truncated,
+            shown_events=len(home_events), activity_chart=activity_svg,
+            activity_data=activity_data, mix_bar=mix_svg,
             **common,
         ),
     )

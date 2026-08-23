@@ -35,6 +35,36 @@
       ? cards.length + ' events'
       : shown + ' of ' + cards.length + ' events';
     noresults.hidden = shown !== 0;
+
+    // Keep the chart showing the same population as the cards. Search text is
+    // deliberately excluded: it matches card text, which the chart rows do not
+    // carry, so applying it there would silently disagree with the register.
+    if (window.redrawActivityChart) {
+      window.redrawActivityChart(function (row) {
+        var okSignal = activeSignal === 'all' || row.s === activeSignal;
+        var okSize = !activeSizes || activeSizes.indexOf(row.z) !== -1;
+        return okSignal && okSize;
+      }, describeScope());
+    }
+  }
+
+  function describeScope() {
+    var parts = [];
+    if (activeSignal !== 'all') {
+      var btn = chips.querySelector('[data-filter="' + activeSignal + '"]');
+      if (btn) parts.push(btn.textContent.trim());
+    }
+    if (activeSizes) {
+      var sbtn = sizeChips.querySelector('.chip.is-on');
+      if (sbtn) parts.push(sbtn.textContent.trim());
+    }
+    return parts.length ? parts.join(' \u00b7 ') : (data_days() + ' days');
+  }
+
+  function data_days() {
+    try {
+      return JSON.parse(document.getElementById('chart-data').textContent).days.length;
+    } catch (e) { return ''; }
   }
 
   function wire(group, onPick) {

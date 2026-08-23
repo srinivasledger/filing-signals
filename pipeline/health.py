@@ -123,6 +123,17 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         f"{len(ragged)} of {sum(1 for e in events if e.quote)} quoted passages "
         "begin mid-sentence"))
 
+    # --- is the home page still showing everything? ---
+    from .render import MAX_HOME_EVENTS
+    if total > MAX_HOME_EVENTS:
+        checks.append(_check(
+            "Home page window", WARN,
+            f"showing the most recent {MAX_HOME_EVENTS} of {total}; the full "
+            "record is on the signals pages and in events.json"))
+    else:
+        checks.append(_check("Home page window", OK,
+                             f"all {total} entries fit on the home page"))
+
     # --- size index ---
     checks.append(_size_check(today))
 

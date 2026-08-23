@@ -137,6 +137,22 @@ def rates_chart(rows: Sequence[Dict]) -> str:
     return "".join(out)
 
 
+def chart_data(events, max_days: int = 20) -> str:
+    """The activity chart's underlying rows, so the browser can redraw it when
+    a filter changes. Server-rendered SVG stays the no-JavaScript view."""
+    import json as _json
+
+    days = sorted({e.filed for e in events})[-max_days:]
+    keep = set(days)
+    rows = [{"d": e.filed, "s": e.signal_type, "z": e.size_tier or ""}
+            for e in events if e.filed in keep]
+    palette = {sig: f"--series-{i + 1}" for i, sig in enumerate(SERIES_ORDER)}
+    payload = {"days": days, "order": SERIES_ORDER, "labels": SIGNAL_LABELS,
+               "vars": palette, "rows": rows}
+    return ('<script type="application/json" id="chart-data">'
+            + _json.dumps(payload, separators=(",", ":")) + "</script>")
+
+
 def mix_bar(events) -> str:
     """One-row stacked bar: the overall signal mix, used under the hero."""
     counts = Counter(e.signal_type for e in events)
