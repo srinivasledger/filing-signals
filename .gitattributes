@@ -1,0 +1,5 @@
+# Generated on every pipeline run, so a merge conflict here is never
+# meaningful - both sides are machine output from the same inputs. Marking
+# them binary stops git attempting a line merge and producing a conflict.
+data/state/health.json    -merge -diff
+data/state/pipeline.json  -merge -diff
