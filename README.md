@@ -181,4 +181,16 @@ filing — verify there before relying on anything. Reports only what companies 
 means previously issued statements should not be relied upon, which is not by
 itself evidence of misconduct.
 
-Data from [SEC EDGAR](https://www.sec.gov/edgar). Public domain.
+## Rights
+
+Filings on EDGAR are the registrants' own documents, not works of the US
+Government, so they are **not** public domain — an earlier version of this file
+said otherwise and was wrong. What holds in practice is narrower and enough:
+the facts drawn from filings (dates, item codes, disclosure states) are not
+copyrightable, and the quoted passages are short excerpts reproduced with
+attribution and a link to the source.
+
+The code, the design, and the classification and comparison work are this
+project's own. Set `SITE_OWNER` to change the name in the footer notice.
+
+Data from [SEC EDGAR](https://www.sec.gov/edgar).

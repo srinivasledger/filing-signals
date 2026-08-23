@@ -184,6 +184,8 @@ def build() -> None:
         "status_state": status_state,
         "status_label": status_label,
         "site_title": config.SITE_TITLE,
+        "site_owner": config.SITE_OWNER,
+        "year": dt.datetime.now(dt.timezone.utc).year,
         "site_tagline": config.SITE_TAGLINE,
         "built_at": built_at,
         "signal_labels": [(k, SIGNAL_LABELS[k]) for k in SIGNAL_ORDER],

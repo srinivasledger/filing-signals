@@ -47,6 +47,12 @@ SITE_TAGLINE = os.getenv(
 )
 SITE_URL = os.getenv("SITE_URL", "").rstrip("/")
 
+# Whose copyright. Only the parts this project actually authored are claimed:
+# the code, the design, and the classification and comparison of filings. The
+# filings themselves are the registrants' documents, and the facts drawn from
+# them are not copyrightable at all.
+SITE_OWNER = os.getenv("SITE_OWNER", "Filing Signals")
+
 # Serving from a custom domain. GitHub Pages stores the domain in repository
 # settings, but an Actions deploy replaces the whole site directory on every
 # run - and a deployed artifact without a CNAME file can clear that setting,

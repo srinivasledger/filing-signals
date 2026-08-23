@@ -374,3 +374,5 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
   letter-spacing:.11em;color:var(--muted);grid-row:1;grid-column:3}
 .check-fail .check-status{color:var(--alert);font-weight:700}
 .check-warn .check-status{color:var(--series-4);font-weight:700}
+.rights{font-size:.79rem;color:var(--muted);max-width:74ch;
+  padding-top:12px;border-top:1px solid var(--line);margin-top:14px!important}
