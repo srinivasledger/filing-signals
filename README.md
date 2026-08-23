@@ -1,8 +1,8 @@
 # Filing Signals
 
-**Live: <https://srinivasledger.github.io/filing-signals>** ·
-[RSS](https://srinivasledger.github.io/filing-signals/feed.xml) ·
-[JSON](https://srinivasledger.github.io/filing-signals/events.json)
+**Live: <https://filings.srinivas.cv>** ·
+[RSS](https://filings.srinivas.cv/feed.xml) ·
+[JSON](https://filings.srinivas.cv/events.json)
 
 Deployed elsewhere it lives at `https://<user>.github.io/<repo>/` — nothing in
 the code is tied to an account or repository name.
@@ -114,6 +114,7 @@ decides whether something is a signal.
 | Setting | Default | Purpose |
 |---|---|---|
 | `SEC_USER_AGENT` | *(required)* | Contact string sent to SEC |
+| `CUSTOM_DOMAIN` | *(unset)* | Written to `public/CNAME` on every build |
 | `SEC_RATE_LIMIT` | `5` | Requests/sec (SEC's ceiling is 10) |
 | `ANTHROPIC_API_KEY` | *(unset)* | Enables analysis; unset = free |
 | `MAX_BACKFILL_DAYS` | `10` | Cap on catch-up work per run |
