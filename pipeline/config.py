@@ -47,6 +47,12 @@ SITE_TAGLINE = os.getenv(
 )
 SITE_URL = os.getenv("SITE_URL", "").rstrip("/")
 
+# Serving from a custom domain. GitHub Pages stores the domain in repository
+# settings, but an Actions deploy replaces the whole site directory on every
+# run - and a deployed artifact without a CNAME file can clear that setting,
+# silently unbinding the domain. So the build writes the file every time.
+CUSTOM_DOMAIN = os.getenv("CUSTOM_DOMAIN", "").strip().lstrip("https://").lstrip("http://").rstrip("/")
+
 # --- Analysis layer ---------------------------------------------------------
 # Absent key => NullAnalyzer => the pipeline runs end to end at zero cost.
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()

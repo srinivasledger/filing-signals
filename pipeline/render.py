@@ -265,6 +265,9 @@ def build() -> None:
            }, indent=2))
     _write(config.PUBLIC / "feed.xml", _feed_xml(events, built_at))
     (config.PUBLIC / ".nojekyll").write_text("")
+    if config.CUSTOM_DOMAIN:
+        # Rewritten on every deploy; see config.CUSTOM_DOMAIN for why.
+        (config.PUBLIC / "CNAME").write_text(config.CUSTOM_DOMAIN + "\n")
 
     log.info("site built: %d events, %d companies -> %s",
              len(events), len(by_company), config.PUBLIC)

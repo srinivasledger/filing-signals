@@ -51,6 +51,7 @@ jobs:
           # Optional. Absent => deterministic-only, zero cost.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SITE_URL: ${{ vars.SITE_URL }}
+          CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
         run: |
           if [ -n "${{ inputs.days }}" ]; then
             python -m pipeline.run --days "${{ inputs.days }}"
