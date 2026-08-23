@@ -53,11 +53,14 @@
 
     while (holder.firstChild) holder.removeChild(holder.firstChild);
 
-    for (var i = 0; i <= 4; i++) {
-      var y = PAD_T + PLOT_H - (PLOT_H * i / 4);
+    // Never more ticks than whole numbers to label: four steps over a peak of
+    // 2 rounds to "2, 2, 1, 1, 0", which reads as a broken axis.
+    var steps = Math.max(1, Math.min(4, peak));
+    for (var i = 0; i <= steps; i++) {
+      var y = PAD_T + PLOT_H - (PLOT_H * i / steps);
       holder.appendChild(el('line', {x1: PAD_L, y1: y, x2: W - PAD_R, y2: y, "class": 'grid'}));
       holder.appendChild(el('text', {x: PAD_L - 10, y: y + 4, "class": 'axis',
-        'text-anchor': 'end'}, String(Math.round(peak * i / 4))));
+        'text-anchor': 'end'}, String(Math.round(peak * i / steps))));
     }
 
     var slot = PLOT_W / days.length;

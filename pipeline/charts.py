@@ -67,8 +67,10 @@ def activity_chart(events, max_days: int = 20) -> str:
 
     parts: List[str] = []
 
-    # Recessive gridlines with a value axis.
-    steps = 4
+    # Recessive gridlines with a value axis. Never ask for more ticks than
+    # there are whole numbers to label: four steps over a peak of 2 rounds to
+    # "2, 2, 1, 1, 0", which reads as a broken axis.
+    steps = max(1, min(4, peak))
     for i in range(steps + 1):
         val = round(peak * i / steps)
         y = pad_t + plot_h - (plot_h * i / steps)
