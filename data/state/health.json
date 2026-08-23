@@ -41,6 +41,11 @@
       "status": "ok"
     },
     {
+      "detail": "all 251 entries fit on the home page",
+      "name": "Home page window",
+      "status": "ok"
+    },
+    {
       "detail": "5,156 companies, refreshed 1 day(s) ago",
       "name": "Company size index",
       "status": "ok"
@@ -51,12 +56,12 @@
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-23T04:18:46+00:00",
+  "generated_at": "2026-08-23T04:20:56+00:00",
   "summary": {
     "fail": 0,
-    "ok": 10,
+    "ok": 11,
     "overall": "ok",
-    "total": 10,
+    "total": 11,
     "unknown": 0,
     "warn": 0
   }
