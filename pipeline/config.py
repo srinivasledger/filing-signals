@@ -47,12 +47,6 @@ SITE_TAGLINE = os.getenv(
 )
 SITE_URL = os.getenv("SITE_URL", "").rstrip("/")
 
-# Whose copyright. Only the parts this project actually authored are claimed:
-# the code, the design, and the classification and comparison of filings. The
-# filings themselves are the registrants' documents, and the facts drawn from
-# them are not copyrightable at all.
-SITE_OWNER = os.getenv("SITE_OWNER", "Filing Signals")
-
 # Where corrections go. The methodology page invited people to "open an issue"
 # without linking anywhere, which is worse than offering nothing: it implies a
 # route that does not exist.

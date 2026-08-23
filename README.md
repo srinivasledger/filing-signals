@@ -190,7 +190,10 @@ the facts drawn from filings (dates, item codes, disclosure states) are not
 copyrightable, and the quoted passages are short excerpts reproduced with
 attribution and a link to the source.
 
-The code, the design, and the classification and comparison work are this
-project's own. Set `SITE_OWNER` to change the name in the footer notice.
+The site carries no copyright assertion. Copyright in the code and design is
+automatic and does not need declaring, and an ownership claim sitting under a
+page of filing extracts reads as claiming more than it does. The footer states
+the useful half instead: where the quotes come from, and that the facts in them
+are not owned by anyone.
 
 Data from [SEC EDGAR](https://www.sec.gov/edgar).

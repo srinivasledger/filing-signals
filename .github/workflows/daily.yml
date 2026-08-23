@@ -52,7 +52,6 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SITE_URL: ${{ vars.SITE_URL }}
           CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
-          SITE_OWNER: ${{ vars.SITE_OWNER }}
           REPO_URL: ${{ vars.REPO_URL }}
         run: |
           if [ -n "${{ inputs.days }}" ]; then
