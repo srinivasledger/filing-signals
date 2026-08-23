@@ -7,3 +7,7 @@ __pycache__/
 .DS_Store
 .claude/
 us-listed-companies-by-public-float.csv
+
+# Derived exports — regenerate rather than commit; an early version of this
+# shipped known-wrong float values.
+*.csv

@@ -1,6 +1,7 @@
 # Filing Signals
 
-**Live: <https://srini-gg.github.io/filing-signals>** · [RSS](https://srini-gg.github.io/filing-signals/feed.xml) · [JSON](https://srini-gg.github.io/filing-signals/events.json)
+Once deployed, the site lives at `https://<user>.github.io/<repo>/`, with an
+RSS feed at `/feed.xml` and the full record as JSON at `/events.json`.
 
 A self-updating public tracker that reads new SEC filings every weekday and
 publishes four things that are otherwise hard to see:
