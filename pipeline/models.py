@@ -82,6 +82,7 @@ class Event:
     prior_accession: str = ""
     prior_url: str = ""
     beta: bool = False
+    routine: bool = False
     ai: Dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -100,6 +101,7 @@ class Event:
             "label": self.label,
             "confidence": self.confidence,
             "beta": self.beta,
+            "routine": self.routine,
             "company": self.company,
             "cik": self.cik,
             "ticker": self.ticker,
@@ -125,7 +127,7 @@ class Event:
         known = {
             "signal_type", "confidence", "company", "cik", "form", "filed",
             "accession", "filing_url", "headline", "evidence", "quote",
-            "ticker", "sic_desc", "prior_accession", "prior_url", "beta", "ai",
+            "ticker", "sic_desc", "prior_accession", "prior_url", "beta", "ai", "routine",
             "size_tier", "public_float",
         }
         return cls(**{k: v for k, v in d.items() if k in known})

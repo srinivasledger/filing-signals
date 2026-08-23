@@ -101,6 +101,25 @@ def _auditor_stats(events):
             for f in firms]
 
 
+# Evidence values are Python objects. Rendered raw they reached the page as
+# "['2024-04', '2025-11']", "True" and "None".
+_EVIDENCE_HIDDEN = {
+    "why", "source", "severity", "stated_reason", "new_language", "contexts",
+    "limb_label", "limb", "limb_basis", "direction_label", "caveat",
+    "current_state", "prior_state", "comparable",
+}
+
+
+def _evidence_value(value):
+    if isinstance(value, bool):
+        return "Yes" if value else "No"
+    if isinstance(value, (list, tuple)):
+        return ", ".join(str(v) for v in value)
+    if value is None:
+        return "\u2014"
+    return value
+
+
 def _env() -> Environment:
     env = Environment(
         loader=FileSystemLoader(str(config.TEMPLATES)),
@@ -109,6 +128,7 @@ def _env() -> Environment:
         lstrip_blocks=True,
     )
     env.filters["floatformat"] = size_mod.format_float
+    env.filters["evidence"] = _evidence_value
     return env
 
 
@@ -188,9 +208,12 @@ def build() -> None:
         "site_tagline": config.SITE_TAGLINE,
         "built_at": built_at,
         "signal_labels": [(k, SIGNAL_LABELS[k]) for k in SIGNAL_ORDER],
+        "hidden_evidence": _EVIDENCE_HIDDEN,
         "blurbs": SIGNAL_BLURBS,
     }
 
+    situations = len({(e.cik, e.filed) for e in events})
+    routine_n = sum(1 for e in events if e.routine)
     scanned, candidates = _scan_totals(state.get("runs", []))
     flag_rate = (f"{len(events) / candidates * 100:.1f}%"
                  if candidates else "—")
@@ -205,6 +228,7 @@ def build() -> None:
             rel="", events=home_events,
             total_events=len(events),
             companies=len({e.cik for e in events}),
+            situations=situations, routine_n=routine_n,
             days_covered=len({e.filed for e in events}),
             last_run=state.get("last_processed"),
             filings_scanned=scanned, candidates_scanned=candidates,

@@ -40,6 +40,9 @@ _REVENUE_VOCAB = re.compile(
 SHINGLE_SIZE = 5
 MIN_SECTION_CHARS = 400
 
+# A genuine rewrite surfaces more than a single novel sentence; one is noise.
+MIN_NOVEL_SENTENCES = 2
+
 
 def _base_form(form: str) -> str:
     """10-Q/A -> 10-Q, so amendments compare against the original series."""
@@ -190,7 +193,7 @@ def _diff_sample(current: str, prior: str, limit: int = 3) -> List[str]:
             continue
         sh = shingles(normalise_for_diff(s))
         if sh and not (sh & prior_sh):
-            out.append(" ".join(s.split())[:320])
+            out.append(sections.truncate_words(s, 320))
         if len(out) >= limit:
             break
     return out
@@ -378,10 +381,19 @@ def analyse_periodic(filing) -> List[Event]:
                  or len(pri_sec) >= sections.REVENUE_MAX_CHARS - 2)
     if (not truncated
             and len(cur_sec) >= MIN_SECTION_CHARS and len(pri_sec) >= MIN_SECTION_CHARS):
-        score = similarity(cur_sec, pri_sec)
+        # Compare only filer-specific wording: the ASC 606 recitation is
+        # identical across thousands of filers and dominates both the score and
+        # the "new language" list.
+        cur_own = sections.strip_asc606_boilerplate(cur_sec)
+        pri_own = sections.strip_asc606_boilerplate(pri_sec)
+        score = similarity(cur_own, pri_own)
         if score < POLICY_SIMILARITY_THRESHOLD:
-            added = [a for a in _diff_sample(cur_sec, pri_sec) if _REVENUE_VOCAB.search(a)]
-            if added:
+            added = [a for a in _diff_sample(cur_own, pri_own)
+                     if _REVENUE_VOCAB.search(a)
+                     and not sections.is_asc606_boilerplate(a)]
+            # One stray sentence is extraction noise. A rewritten policy shows
+            # up as several.
+            if len(added) >= MIN_NOVEL_SENTENCES:
                 events.append(base(
                     REVENUE_RECOGNITION,
                     f"{filing.company} changed its revenue recognition disclosure",

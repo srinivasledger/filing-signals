@@ -376,3 +376,9 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 .check-warn .check-status{color:var(--series-4);font-weight:700}
 .rights{font-size:.79rem;color:var(--muted);max-width:74ch;
   padding-top:12px;border-top:1px solid var(--line);margin-top:14px!important}
+
+/* Non-comparable entries are context, not signal: a reverse merger carries the
+   CIK across, so there is no "before" to have changed. */
+.event.is-context{opacity:.72}
+.event.is-context:hover{opacity:1}
+.event.is-context::before{opacity:.45}

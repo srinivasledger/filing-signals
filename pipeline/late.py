@@ -117,7 +117,7 @@ def extract_reason(text: str) -> str:
     # A leading fragment has nothing to attach to; drop it rather than quote it.
     while kept and not re.match(r'[A-Z\u201c("]', kept[0]):
         kept.pop(0)
-    return " ".join(" ".join(kept).split())[:700]
+    return sections.truncate_words(" ".join(kept), 700)
 
 
 def parse_form(text: str) -> Dict:
@@ -128,13 +128,63 @@ def parse_form(text: str) -> Dict:
     }
 
 
+# Statutory windows after the period end, by SEC filer category (Rule 12b-25
+# extends these, but the original due date is what makes a notice routine).
+_DUE_DAYS = {
+    "quarterly": {"large": 40, "mid": 40, "small": 45},
+    "annual": {"large": 60, "mid": 75, "small": 90},
+}
+
+# Substantive reasons. A notice saying the accounts need more time is routine;
+# one disclosing an error, a restatement or a departure is not. Cambium Networks
+# and Infleqtion were both "high" on checkbox fields alone, though one recited
+# boilerplate and the other disclosed an identified revenue-recognition error.
+_SUBSTANTIVE_REASON = re.compile(
+    r"\brestat\w+|\berror(?:s)?\b|material\s+weakness|significant\s+deficienc"
+    r"|non-?reliance|resign\w+|dismiss\w+|terminat\w+"
+    r"|internal\s+(?:review|investigation)|independent\s+(?:review|investigation)"
+    r"|audit\s+committee\s+(?:review|investigation)|forensic"
+    r"|bankrupt\w+|chapter\s+(?:7|11)|delist\w+|going\s+concern"
+    r"|revenue\s+recognition|impairment|fraud|misstat\w+"
+    r"|departure|resignation\s+of|chief\s+(?:executive|financial)",
+    re.I,
+)
+
+
+def deadline_for(period_end, form: str, tier: str):
+    """The original statutory due date, or None when it cannot be determined."""
+    import datetime as _dt
+    if not period_end:
+        return None
+    kind = "annual" if form.upper() in ANNUAL_LATE else "quarterly"
+    bucket = {"mega": "large", "large": "large", "mid": "mid"}.get(tier, "small")
+    try:
+        end = _dt.date.fromisoformat(period_end)
+    except (TypeError, ValueError):
+        return None
+    return end + _dt.timedelta(days=_DUE_DAYS[kind][bucket])
+
+
 def _severity(form: str, parsed: Dict) -> str:
-    if parsed.get("anticipates_significant_change") is True:
+    """Grade the notice.
+
+    Content first. Keying off the form's checkboxes alone made a boilerplate
+    notice rank equal to one disclosing an identified accounting error, which
+    left the field carrying no information.
+    """
+    reason = parsed.get("reason") or ""
+
+    # Content decides "high". The checkboxes are inputs, not the rule: most
+    # filers tick "significant change" - it was True for Cambium's boilerplate
+    # notice and Infleqtion's disclosed revenue-recognition error alike - so on
+    # its own it separates nothing and leaves the field carrying no information.
+    if _SUBSTANTIVE_REASON.search(reason):
         return "high"
-    if form.upper() in ANNUAL_LATE:
-        return "high"
-    if parsed.get("other_reports_filed") is False:
-        return "high"
+
+    if (parsed.get("anticipates_significant_change") is True
+            or parsed.get("other_reports_filed") is False
+            or form.upper() in ANNUAL_LATE):
+        return "elevated"
     return "normal"
 
 
@@ -163,13 +213,33 @@ def analyse_late_filing(filing) -> List[Event]:
     if sub and sub.get("tickers"):
         ticker = sub["tickers"][0]
 
+    due = deadline_for(getattr(filing, "period", ""), filing.form,
+                       getattr(filing, "size_tier", "") or "small")
+    days_late = None
+    if due:
+        try:
+            import datetime as _dt
+            days_late = (_dt.date.fromisoformat(filing.filed) - due).days
+        except (TypeError, ValueError):
+            days_late = None
+
+    # A notice filed on or around the statutory due date is the filing
+    # calendar, not distress: 101 of 251 events landed on 14 August 2026, the
+    # 10-Q deadline for the June quarter. One filed well past the date, or by a
+    # company that was late last period too, is the actual signal.
+    routine = (severity == "normal"
+               and days_late is not None and days_late <= 3)
+
     evidence = {
         "source": "Form 12b-25 (notification of late filing)",
         "severity": severity,
+        "routine": routine,
         "anticipates_significant_change": parsed["anticipates_significant_change"],
         "other_periodic_reports_filed": parsed["other_reports_filed"],
         "why": SIGNAL_BLURBS[LATE_FILING],
     }
+    if days_late is not None:
+        evidence["days_past_due_date"] = days_late
     if parsed["reason"]:
         evidence["stated_reason"] = parsed["reason"]
 
@@ -186,6 +256,7 @@ def analyse_late_filing(filing) -> List[Event]:
         headline=_headline(filing.company, filing.form, parsed),
         sic_desc=filing.sic_desc,
         evidence=evidence,
+        routine=routine,
         quote=parsed["reason"],
     )]
 

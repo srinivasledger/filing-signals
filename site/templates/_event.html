@@ -1,6 +1,7 @@
 {% macro card(e, rel, show_company=True) %}
-<article class="event" data-signal="{{ e.signal_type }}"
-  data-size="{{ e.size_tier }}" data-confidence="{{ e.confidence }}">
+<article class="event{% if e.routine %} is-routine{% endif %}{% if e.evidence.comparable is false %} is-context{% endif %}"
+  data-signal="{{ e.signal_type }}" data-size="{{ e.size_tier }}"
+  data-routine="{{ 'yes' if e.routine else 'no' }}" data-confidence="{{ e.confidence }}">
   <div class="event-head">
     <span class="tag tag-{{ e.signal_type }}">{{ e.label }}</span>
     {% if e.evidence.severity == 'high' %}<span class="tag tag-sev-high">elevated</span>{% endif %}
@@ -19,7 +20,7 @@
     {% if e.ticker %}<span class="ticker">{{ e.ticker }}</span>{% endif %}
     <span class="sep">&middot;</span>{{ e.form }}
     {% if e.sic_desc %}<span class="sep">&middot;</span><span class="muted">{{ e.sic_desc|title }}</span>{% endif %}
-    {% if e.public_float %}<span class="sep">&middot;</span><span class="float"
+    {% if e.public_float and e.public_float >= 1000000 %}<span class="sep">&middot;</span><span class="float"
       title="Public float reported on the latest 10-K cover">{{ e.public_float|floatformat }}</span>{% endif %}
   </p>
   {% endif %}
@@ -74,6 +75,10 @@
       <span class="muted">{{ e.evidence.filings_in_batch }} notices filed the same day
       ({{ e.evidence.other_forms|join(', ') }}).</span>
     {% endif %}
+    {% if e.evidence.days_past_due_date is not none and e.evidence.days_past_due_date is defined %}
+      <span class="muted">{{ e.evidence.days_past_due_date }} day(s) past the
+      statutory due date.</span>
+    {% endif %}
     {% if e.evidence.other_periodic_reports_filed is false %}
       <span class="tag tag-sev-high">other reports also outstanding</span>
     {% endif %}
@@ -92,8 +97,8 @@
     <summary>Evidence</summary>
     <dl>
       {% for k, v in e.evidence.items() %}
-        {% if k != 'new_language' %}
-        <dt>{{ k.replace('_',' ')|capitalize }}</dt><dd>{{ v }}</dd>
+        {% if k not in hidden_evidence and v is not none %}
+        <dt>{{ k.replace('_',' ')|capitalize }}</dt><dd>{{ v|evidence }}</dd>
         {% endif %}
       {% endfor %}
     </dl>

@@ -47,16 +47,17 @@ def test_index_handles_form_types_containing_spaces():
 
 # --- filing headers ----------------------------------------------------------
 def test_header_yields_numeric_item_codes():
-    items, sic, _, name = enrich.parse_header((FIX / "solesence.hdr.sgml").read_text())
+    items, sic, _, name, _period = enrich.parse_header(
+        (FIX / "solesence.hdr.sgml").read_text())
     assert "4.02" in items
     assert sic == 2844
     assert "SOLESENCE" in name.upper()
 
 
 def test_triage_maps_item_codes_to_signals():
-    gaucho, _, _, _ = enrich.parse_header((FIX / "gaucho.hdr.sgml").read_text())
-    sole, _, _, _ = enrich.parse_header((FIX / "solesence.hdr.sgml").read_text())
-    adial, _, _, _ = enrich.parse_header((FIX / "adial.hdr.sgml").read_text())
+    gaucho, *_ = enrich.parse_header((FIX / "gaucho.hdr.sgml").read_text())
+    sole, *_ = enrich.parse_header((FIX / "solesence.hdr.sgml").read_text())
+    adial, *_ = enrich.parse_header((FIX / "adial.hdr.sgml").read_text())
     assert triage.classify_items(gaucho) == [models.AUDITOR_CHANGE]
     assert triage.classify_items(sole) == [models.RESTATEMENT]
     assert triage.classify_items(adial) == []      # item 3.01, not ours
@@ -343,11 +344,30 @@ def test_late_reason_strips_form_instructions():
     assert "auditors have not completed" in reason
 
 
-def test_late_severity_promotes_expected_change():
-    high = late._severity("NT 10-Q", {"anticipates_significant_change": True})
-    normal = late._severity("NT 10-Q", {"anticipates_significant_change": False})
-    annual = late._severity("NT 10-K", {"anticipates_significant_change": False})
-    assert high == "high" and annual == "high" and normal == "normal"
+def test_severity_is_driven_by_the_stated_reason_not_the_checkbox():
+    # Most filers tick "significant change": it was True for Cambium's
+    # boilerplate notice and for Infleqtion's disclosed revenue-recognition
+    # error alike, so on its own it separates nothing.
+    substantive = late._severity("NT 10-Q", {
+        "reason": "the Company identified an error related to revenue recognition",
+        "anticipates_significant_change": True})
+    boilerplate = late._severity("NT 10-Q", {
+        "reason": "unable to file without unreasonable effort or expense",
+        "anticipates_significant_change": True})
+    plain = late._severity("NT 10-Q", {
+        "reason": "requires additional time", "anticipates_significant_change": False})
+    assert substantive == "high"
+    assert boilerplate == "elevated"      # checkbox contributes, does not decide
+    assert plain == "normal"
+
+
+def test_statutory_deadline_matches_the_filing_calendar():
+    # 30 June quarter, non-accelerated filer: 45 days -> 14 August, the date
+    # 101 of one day's notices clustered on.
+    import datetime as _dt
+    assert late.deadline_for("2026-06-30", "NT 10-Q", "small") == _dt.date(2026, 8, 14)
+    assert late.deadline_for("2026-06-30", "NT 10-Q", "mega") == _dt.date(2026, 8, 9)
+    assert late.deadline_for("", "NT 10-Q", "small") is None
 
 
 def test_reason_survives_abbreviation_in_company_name():

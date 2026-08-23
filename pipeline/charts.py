@@ -146,7 +146,8 @@ def chart_data(events, max_days: int = 20) -> str:
 
     days = sorted({e.filed for e in events})[-max_days:]
     keep = set(days)
-    rows = [{"d": e.filed, "s": e.signal_type, "z": e.size_tier or ""}
+    rows = [{"d": e.filed, "s": e.signal_type, "z": e.size_tier or "",
+             "r": bool(e.routine)}
             for e in events if e.filed in keep]
     palette = {sig: f"--series-{i + 1}" for i, sig in enumerate(SERIES_ORDER)}
     payload = {"days": days, "order": SERIES_ORDER, "labels": SIGNAL_LABELS,

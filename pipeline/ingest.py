@@ -46,6 +46,7 @@ class Filing:
     items: List[str] = field(default_factory=list)
     sic: Optional[int] = None
     sic_desc: str = ""
+    period: str = ""
 
     def __post_init__(self) -> None:
         if not self.accession:

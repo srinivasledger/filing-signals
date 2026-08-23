@@ -7,7 +7,7 @@
       "date": "2026-08-12",
       "events": 11,
       "events_written": 11,
-      "finished_at": "2026-08-22T17:05:03+00:00",
+      "finished_at": "2026-08-23T09:06:30+00:00",
       "index_rows": 5580,
       "operating": 586
     },
@@ -17,7 +17,7 @@
       "date": "2026-08-13",
       "events": 16,
       "events_written": 16,
-      "finished_at": "2026-08-22T17:08:48+00:00",
+      "finished_at": "2026-08-23T09:06:42+00:00",
       "index_rows": 7132,
       "operating": 798
     },
@@ -27,7 +27,7 @@
       "date": "2026-08-14",
       "events": 122,
       "events_written": 122,
-      "finished_at": "2026-08-22T17:14:10+00:00",
+      "finished_at": "2026-08-23T09:06:51+00:00",
       "index_rows": 11140,
       "operating": 859
     },
@@ -37,7 +37,7 @@
       "date": "2026-08-17",
       "events": 67,
       "events_written": 67,
-      "finished_at": "2026-08-22T17:15:31+00:00",
+      "finished_at": "2026-08-23T09:06:54+00:00",
       "index_rows": 4730,
       "operating": 271
     },
@@ -45,9 +45,9 @@
       "analysis": "deterministic-only",
       "candidates": 237,
       "date": "2026-08-18",
-      "events": 8,
-      "events_written": 8,
-      "finished_at": "2026-08-22T17:16:51+00:00",
+      "events": 9,
+      "events_written": 9,
+      "finished_at": "2026-08-23T09:06:58+00:00",
       "index_rows": 5551,
       "operating": 213
     },
@@ -55,9 +55,9 @@
       "analysis": "deterministic-only",
       "candidates": 285,
       "date": "2026-08-19",
-      "events": 19,
-      "events_written": 19,
-      "finished_at": "2026-08-22T17:17:53+00:00",
+      "events": 20,
+      "events_written": 20,
+      "finished_at": "2026-08-23T09:07:03+00:00",
       "index_rows": 4423,
       "operating": 260
     },
@@ -67,7 +67,7 @@
       "date": "2026-08-20",
       "events": 3,
       "events_written": 3,
-      "finished_at": "2026-08-22T17:17:55+00:00",
+      "finished_at": "2026-08-23T09:07:06+00:00",
       "index_rows": 4183,
       "operating": 227
     },
@@ -75,9 +75,9 @@
       "analysis": "deterministic-only",
       "candidates": 209,
       "date": "2026-08-21",
-      "events": 11,
-      "events_written": 11,
-      "finished_at": "2026-08-22T17:18:13+00:00",
+      "events": 6,
+      "events_written": 6,
+      "finished_at": "2026-08-23T09:07:07+00:00",
       "index_rows": 4983,
       "operating": 194
     }

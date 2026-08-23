@@ -17,6 +17,7 @@
 
   var haystacks = cards.map(function (c) { return c.textContent.toLowerCase(); });
   var sizes = cards.map(function (c) { return c.dataset.size || ''; });
+  var routine = cards.map(function (c) { return c.dataset.routine === 'yes'; });
 
   function apply() {
     var term = (q.value || '').trim().toLowerCase();
@@ -27,7 +28,8 @@
       // size is being asked for; it is never silently counted as small.
       var okSize = !activeSizes || activeSizes.indexOf(sizes[i]) !== -1;
       var okTerm = !term || haystacks[i].indexOf(term) !== -1;
-      var show = okSignal && okSize && okTerm;
+      var okRoutine = showRoutine || !routine[i];
+      var show = okSignal && okSize && okTerm && okRoutine;
       card.hidden = !show;
       if (show) shown++;
     });
@@ -43,7 +45,8 @@
       window.redrawActivityChart(function (row) {
         var okSignal = activeSignal === 'all' || row.s === activeSignal;
         var okSize = !activeSizes || activeSizes.indexOf(row.z) !== -1;
-        return okSignal && okSize;
+        var okRoutine = showRoutine || !row.r;
+        return okSignal && okSize && okRoutine;
       }, describeScope());
     }
   }
@@ -82,6 +85,9 @@
 
   q.addEventListener('input', apply);
   wire(chips, function (btn) { activeSignal = btn.dataset.filter; });
+  wire(document.getElementById('routinechips'), function (btn) {
+    showRoutine = btn.dataset.routine === 'show';
+  });
   wire(sizeChips, function (btn) {
     var v = btn.dataset.size;
     activeSizes = v === 'all' ? null : v.split(',');

@@ -35,6 +35,7 @@ ITEM_TITLES = {
 _ITEMS = re.compile(r"<ITEMS>\s*([0-9]+\.[0-9]+)", re.I)
 _SIC = re.compile(r"<ASSIGNED-SIC>\s*(\d{3,4})", re.I)
 _NAME = re.compile(r"<CONFORMED-NAME>\s*(.+)", re.I)
+_PERIOD = re.compile(r"<PERIOD>\s*(\d{8})", re.I)
 
 
 def header_url(cik: int, accession: str) -> str:
@@ -63,7 +64,12 @@ def parse_header(text: str) -> Tuple[List[str], Optional[int], str, str]:
 
     name_m = _NAME.search(text)
     name = name_m.group(1).strip() if name_m else ""
-    return items, sic, describe(sic), name
+    period = ""
+    pm = _PERIOD.search(text)
+    if pm:
+        raw = pm.group(1)
+        period = f"{raw[:4]}-{raw[4:6]}-{raw[6:]}"
+    return items, sic, describe(sic), name, period
 
 
 def enrich(filing) -> bool:
@@ -82,7 +88,8 @@ def enrich(filing) -> bool:
     if not text:
         return False
 
-    items, sic, sic_desc, name = parse_header(text)
+    items, sic, sic_desc, name, period = parse_header(text)
+    filing.period = period
     filing.items = items
     filing.sic = sic
     filing.sic_desc = sic_desc

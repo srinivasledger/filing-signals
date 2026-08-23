@@ -180,6 +180,50 @@ _ASC606_MARKERS = [
 ]
 MIN_ASC606_MARKERS = 3
 
+# The ASC 606 five-step model and core principle are recited verbatim by
+# thousands of filers. Reciting them is not a policy change, but they are
+# exactly the sentences a text diff surfaces as "new language" - Virtuix and
+# Axil Brands were both flagged on the standard wording alone. Stopped before
+# similarity is computed and before any sentence is quoted as novel.
+_ASC606_BOILERPLATE = [
+    re.compile(r"identify\s+the\s+contract\s*\(?s?\)?\s+with\s+(?:a|the)\s+customer", re.I),
+    re.compile(r"identify\s+the\s+performance\s+obligations?\s+in\s+the\s+contract", re.I),
+    re.compile(r"determine\s+the\s+transaction\s+price", re.I),
+    re.compile(r"allocate\s+the\s+transaction\s+price\s+to\s+the\s+performance\s+obligations?", re.I),
+    re.compile(r"recogni[sz]e\s+revenue\s+when\s+(?:or\s+as\s+)?(?:each\s+)?"
+               r"(?:the\s+)?performance\s+obligation\s+is\s+satisfied", re.I),
+    re.compile(r"in\s+an\s+amount\s+that\s+reflects\s+the\s+consideration[^.]{0,120}"
+               r"expects?\s+to\s+be\s+entitled", re.I),
+    re.compile(r"depicts?\s+the\s+transfer\s+of\s+(?:promised\s+)?goods\s+or\s+services", re.I),
+    re.compile(r"five[- ]step\s+(?:model|approach|process)", re.I),
+    re.compile(r"the\s+following\s+five\s+steps", re.I),
+    re.compile(r"evaluat\w+\s+to\s+determine\s+whether\s+it\s+contains?\s+"
+               r"one\s+or\s+more\s+performance\s+obligations?", re.I),
+    re.compile(r"core\s+principles?\s+(?:in|of|underlying)\s+(?:ASC|Topic)\s*606", re.I),
+    re.compile(r"contract\s+with\s+a\s+customer\s+creates\s+distinct\s+contract", re.I),
+    re.compile(r"revenue\s+is\s+recogni[sz]ed\s+(?:to\s+)?in\s+exchange\s+for\s+"
+               r"transferring\s+goods\s+or\s+services", re.I),
+    re.compile(r"transfer\s+of\s+control\s+(?:to\s+the\s+customer\s+)?"
+               r"(?:occurs|is\s+determined)", re.I),
+]
+
+
+def is_asc606_boilerplate(sentence: str) -> bool:
+    return any(pat.search(sentence) for pat in _ASC606_BOILERPLATE)
+
+
+def strip_asc606_boilerplate(text: str) -> str:
+    """Drop whole sentences of canonical ASC 606 recitation.
+
+    Removing the matched substring instead left mangled remnants that then read
+    as novel wording - Axil Brands was flagged on "Revenue is recognized to in
+    exchange for transferring goods or services", which is the core principle
+    with its middle cut out by this very function.
+    """
+    sentences = re.split(r"(?<=[.;])\s+", " ".join(text.split()))
+    kept = [x for x in sentences if x.strip() and not is_asc606_boilerplate(x)]
+    return " ".join(kept)
+
 
 def _bounded_span(text: str, start: int, terminator: str, default: int):
     nxt = re.search(terminator, text[start:], re.I)
@@ -348,6 +392,19 @@ def _strip_forward_looking(text: str) -> str:
     return text[:m.start()] + "\n" + text[min(end, len(text)):]
 
 
+def truncate_words(text: str, limit: int) -> str:
+    """Cut at a word boundary, never mid-word.
+
+    Raw slicing produced published quotes ending "Off-Ba", "Class A com" and
+    "(24 months from the".
+    """
+    text = " ".join(text.split())
+    if len(text) <= limit:
+        return text
+    cut = text.rfind(" ", 0, limit)
+    return (text[:cut] if cut > limit * 0.6 else text[:limit]).rstrip(" ,;:-") + "\u2026"
+
+
 def _context(text: str, pos: int, before: int = 400, after: int = 900) -> str:
     """A readable excerpt around a match.
 
@@ -394,7 +451,7 @@ def going_concern_state(text: str) -> Dict[str, object]:
         state = classify_going_concern(body)
         return {
             "state": state,
-            "quote": " ".join(ctx.split())[:600],
+            "quote": truncate_words(ctx, 600),
             "source": "going-concern note",
         }
 
@@ -405,7 +462,7 @@ def going_concern_state(text: str) -> Dict[str, object]:
         state = classify_going_concern(ctx)
         return {
             "state": state,
-            "quote": " ".join(ctx.split())[:600],
+            "quote": truncate_words(ctx, 600),
             "source": "filing body",
         }
 
@@ -413,7 +470,7 @@ def going_concern_state(text: str) -> Dict[str, object]:
         m2 = _GC_CONCLUSION.search(text)
         return {
             "state": GC_RISK_FACTOR_ONLY,
-            "quote": " ".join(_context(text, m2.start()).split())[:600],
+            "quote": truncate_words(_context(text, m2.start()), 600),
             "source": "risk factors / forward-looking statements only",
         }
 

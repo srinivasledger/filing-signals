@@ -18,6 +18,7 @@
     <dl class="figures">
       <div><dt>Events recorded</dt><dd>{{ total_events }}</dd></div>
       <div><dt>Companies</dt><dd>{{ companies }}</dd></div>
+      <div><dt>Company-days</dt><dd>{{ situations }}</dd></div>
       <div><dt>Filing days</dt><dd>{{ days_covered }}</dd></div>
       <div><dt>Filings scanned</dt><dd>{{ '{:,}'.format(filings_scanned) }}</dd></div>
       <div><dt>Flagged</dt><dd>{{ flag_rate }}</dd></div>
@@ -58,6 +59,17 @@
   </div>
   <span class="filter-note">Public float from the 10-K cover &mdash; the SEC&rsquo;s own size test</span>
 </section>
+{% if routine_n %}
+<section class="controls controls-size">
+  <span class="filter-label">Routine late filings</span>
+  <div class="chips" id="routinechips">
+    <button class="chip is-on" data-routine="hide">Hidden</button>
+    <button class="chip" data-routine="show">Shown</button>
+  </div>
+  <span class="filter-note">{{ routine_n }} notices filed on or within three days
+  of the statutory due date &mdash; the filing calendar, not distress</span>
+</section>
+{% endif %}
 
 <p class="count" id="count" aria-live="polite"></p>
 <div class="feed" id="feed">

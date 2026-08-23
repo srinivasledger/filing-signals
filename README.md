@@ -1,8 +1,8 @@
 # Filing Signals
 
-**Live: <https://filings.srinivas.cv>** ·
-[RSS](https://filings.srinivas.cv/feed.xml) ·
-[JSON](https://filings.srinivas.cv/events.json)
+**Live: <https://srinivasledger.github.io/filing-signals>** ·
+[RSS](https://srinivasledger.github.io/filing-signals/feed.xml) ·
+[JSON](https://srinivasledger.github.io/filing-signals/events.json)
 
 Deployed elsewhere it lives at `https://<user>.github.io/<repo>/` — nothing in
 the code is tied to an account or repository name.
