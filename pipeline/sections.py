@@ -67,12 +67,31 @@ _GC_CONCLUSION = re.compile(
 # closer. Verified against Cyclerion, whose note contains "Management's plans
 # to alleviate the conditions" and then concludes the opposite way.
 _GC_CONCLUDES_DOUBT = re.compile(
-    r"conclude[ds]?\s+(?:that\s+)?substantial\s+doubt\s+exists"
-    r"|substantial\s+doubt\s+exists\s+about"
-    r"|there\s+is\s+substantial\s+doubt\s+about"
+    r"raise[sd]?\s+(?:a\s+)?substantial\s+doubt"
+    r"|conclude[ds]?\s+(?:that\s+)?substantial\s+doubt\s+exist(?:s|ed)"
+    r"|substantial\s+doubt\s+exist(?:s|ed)\s+about"
+    r"|there\s+(?:is|was|are|were)\s+substantial\s+doubt\s+about"
+    r"|disclose[ds]?\s+that\s+substantial\s+doubt\s+exist(?:s|ed)"
     r"|substantial\s+doubt[^.]{0,140}?(?:has\s+)?not\s+been\s+alleviated"
     r"|do(?:es)?\s+not\s+alleviate\s+(?:the\s+)?substantial\s+doubt"
     r"|(?:is|are)\s+not\s+sufficient\s+to\s+alleviate",
+    re.I,
+)
+
+# An explicit negation of the conclusion. ChronoScale Holdings wrote
+# "Management has concluded that substantial doubt about our ability to continue
+# as a going concern is not raised" and was published as having disclosed
+# substantial doubt - the exact opposite of the filing. The phrase that triggers
+# detection is present in full; only the negation governing it distinguishes the
+# two, so it has to be matched explicitly.
+_GC_NEGATED = re.compile(
+    r"substantial\s+doubt[^.]{0,160}?\b(?:is|was|has\s+been|have\s+been)\s+not\s+"
+    r"(?:raised|present|indicated|warranted)"
+    r"|\bno\s+substantial\s+doubt\b"
+    r"|(?:do|does|did)\s+not\s+raise\s+(?:any\s+)?substantial\s+doubt"
+    r"|substantial\s+doubt[^.]{0,160}?(?:do|does|did)\s+not\s+exist"
+    r"|substantial\s+doubt[^.]{0,160}?\bis\s+not\s+raised"
+    r"|alleviat\w+[^.]{0,60}?\bsubstantial\s+doubt[^.]{0,60}?\bno\s+longer",
     re.I,
 )
 
@@ -95,20 +114,35 @@ def _last(pattern: "re.Pattern", text: str) -> int:
 
 
 def classify_going_concern(note: str) -> str:
-    """Map a going-concern note onto the ladder using its conclusion."""
-    doubt = _last(_GC_CONCLUDES_DOUBT, note)
-    alleviated = _last(_GC_CONCLUDES_ALLEVIATED, note)
+    """Map a going-concern note onto the ladder using its conclusion.
+
+    Three readings compete - doubt concluded, doubt alleviated, doubt expressly
+    negated - and the one stated last governs, because that is where a note
+    reaches its conclusion.
+
+    The default when none of them matches is GC_NONE, not substantial doubt.
+    Defaulting to the severe reading turned "cannot tell" into an affirmative
+    claim about a named company, which is how ChronoScale came to be published
+    as disclosing substantial doubt when its filing said the opposite.
+    """
+    # Negated statements are masked out before anything positive is looked for.
+    # Position alone cannot resolve the overlap: in "do not raise substantial
+    # doubt" the negation starts earlier than the phrase it negates, so a
+    # last-match-wins rule would let the positive reading win.
+    cleaned = _GC_NEGATED.sub(lambda m: " " * len(m.group(0)), note)
+
+    doubt = _last(_GC_CONCLUDES_DOUBT, cleaned)
+    alleviated = _last(_GC_CONCLUDES_ALLEVIATED, cleaned)
 
     if doubt >= 0 and doubt > alleviated:
         return GC_SUBSTANTIAL_DOUBT
-    if alleviated >= 0 and alleviated > doubt:
+    if alleviated >= 0:
         return GC_DOUBT_ALLEVIATED
-    if doubt >= 0:
-        return GC_SUBSTANTIAL_DOUBT
-    # Doubt was raised but the filing states no explicit resolution. Reporting
-    # the more severe reading would overstate; ASC 205-40 requires an explicit
-    # alleviation statement, so its absence means doubt stands.
-    return GC_SUBSTANTIAL_DOUBT
+    # Nothing survives the masking: either the filing expressly negated the
+    # conclusion, or its wording cannot be read confidently. Both are reported
+    # as no conclusion. Defaulting to the severe reading is what published
+    # ChronoScale as the opposite of what its filing said.
+    return GC_NONE
 
 
 # --- policy sections ---------------------------------------------------------

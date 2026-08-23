@@ -108,6 +108,59 @@ def test_going_concern_read_from_the_note_not_risk_factors():
     assert st["source"] == "going-concern note"
 
 
+# --- negation, one case per form, with positive controls -------------------
+# ChronoScale Holdings wrote "substantial doubt ... is not raised" and was
+# published as disclosing substantial doubt: the opposite of its filing. The
+# controls matter as much as the negations - the first fix caught the negation
+# and destroyed seven true positives.
+import pytest
+
+
+@pytest.mark.parametrize("text", [
+    "Management has concluded that substantial doubt about our ability to "
+    "continue as a going concern is not raised.",
+    "These conditions do not raise substantial doubt about the Company's ability "
+    "to continue as a going concern.",
+    "The conditions did not raise substantial doubt about its ability to continue.",
+    "There is no substantial doubt about the Company's ability to continue as a "
+    "going concern.",
+    "Management concluded that substantial doubt does not exist about its "
+    "ability to continue as a going concern.",
+])
+def test_negated_going_concern_is_not_a_disclosure(text):
+    assert sections.classify_going_concern(text) == sections.GC_NONE
+
+
+@pytest.mark.parametrize("text", [
+    "These conditions raise substantial doubt about the Company's ability to "
+    "continue as a going concern.",
+    "Accordingly, the Company has concluded that substantial doubt exists about "
+    "its ability to continue as a going concern.",
+    "The financial statements disclose that substantial doubt existed about the "
+    "Company's ability to continue as a going concern.",
+    "These conditions raise substantial doubt that has not been alleviated by "
+    "management's plans.",
+])
+def test_real_going_concern_disclosures_survive(text):
+    assert sections.classify_going_concern(text) == sections.GC_SUBSTANTIAL_DOUBT
+
+
+def test_negation_beats_the_phrase_it_governs():
+    # "do not raise substantial doubt": the negation starts BEFORE the phrase,
+    # so a last-match-wins rule lets the positive reading win. Masking first is
+    # what makes this come out right.
+    assert sections.classify_going_concern(
+        "The conditions described do not raise substantial doubt.") == sections.GC_NONE
+
+
+def test_unreadable_wording_is_not_reported_as_doubt():
+    # The old default turned "cannot tell" into an affirmative claim about a
+    # named company.
+    assert sections.classify_going_concern(
+        "The Company evaluated going concern matters under ASC 205-40."
+    ) == sections.GC_NONE
+
+
 def test_bullet_fragments_are_not_headings():
     # A Flux Power 10-K matched the bullet "ability to continue as a going
     # concern;" as a note heading and read the wrong 4,000 characters.
