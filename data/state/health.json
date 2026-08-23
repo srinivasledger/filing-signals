@@ -41,7 +41,7 @@
       "status": "ok"
     },
     {
-      "detail": "5,156 companies, refreshed 0 day(s) ago",
+      "detail": "5,156 companies, refreshed 1 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
@@ -51,7 +51,7 @@
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-23T03:51:02+00:00",
+  "generated_at": "2026-08-23T04:07:40+00:00",
   "summary": {
     "fail": 0,
     "ok": 10,
