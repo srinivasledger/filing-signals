@@ -11,7 +11,7 @@
   (function(){try{var t=localStorage.getItem("fs-theme");
     if(t==="dark"||t==="light")document.documentElement.dataset.theme=t;}catch(e){}})();
 </script>
-<link rel="stylesheet" href="{{ rel }}static/style.css">
+<link rel="stylesheet" href="{{ rel }}static/style.css?v={{ asset_v["style.css"] }}">
 <link rel="alternate" type="application/rss+xml" title="{{ site_title }}" href="{{ rel }}feed.xml">
 </head>
 <body>
@@ -64,6 +64,6 @@
     Last build {{ built_at }}. <a href="{{ rel }}methodology.html">How this works</a>.</p>
   </div>
 </footer>
-<script src="{{ rel }}static/theme.js" defer></script>
+<script src="{{ rel }}static/theme.js?v={{ asset_v["theme.js"] }}" defer></script>
 </body>
 </html>

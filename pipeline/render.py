@@ -132,6 +132,24 @@ def _env() -> Environment:
     return env
 
 
+def asset_versions() -> Dict[str, str]:
+    """Short content hashes for the static assets.
+
+    GitHub Pages caches these aggressively. A broken filter.js stayed live in
+    browsers that had already loaded it even after the fix deployed, because
+    the URL had not changed. Hashing the content means a changed file is a
+    changed URL, and an unchanged one still caches.
+    """
+    import hashlib
+
+    out: Dict[str, str] = {}
+    for path in sorted(config.STATIC.glob("*")):
+        if path.is_file():
+            digest = hashlib.sha1(path.read_bytes()).hexdigest()[:8]
+            out[path.name] = digest
+    return out
+
+
 def _write(path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
@@ -201,6 +219,7 @@ def build() -> None:
         status_label = f"All {summary.get('total', 0)} checks passing"
 
     common = {
+        "asset_v": asset_versions(),
         "status_state": status_state,
         "status_label": status_label,
         "site_title": config.SITE_TITLE,

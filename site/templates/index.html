@@ -86,6 +86,6 @@
   confirm the pipeline is running.</p>
 </section>
 {% endif %}
-<script src="{{ rel }}static/chart.js" defer></script>
-<script src="{{ rel }}static/filter.js" defer></script>
+<script src="{{ rel }}static/chart.js?v={{ asset_v["chart.js"] }}" defer></script>
+<script src="{{ rel }}static/filter.js?v={{ asset_v["filter.js"] }}" defer></script>
 {% endblock %}
