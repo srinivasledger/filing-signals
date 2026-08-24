@@ -1,7 +1,7 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-08-21, today",
+      "detail": "last complete filing day 2026-08-21, 1 business days ago",
       "name": "Pipeline is current",
       "status": "ok"
     },
@@ -46,7 +46,7 @@
       "status": "ok"
     },
     {
-      "detail": "5,156 companies, refreshed 1 day(s) ago",
+      "detail": "5,156 companies, refreshed 2 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
@@ -56,7 +56,7 @@
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-23T09:23:16+00:00",
+  "generated_at": "2026-08-24T06:48:22+00:00",
   "summary": {
     "fail": 0,
     "ok": 11,
