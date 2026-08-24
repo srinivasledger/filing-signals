@@ -16,8 +16,8 @@ import re
 from typing import Dict, List, Optional, Tuple
 
 from . import config, fetch, sections
-from .models import (CONFIRMED, DERIVED, GOING_CONCERN, POLICY_CHANGE,
-                     REVENUE_RECOGNITION, SIGNAL_BLURBS, Event)
+from .models import (CONFIRMED, DERIVED, GOING_CONCERN, MATERIAL_WEAKNESS,
+                     POLICY_CHANGE, REVENUE_RECOGNITION, SIGNAL_BLURBS, Event)
 
 log = logging.getLogger(__name__)
 
@@ -334,6 +334,35 @@ def analyse_periodic(filing) -> List[Event]:
                 "why": SIGNAL_BLURBS[GOING_CONCERN],
             },
             cur_gc["quote"],
+            beta=False,
+        ))
+
+    # --- internal control over financial reporting ---
+    cur_ic = sections.internal_control_state(current_text)
+    pri_ic = sections.internal_control_state(prior_text)
+    if (cur_ic["state"] and pri_ic["state"]
+            and cur_ic["state"] != pri_ic["state"]):
+        newly = cur_ic["state"] == sections.ICFR_MATERIAL_WEAKNESS
+        events.append(base(
+            MATERIAL_WEAKNESS,
+            (f"{filing.company} reported a material weakness in internal control"
+             if newly else
+             f"{filing.company} reported internal control effective again after "
+             "a material weakness"),
+            {
+                "source": "Item 9A internal control conclusion, compared with the prior filing",
+                "prior_state": pri_ic["state"],
+                "prior_state_label": sections.ICFR_LABELS.get(pri_ic["state"], ""),
+                "current_state": cur_ic["state"],
+                "current_state_label": sections.ICFR_LABELS.get(cur_ic["state"], ""),
+                "direction": "newly reported" if newly else "remediated",
+                "remediation_stated": cur_ic["remediated"],
+                "severity": "high" if newly else "normal",
+                "prior_form": prior["form"],
+                "prior_filed": prior["filingDate"],
+                "why": SIGNAL_BLURBS[MATERIAL_WEAKNESS],
+            },
+            cur_ic["quote"],
             beta=False,
         ))
 

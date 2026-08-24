@@ -13,8 +13,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline import (auditor, compare, enrich, ingest, late, models, publish,
-                      sections, triage, universe)
+from pipeline import (auditor, compare, enrich, ingest, late, letters, models,
+                      officers, publish, sections, triage, universe)
 from pipeline.run import business_days, days_to_process
 
 FIX = Path(__file__).parent / "fixtures"
@@ -469,3 +469,124 @@ def test_site_scripts_execute_without_reference_errors():
         [node, "tests/js/smoke.mjs"], cwd=root,
         capture_output=True, text=True, timeout=60)
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+# --- SEC comment letters ----------------------------------------------------
+def test_only_periodic_report_reviews_count():
+    # Of thirty sampled staff letters, seventeen reviewed registration
+    # statements and four reviewed a periodic report. Only the latter is the
+    # accounting signal.
+    assert letters.reviews_a_periodic_report(
+        "Chewy, Inc. Form 10-K for Fiscal Year Ended February 2, 2025")
+    assert not letters.reviews_a_periodic_report(
+        "AEVEX Corp. Draft Registration Statement on Form S-1 Submitted May 11, 2026")
+    assert not letters.reviews_a_periodic_report(
+        "AvidXchange Holdings, Inc. Schedule 13E-3 filed June 18, 2025")
+    assert not letters.reviews_a_periodic_report("")
+
+
+def test_topic_matching_is_word_bounded():
+    # "lease" matched every letter in the first sample, because "please"
+    # contains it.
+    assert "Leases" not in letters.classify_topics(
+        "Please respond to this letter within ten business days.")
+    assert "Leases" in letters.classify_topics(
+        "Tell us how you evaluated the lease term under ASC 842.")
+
+
+def test_comment_topics_and_citations():
+    text = ("We have reviewed your filing and have the following comments. "
+            "Note 2. Basis of Presentation and Significant Accounting Policies "
+            "Revenue Recognition, page 60 We note you generate revenue from the "
+            "sale of pet products.")
+    assert "Revenue recognition" in letters.classify_topics(text)
+    assert any("page 60" in c for c in letters.citations(text))
+
+
+# --- finance chief departures ----------------------------------------------
+def test_no_disagreements_boilerplate_is_not_a_disagreement():
+    # "There were no disagreements with the Company" is the standard Item 5.02
+    # sentence. Matched unguarded it labelled routine transitions at Boeing,
+    # Xylem, Centene and Baxter as departures amid disagreement.
+    d = officers.classify(
+        "On August 1, 2026 the Chief Financial Officer resigned. There were no "
+        "disagreements with the Company on any matter relating to its "
+        "operations, policies or practices. The Board appointed a successor.")
+    assert d["is_finance_departure"] is True
+    assert d["disagreement_disclosed"] is False
+    assert officers.severity(d) == "normal"
+
+
+@pytest.mark.parametrize("denial", [
+    "His departure from the Company is not related to any disagreement with the Company",
+    "Mr Rizvi's resignation was not due to any disagreement with the Company",
+    "Ms Barkema's departure is not the result of any disagreement with the Company",
+    "There were no disagreements with the Company on any matter",
+])
+def test_denials_do_not_read_as_disagreements(denial):
+    # Real filings put the negator a clause away from the noun, not next to it.
+    # Requiring adjacency labelled Boston Beer, Synaptics and Marqeta as
+    # departures amid disagreement when each filing said the opposite.
+    d = officers.classify("The Chief Financial Officer resigned. " + denial + ".")
+    assert d["disagreement_disclosed"] is False
+
+
+def test_a_real_disagreement_still_registers():
+    d = officers.classify(
+        "The Chief Financial Officer resigned following a disagreement with the "
+        "Company regarding revenue recognition policies.")
+    assert d["disagreement_disclosed"] is True
+    assert officers.severity(d) == "high"
+
+
+def test_amended_and_restated_plan_is_not_a_restatement():
+    # "restated" is in the name of nearly every equity plan ever adopted.
+    d = officers.classify(
+        "The Chief Financial Officer resigned. He remains eligible for grants "
+        "under the Company's Second Amended and Restated 2021 Incentive Plan.")
+    assert d["adverse_language"] == ""
+
+
+def test_departure_must_share_a_sentence_with_the_role():
+    # A 400-character window joined "a director resigned" to the CFO named in
+    # the signature block.
+    d = officers.classify(
+        "On August 1, 2026, a director resigned from the Board. The report was "
+        "signed by the Chief Financial Officer.")
+    assert d["is_finance_departure"] is False
+
+
+def test_missing_successor_outranks_an_orderly_handover():
+    gone = officers.classify(
+        "The Chief Financial Officer resigned. The Company has not yet named a successor.")
+    handover = officers.classify(
+        "The Chief Financial Officer resigned. The Board appointed Jane Doe as "
+        "Chief Financial Officer.")
+    assert officers.severity(gone) == "high"
+    assert officers.severity(handover) == "normal"
+
+
+# --- internal control -------------------------------------------------------
+def test_material_weakness_definition_is_not_a_disclosure():
+    # Every filer recites the definition; reciting it is not reporting one.
+    state = sections.internal_control_state(
+        "Item 9A. A material weakness is a deficiency, or combination of "
+        "deficiencies, such that there is a reasonable possibility that a "
+        "material misstatement will not be prevented. Management concluded that "
+        "internal control over financial reporting was effective.")
+    assert state["state"] == sections.ICFR_EFFECTIVE
+
+
+def test_material_weakness_is_read_when_reported():
+    state = sections.internal_control_state(
+        "Item 9A. Controls and Procedures. Management concluded that our "
+        "internal control over financial reporting was not effective because we "
+        "identified a material weakness relating to revenue recognition.")
+    assert state["state"] == sections.ICFR_MATERIAL_WEAKNESS
+
+
+def test_unreadable_internal_control_is_unknown_not_severe():
+    assert sections.internal_control_state(
+        "Item 9A. Controls and Procedures. The Company evaluated its disclosure "
+        "controls."
+    )["state"] == sections.ICFR_UNKNOWN

@@ -18,15 +18,17 @@ from xml.sax.saxutils import escape as xml_escape
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import charts, config, publish, size as size_mod
-from .models import (AUDITOR_CHANGE, GOING_CONCERN, LATE_FILING, POLICY_CHANGE,
+from .models import (AUDITOR_CHANGE, COMMENT_LETTER, GOING_CONCERN, LATE_FILING,
+                     MATERIAL_WEAKNESS, OFFICER_DEPARTURE, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_BLURBS,
                      SIGNAL_LABELS, Event)
 
 log = logging.getLogger(__name__)
 
 SIGNAL_ORDER = [
-    RESTATEMENT, AUDITOR_CHANGE, LATE_FILING, GOING_CONCERN, POLICY_CHANGE,
-    REVENUE_RECOGNITION,
+    RESTATEMENT, COMMENT_LETTER, MATERIAL_WEAKNESS, AUDITOR_CHANGE,
+    OFFICER_DEPARTURE, GOING_CONCERN, POLICY_CHANGE, REVENUE_RECOGNITION,
+    LATE_FILING,
 ]
 # The home page holds a recent window, not the whole record. At ~31 events a
 # weekday the full set outgrows a single page quickly, and a 600KB page is
@@ -44,8 +46,9 @@ PROGRESSION_ORDER = [LATE_FILING, AUDITOR_CHANGE, GOING_CONCERN,
 # produced 122 of them - so a purely chronological feed buries the rare events
 # under routine ones. Within a day, rank by how unusual the signal is.
 _SIGNAL_WEIGHT = {
-    RESTATEMENT: 0, AUDITOR_CHANGE: 1, GOING_CONCERN: 2,
-    POLICY_CHANGE: 3, REVENUE_RECOGNITION: 4, LATE_FILING: 5,
+    RESTATEMENT: 0, COMMENT_LETTER: 1, MATERIAL_WEAKNESS: 2, AUDITOR_CHANGE: 3,
+    OFFICER_DEPARTURE: 4, GOING_CONCERN: 5, POLICY_CHANGE: 6,
+    REVENUE_RECOGNITION: 7, LATE_FILING: 8,
 }
 
 

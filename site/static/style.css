@@ -33,6 +33,7 @@
     --alert:#ff6b5e; --alert-ink:#1a0f0d;
     --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
     --series-4:#c98500; --series-5:#d55181; --series-6:#008300;
+    --series-7:#9085e9; --series-8:#e66767; --series-muted:#5c6874;
   }
 }
 :root[data-theme="dark"]{
@@ -44,6 +45,7 @@
     --alert:#ff6b5e; --alert-ink:#1a0f0d;
     --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
     --series-4:#c98500; --series-5:#d55181; --series-6:#008300;
+    --series-7:#9085e9; --series-8:#e66767; --series-muted:#5c6874;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -163,11 +165,14 @@ h1{font-family:var(--sans);font-size:clamp(1.55rem,3.1vw,2.35rem);line-height:1.
   transition:border-color .12s}
 .event::before{content:"";position:absolute;left:0;top:-1px;bottom:-1px;width:3px}
 .event[data-signal="restatement"]::before{background:var(--series-1)}
-.event[data-signal="auditor_change"]::before{background:var(--series-2)}
-.event[data-signal="late_filing"]::before{background:var(--series-3)}
-.event[data-signal="going_concern"]::before{background:var(--series-4)}
-.event[data-signal="policy_change"]::before{background:var(--series-5)}
-.event[data-signal="revenue_recognition"]::before{background:var(--series-6)}
+.event[data-signal="comment_letter"]::before{background:var(--series-2)}
+.event[data-signal="material_weakness"]::before{background:var(--series-3)}
+.event[data-signal="auditor_change"]::before{background:var(--series-4)}
+.event[data-signal="officer_departure"]::before{background:var(--series-5)}
+.event[data-signal="going_concern"]::before{background:var(--series-6)}
+.event[data-signal="policy_change"]::before{background:var(--series-7)}
+.event[data-signal="revenue_recognition"]::before{background:var(--series-8)}
+.event[data-signal="late_filing"]::before{background:var(--series-muted)}
 .event:hover{border-color:var(--line-strong)}
 .event-head{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
 .event-head time{margin-left:auto;color:var(--muted);font-size:.72rem;
@@ -185,11 +190,14 @@ h1{font-family:var(--sans);font-size:clamp(1.55rem,3.1vw,2.35rem);line-height:1.
   letter-spacing:.09em;padding:3px 7px;border-radius:0;white-space:nowrap;
   border:1px solid currentColor}
 .tag-restatement{color:var(--series-1)}
-.tag-auditor_change{color:var(--series-2)}
-.tag-late_filing{color:var(--series-3)}
-.tag-going_concern{color:var(--series-4)}
-.tag-policy_change{color:var(--series-5)}
-.tag-revenue_recognition{color:var(--series-6)}
+.tag-comment_letter{color:var(--series-2)}
+.tag-material_weakness{color:var(--series-3)}
+.tag-auditor_change{color:var(--series-4)}
+.tag-officer_departure{color:var(--series-5)}
+.tag-going_concern{color:var(--series-6)}
+.tag-policy_change{color:var(--series-7)}
+.tag-revenue_recognition{color:var(--series-8)}
+.tag-late_filing{color:var(--series-muted)}
 .tag-beta{color:var(--muted);letter-spacing:.06em;font-weight:600}
 .tag-conf{color:var(--muted);border-style:dashed;font-weight:500;letter-spacing:.05em}
 .tag-sev-high{color:var(--alert-ink);background:var(--alert);border-color:var(--alert)}

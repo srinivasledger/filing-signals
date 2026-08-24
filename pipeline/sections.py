@@ -578,3 +578,74 @@ def extract_asus(text: str) -> Dict[str, Dict[str, str]]:
             status = "adopted"
         out[code] = {"context": sentence[:400], "status": status}
     return out
+
+
+# --- internal control over financial reporting (Item 9A) ---------------------
+# Same shape as the going-concern ladder, and the same trap: the phrase
+# "material weakness" appears in the definition every filer recites, and
+# "effective" appears inside "not effective". Both readings are matched
+# explicitly and the default is unknown, never the severe reading.
+ICFR_EFFECTIVE = "effective"
+ICFR_MATERIAL_WEAKNESS = "material_weakness"
+ICFR_UNKNOWN = ""
+
+ICFR_LABELS = {
+    ICFR_EFFECTIVE: "Internal control reported effective",
+    ICFR_MATERIAL_WEAKNESS: "Material weakness in internal control",
+}
+
+_ICFR_HEADING = re.compile(
+    r"(?:Item\s*9A\b|Controls\s+and\s+Procedures"
+    r"|Management'?s?\s+Report\s+on\s+Internal\s+Control)", re.I)
+
+_ICFR_NOT_EFFECTIVE = re.compile(
+    r"internal\s+control\s+over\s+financial\s+reporting\s+(?:was|were|is|are)\s+not\s+effective"
+    r"|(?:was|were|is|are)\s+not\s+effective[^.]{0,120}?internal\s+control"
+    r"|concluded[^.]{0,80}?not\s+effective"
+    r"|identified\s+(?:the\s+following\s+|a\s+|one\s+or\s+more\s+)?material\s+weakness"
+    r"|we\s+identified\s+a\s+material\s+weakness"
+    r"|the\s+following\s+material\s+weakness(?:es)?\s+(?:were|was|has|have)",
+    re.I,
+)
+_ICFR_EFFECTIVE = re.compile(
+    r"internal\s+control\s+over\s+financial\s+reporting\s+(?:was|were|is|are)\s+effective"
+    r"|concluded[^.]{0,100}?internal\s+control[^.]{0,60}?(?:was|were|is|are)\s+effective"
+    r"|maintained,?\s+in\s+all\s+material\s+respects,?\s+effective\s+internal\s+control",
+    re.I,
+)
+_ICFR_REMEDIATED = re.compile(
+    r"material\s+weakness(?:es)?[^.]{0,120}?(?:has|have)\s+been\s+remediated"
+    r"|remediat\w+[^.]{0,80}?material\s+weakness(?:es)?"
+    r"|no\s+longer[^.]{0,60}?material\s+weakness",
+    re.I,
+)
+
+
+def internal_control_state(text: str) -> Dict[str, object]:
+    """Read management's ICFR conclusion. Unknown when it cannot be read."""
+    # "Item 9A" also appears on the cover page, next to the Section 404(b)
+    # attestation checkbox, and again in the table of contents. Taking the first
+    # match scoped a 312,000 character 10-K to the wrong 30,000. Use the first
+    # occurrence whose following text actually reaches a conclusion.
+    scope = ""
+    for m in _ICFR_HEADING.finditer(text):
+        candidate = text[m.start(): m.start() + 30_000]
+        if _ICFR_NOT_EFFECTIVE.search(candidate) or _ICFR_EFFECTIVE.search(candidate):
+            scope = candidate
+            break
+    if not scope:
+        scope = text
+
+    not_eff = _last(_ICFR_NOT_EFFECTIVE, scope)
+    eff = _last(_ICFR_EFFECTIVE, scope)
+
+    if not_eff < 0 and eff < 0:
+        return {"state": ICFR_UNKNOWN, "quote": "", "remediated": False}
+
+    state = ICFR_MATERIAL_WEAKNESS if not_eff > eff else ICFR_EFFECTIVE
+    pos = max(not_eff, eff)
+    return {
+        "state": state,
+        "quote": truncate_words(_context(scope, pos), 520),
+        "remediated": bool(_ICFR_REMEDIATED.search(scope)),
+    }

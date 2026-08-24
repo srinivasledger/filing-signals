@@ -12,9 +12,10 @@ import unicodedata
 from typing import List, Optional
 
 from . import auditor as auditor_mod
+from . import officers as officers_mod
 from .enrich import ITEM_TITLES
-from .models import (AUDITOR_CHANGE, CONFIRMED, RESTATEMENT, SIGNAL_BLURBS,
-                     Event)
+from .models import (AUDITOR_CHANGE, CONFIRMED, DERIVED, OFFICER_DEPARTURE,
+                     RESTATEMENT, SIGNAL_BLURBS, Event)
 
 # We match the SEC's numeric item codes, taken from the filing's SGML header.
 # Item 4.02 = Non-Reliance on Previously Issued Financial Statements.
@@ -22,6 +23,7 @@ from .models import (AUDITOR_CHANGE, CONFIRMED, RESTATEMENT, SIGNAL_BLURBS,
 # Matching codes rather than English titles avoids depending on filer wording.
 ITEM_RESTATEMENT = "4.02"
 ITEM_AUDITOR = "4.01"
+ITEM_OFFICERS = "5.02"
 
 _SIGNAL_BY_ITEM = {
     ITEM_RESTATEMENT: RESTATEMENT,
@@ -111,12 +113,65 @@ def _subclassify(signal: str, filing) -> dict:
     return auditor_mod.classify_401(text)
 
 
+def _officer_event(filing) -> List[Event]:
+    """Item 5.02 covers every director and officer change and is one of the
+    commonest 8-K items, so the code alone is noise. Only a finance chief
+    leaving qualifies, and the filing has to be read to know."""
+    from . import compare
+
+    try:
+        url = compare.current_document(filing.cik, filing.accession)
+        text = compare.load_text(url) if url else None
+    except Exception:                            # noqa: BLE001
+        return []
+    if not text:
+        return []
+
+    detail = officers_mod.classify(" ".join(text.split()))
+    if not detail.get("is_finance_departure"):
+        return []
+
+    ticker = ""
+    sub = compare.submissions(filing.cik)
+    if sub and sub.get("tickers"):
+        ticker = sub["tickers"][0]
+
+    return [Event(
+        signal_type=OFFICER_DEPARTURE,
+        confidence=DERIVED,
+        company=filing.company,
+        cik=filing.cik,
+        ticker=ticker,
+        form=filing.form,
+        filed=filing.filed,
+        accession=filing.accession,
+        filing_url=filing.index_url,
+        headline=officers_mod.headline(filing.company, detail),
+        sic_desc=filing.sic_desc,
+        evidence={
+            "source": "SEC 8-K item code",
+            "item_code": ITEM_OFFICERS,
+            "item_title": "Departure of Directors or Certain Officers",
+            "severity": officers_mod.severity(detail),
+            "role": officers_mod.ROLE_LABELS.get(detail.get("role", ""), ""),
+            "successor_named": detail.get("successor_named"),
+            "interim_only": detail.get("interim_only"),
+            **({"adverse_language": detail["adverse_language"]}
+               if detail.get("adverse_language") else {}),
+            "why": SIGNAL_BLURBS[OFFICER_DEPARTURE],
+        },
+    )]
+
+
 def events_from_filing(filing) -> List[Event]:
     """Build events from an 8-K's item codes. Returns [] for everything else."""
     if not filing.items:
         return []
 
     events: List[Event] = []
+    if ITEM_OFFICERS in [c.strip() for c in filing.items]:
+        events.extend(_officer_event(filing))
+
     for signal in classify_items(filing.items):
         code = ITEM_RESTATEMENT if signal == RESTATEMENT else ITEM_AUDITOR
         detail = _subclassify(signal, filing)

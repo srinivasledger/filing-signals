@@ -29,7 +29,10 @@ LATE_FORMS = {
     "NT 20-F", "NT 20-F/A", "NT 11-K",
 }
 
-CANDIDATE_FORMS = EVENT_FORMS | PERIODIC_FORMS | LATE_FORMS
+# SEC staff comment letters and the company replies to them.
+LETTER_FORMS = {"UPLOAD", "CORRESP"}
+
+CANDIDATE_FORMS = EVENT_FORMS | PERIODIC_FORMS | LATE_FORMS | LETTER_FORMS
 
 # SIC ranges that are pooled-investment or securitisation vehicles rather than
 # operating companies. They file constantly and never carry these signals.

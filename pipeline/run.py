@@ -20,7 +20,7 @@ except Exception:                                # pragma: no cover
     EASTERN = dt.timezone(dt.timedelta(hours=-5))
 
 from . import (analyze, compare, config, enrich, fetch, health, history, ingest,
-               late, publish, size, triage, universe)
+               late, letters, publish, size, triage, universe)
 from .models import Event
 
 log = logging.getLogger("pipeline")
@@ -107,6 +107,18 @@ def process_day(day: dt.date) -> tuple:
                 raise
             except Exception as exc:                 # noqa: BLE001
                 log.warning("  late-filing parse failed for %s: %s", filing.company, exc)
+
+    # SEC comment letters. Most review registration statements rather than
+    # periodic reports, so the module filters hard; only a couple a week
+    # survive, which is the point.
+    for filing in operating:
+        if filing.form.upper() in universe.LETTER_FORMS:
+            try:
+                events.extend(letters.analyse_letter(filing))
+            except fetch.SECBlocked:
+                raise
+            except Exception as exc:             # noqa: BLE001
+                log.warning("  letter parse failed for %s: %s", filing.company, exc)
 
     events = late.merge_same_day(events)
 

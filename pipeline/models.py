@@ -18,6 +18,9 @@ GOING_CONCERN = "going_concern"
 POLICY_CHANGE = "policy_change"
 REVENUE_RECOGNITION = "revenue_recognition"
 LATE_FILING = "late_filing"
+COMMENT_LETTER = "comment_letter"
+OFFICER_DEPARTURE = "officer_departure"
+MATERIAL_WEAKNESS = "material_weakness"
 
 SIGNAL_LABELS = {
     RESTATEMENT: "Restatement",
@@ -26,6 +29,9 @@ SIGNAL_LABELS = {
     POLICY_CHANGE: "Accounting policy change",
     REVENUE_RECOGNITION: "Revenue recognition change",
     LATE_FILING: "Late filing",
+    COMMENT_LETTER: "SEC comment letter",
+    OFFICER_DEPARTURE: "Finance chief departure",
+    MATERIAL_WEAKNESS: "Material weakness",
 }
 
 SIGNAL_BLURBS = {
@@ -49,6 +55,20 @@ SIGNAL_BLURBS = {
     LATE_FILING: (
         "The company told the SEC it could not file a periodic report on time, "
         "using Form 12b-25."
+    ),
+    MATERIAL_WEAKNESS: (
+        "The company's conclusion on internal control over financial reporting "
+        "changed: a material weakness was newly reported, or a previously "
+        "reported one no longer appears."
+    ),
+    OFFICER_DEPARTURE: (
+        "The company's chief financial or accounting officer departed, "
+        "disclosed under 8-K Item 5.02."
+    ),
+    COMMENT_LETTER: (
+        "SEC staff reviewed the company's periodic report and raised written "
+        "comments on its accounting, or the company replied to them. Letters "
+        "are published on EDGAR only after the review closes."
     ),
 }
 

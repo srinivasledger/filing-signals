@@ -5,13 +5,16 @@
 [JSON](https://srinivasledger.github.io/filing-signals/events.json)
 
 A self-updating public tracker that reads new SEC filings every weekday and
-publishes six things that are otherwise hard to see. It runs on GitHub Actions
+publishes nine things that are otherwise hard to see. It runs on GitHub Actions
 and GitHub Pages: no server, no database, and **no API key required** — the
 default configuration produces the full deterministic feed at zero cost.
 
 | Signal | Source | Sub-classification |
 |---|---|---|
 | **Restatements** | 8-K Item 4.02 | **(a)** management concluded vs **(b)** the auditor told them |
+| **SEC comment letters** | UPLOAD (staff) and CORRESP (company) | classified by accounting topic; only periodic-report reviews, not registration statements |
+| **Material weakness** | Item 9A conclusion vs the previous filing | newly reported vs remediated |
+| **Finance chief departures** | 8-K Item 5.02 | CFO/CAO/controller only; successor named, interim, or none |
 | **Auditor changes** | 8-K Item 4.01 | resigned vs dismissed; disagreements disclosed; predecessor → successor firm, and whether that is a tier downgrade |
 | **Late filings** | Form 12b-25 (NT 10-K / NT 10-Q) | graded on the stated reason; routine deadline-week notices separated from substantive ones |
 | **Going concern** | ASC 205-40 note vs the previous filing | ladder: no conclusion → doubt alleviated → substantial doubt |
@@ -156,6 +159,9 @@ whether something is a signal.
 | `MAX_PERIODIC_PER_DAY` | `120` | Bound on the expensive comparison path |
 | `POLICY_SIMILARITY_THRESHOLD` | `0.60` | Revenue-note rewrite sensitivity |
 
+`pypdf` is required: SEC staff comment letters are PDFs, unlike every other
+filing the pipeline reads.
+
 ## Design notes
 
 Everything below was found by checking output against real filings, not by
@@ -213,6 +219,43 @@ reasoning about the code. Each one changed the implementation.
   "Revenue is recognized to in exchange for transferring goods or services",
   the core principle with its middle removed by that very function. Whole
   boilerplate sentences are dropped instead.
+
+### The newer signals
+
+- **Most comment letters are not about accounting.** Of thirty staff letters
+  sampled, seventeen reviewed registration statements and four reviewed a
+  periodic report. Only the last group is the signal, so the "Re:" line is
+  parsed and everything else discarded — about two a week survive.
+- **UPLOAD documents are PDFs**, unlike everything else on EDGAR that this
+  pipeline reads. CORRESP is HTML.
+- **"lease" matched every letter in the first sample**, because "please"
+  contains it. Every topic pattern is word-bounded.
+- **Item 5.02 covers every officer and director change** and is among the
+  commonest 8-K items, so the code alone is noise. The role and the departure
+  must appear in the same sentence: a 400-character window was wide enough to
+  join "a director resigned" to the CFO named in the signature block.
+- **"Item 9A" appears on the cover page** beside the Section 404(b) checkbox
+  and again in the contents, so the first match scoped a 312,000-character 10-K
+  to the wrong 30,000. Use the first occurrence that actually reaches a
+  conclusion.
+
+### Negation, three times over
+
+The same defect appeared in three unrelated places, and is worth stating as a
+rule: **the phrase that triggers detection is usually present in full, and only
+the negation governing it distinguishes the two readings.**
+
+- "substantial doubt … **is not raised**" — published as its opposite.
+- "**no** disagreements with the Company" — the standard Item 5.02 sentence,
+  which labelled routine departures at Boston Beer, Synaptics and Marqeta as
+  departures amid disagreement.
+- "a material weakness **is a deficiency**…" — the definition every filer
+  recites, which is not a disclosure of one.
+
+Two lessons. Negations must be masked *before* anything positive is matched,
+because position cannot resolve an overlap. And the negator usually sits a
+clause away from the noun — "is **not** related to any **disagreement**" —
+so adjacency is not enough.
 
 ### Grading and ranking
 

@@ -11,12 +11,12 @@
       "status": "ok"
     },
     {
-      "detail": "254/254 link to sec.gov",
+      "detail": "297/297 link to sec.gov",
       "name": "Every entry links to its filing",
       "status": "ok"
     },
     {
-      "detail": "254/254 carry a detection method",
+      "detail": "297/297 carry a detection method",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
@@ -31,17 +31,17 @@
       "status": "ok"
     },
     {
-      "detail": "254 unique entries",
+      "detail": "297 unique entries",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 216 quoted passages begin mid-sentence",
+      "detail": "0 of 224 quoted passages begin mid-sentence",
       "name": "Quotes start at a sentence",
       "status": "ok"
     },
     {
-      "detail": "all 254 entries fit on the home page",
+      "detail": "all 297 entries fit on the home page",
       "name": "Home page window",
       "status": "ok"
     },
@@ -51,12 +51,12 @@
       "status": "ok"
     },
     {
-      "detail": "226 companies, 4,035 historical events",
+      "detail": "264 companies, 4,271 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-24T07:43:07+00:00",
+  "generated_at": "2026-08-24T07:41:36+00:00",
   "summary": {
     "fail": 0,
     "ok": 11,

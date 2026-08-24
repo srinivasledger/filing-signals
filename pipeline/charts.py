@@ -16,13 +16,21 @@ import html
 from collections import Counter, OrderedDict
 from typing import Dict, List, Sequence
 
-from .models import (AUDITOR_CHANGE, GOING_CONCERN, LATE_FILING, POLICY_CHANGE,
+from .models import (AUDITOR_CHANGE, COMMENT_LETTER, GOING_CONCERN, LATE_FILING,
+                     MATERIAL_WEAKNESS, OFFICER_DEPARTURE, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_LABELS)
 
 # Fixed slot order. A signal keeps its colour regardless of how many appear.
-SERIES_ORDER = [RESTATEMENT, AUDITOR_CHANGE, LATE_FILING, GOING_CONCERN,
-                POLICY_CHANGE, REVENUE_RECOGNITION]
-SERIES_VAR = {s: f"var(--series-{i + 1})" for i, s in enumerate(SERIES_ORDER)}
+SERIES_ORDER = [RESTATEMENT, COMMENT_LETTER, MATERIAL_WEAKNESS, AUDITOR_CHANGE,
+                OFFICER_DEPARTURE, GOING_CONCERN, POLICY_CHANGE,
+                REVENUE_RECOGNITION, LATE_FILING]
+# Eight validated categorical slots, assigned in fixed order. Late filings take
+# a neutral instead of a ninth hue: they are the high-volume background against
+# which the rest are read, and a generated ninth hue would be indistinguishable
+# under colour-vision deficiency and would break the validated set.
+SERIES_VAR = {sig: f"var(--series-{i + 1})"
+              for i, sig in enumerate(SERIES_ORDER) if sig != LATE_FILING}
+SERIES_VAR[LATE_FILING] = "var(--series-muted)"
 
 GAP = 2          # surface gap between stacked segments
 RADIUS = 4       # rounded data-end
