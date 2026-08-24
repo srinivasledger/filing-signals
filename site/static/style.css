@@ -13,8 +13,14 @@
   --rule:#0f151b;
   --alert:#b3261e; --alert-ink:#fff;
 
+  /* Eight validated categorical slots, fixed order. Late filings take a
+     neutral rather than a ninth hue: they are the high-volume background
+     (60% of events), and a generated ninth would be indistinguishable under
+     colour-vision deficiency. Both themes must define every slot - three were
+     missing here, so SVG fell back to black on the largest segment. */
   --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a;
   --series-4:#eda100; --series-5:#e87ba4; --series-6:#008300;
+  --series-7:#4a3aa7; --series-8:#e34948; --series-muted:#5f6a75;
 
   --radius:2px; --wrap:1340px; --reading:76ch;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
@@ -33,7 +39,7 @@
     --alert:#ff6b5e; --alert-ink:#1a0f0d;
     --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
     --series-4:#c98500; --series-5:#d55181; --series-6:#008300;
-    --series-7:#9085e9; --series-8:#e66767; --series-muted:#5c6874;
+    --series-7:#9085e9; --series-8:#e66767; --series-muted:#aab6c2;
   }
 }
 :root[data-theme="dark"]{
@@ -45,7 +51,7 @@
     --alert:#ff6b5e; --alert-ink:#1a0f0d;
     --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
     --series-4:#c98500; --series-5:#d55181; --series-6:#008300;
-    --series-7:#9085e9; --series-8:#e66767; --series-muted:#5c6874;
+    --series-7:#9085e9; --series-8:#e66767; --series-muted:#aab6c2;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}

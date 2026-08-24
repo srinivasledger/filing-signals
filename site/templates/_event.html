@@ -41,6 +41,12 @@
   </p>
   {% endif %}
 
+  {% if e.evidence.letter_dated and e.evidence.letter_dated != e.filed %}
+  <p class="subclass"><span class="muted">Letter dated
+    {{ e.evidence.letter_dated }}; published on EDGAR {{ e.filed }} &mdash; the
+    SEC releases comment letters only after the review closes.</span></p>
+  {% endif %}
+
   {% if e.evidence.limb_label %}
   <p class="subclass">{{ e.evidence.limb_label }}</p>
   {% endif %}

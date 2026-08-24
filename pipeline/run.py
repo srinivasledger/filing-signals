@@ -114,7 +114,8 @@ def process_day(day: dt.date) -> tuple:
     for filing in operating:
         if filing.form.upper() in universe.LETTER_FORMS:
             try:
-                events.extend(letters.analyse_letter(filing))
+                events.extend(
+                    letters.analyse_letter(filing, disclosed_on=day.isoformat()))
             except fetch.SECBlocked:
                 raise
             except Exception as exc:             # noqa: BLE001

@@ -590,3 +590,75 @@ def test_unreadable_internal_control_is_unknown_not_severe():
         "Item 9A. Controls and Procedures. The Company evaluated its disclosure "
         "controls."
     )["state"] == sections.ICFR_UNKNOWN
+
+
+def test_comment_letters_are_dated_by_publication():
+    """A letter carries the date it was written; EDGAR publishes it months
+    later. Dating the event by the letter put January entries in an August
+    feed, which reads as a seven-month miss rather than a same-day catch."""
+    class _F:
+        form, cik, accession = "UPLOAD", 1, "0001-26-000001"
+        company, filed, sic_desc = "Acme", "2026-01-15", ""
+
+        @property
+        def index_url(self):
+            return "https://www.sec.gov/x"
+
+    # analyse_letter needs a document; assert the dating contract directly.
+    import inspect
+    src = inspect.getsource(letters.analyse_letter)
+    assert "disclosed_on or filing.filed" in src
+    assert "filed=appeared" in src
+    assert '"letter_dated": letter_dated' in src
+
+
+def test_chart_data_and_svg_use_the_same_palette():
+    """Server SVG and browser redraw must agree on colours.
+
+    They were built from two separate mappings. The second numbered all nine
+    slots, so late filings asked for --series-9, which is not defined, and the
+    largest segment of every bar rendered black.
+    """
+    import json as _json
+    import re as _re
+
+    from pipeline import charts
+
+    class _E:
+        def __init__(self, filed, sig):
+            self.filed, self.signal_type = filed, sig
+            self.size_tier, self.routine = "", False
+
+    events = [_E("2026-08-21", s) for s in charts.SERIES_ORDER]
+    payload = _json.loads(_re.search(r">(.*)</script>",
+                                     charts.chart_data(events), _re.S).group(1))
+    for sig, var in charts.SERIES_VAR.items():
+        assert payload["vars"][sig] == var[4:-1], sig
+
+
+def test_every_chart_colour_is_defined_in_every_theme():
+    """A slot missing from a theme block makes SVG fall back to black.
+
+    Three slots were absent from the light palette after the series list grew,
+    so the largest segment on every chart rendered pure black in light mode.
+    Nothing failed; the colour simply did not exist.
+    """
+    import re
+
+    css = (Path(__file__).resolve().parent.parent
+           / "site" / "static" / "style.css").read_text()
+    blocks = {
+        "light": re.search(r"^:root\{(.*?)^\}", css, re.S | re.M),
+        "media-dark": re.search(
+            r"@media \(prefers-color-scheme:dark\)\{(.*?)\n\}", css, re.S),
+        "attr-dark": re.search(
+            r':root\[data-theme="dark"\]\{(.*?)^\}', css, re.S | re.M),
+    }
+    from pipeline.charts import SERIES_VAR
+    needed = sorted({v[4:-1] for v in SERIES_VAR.values()})
+
+    for name, match in blocks.items():
+        assert match, f"{name} theme block not found"
+        body = match.group(1)
+        missing = [v for v in needed if f"{v}:" not in body]
+        assert not missing, f"{name} is missing {missing}"

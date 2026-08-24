@@ -157,7 +157,10 @@ def chart_data(events, max_days: int = 20) -> str:
     rows = [{"d": e.filed, "s": e.signal_type, "z": e.size_tier or "",
              "r": bool(e.routine)}
             for e in events if e.filed in keep]
-    palette = {sig: f"--series-{i + 1}" for i, sig in enumerate(SERIES_ORDER)}
+    # Reuse SERIES_VAR rather than rebuilding the mapping. A second copy here
+    # numbered all nine slots, so late filings asked for --series-9, which does
+    # not exist, and SVG fell back to black on the largest segment of every bar.
+    palette = {sig: var[4:-1] for sig, var in SERIES_VAR.items()}
     payload = {"days": days, "order": SERIES_ORDER, "labels": SIGNAL_LABELS,
                "vars": palette, "rows": rows}
     return ('<script type="application/json" id="chart-data">'

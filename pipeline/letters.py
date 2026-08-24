@@ -150,7 +150,7 @@ def citations(text: str, limit: int = 4) -> List[str]:
     return out
 
 
-def analyse_letter(filing) -> List[Event]:
+def analyse_letter(filing, disclosed_on: str = "") -> List[Event]:
     """Build an event from a staff comment letter or a company response."""
     form = filing.form.upper()
     url = compare.current_document(filing.cik, filing.accession)
@@ -180,6 +180,14 @@ def analyse_letter(filing) -> List[Event]:
     if sub and sub.get("tickers"):
         ticker = sub["tickers"][0]
 
+    # Comment letters carry the date they were WRITTEN, but the SEC publishes
+    # them only after the review closes - roughly twenty business days later,
+    # and often months. Dating the event by the letter would put a January
+    # entry in an August feed and read as a seven-month miss. The event is
+    # dated by publication; the letter's own date is recorded alongside.
+    letter_dated = filing.filed
+    appeared = disclosed_on or filing.filed
+
     headline = (
         f"SEC staff questioned {filing.company}'s accounting for "
         f"{topics[0].lower()}" if is_staff else
@@ -192,7 +200,7 @@ def analyse_letter(filing) -> List[Event]:
         cik=filing.cik,
         ticker=ticker,
         form=filing.form,
-        filed=filing.filed,
+        filed=appeared,
         accession=filing.accession,
         filing_url=filing.index_url,
         headline=headline,
@@ -202,6 +210,8 @@ def analyse_letter(filing) -> List[Event]:
                        else "Company response to SEC staff (CORRESP)"),
             "direction": "staff to company" if is_staff else "company to staff",
             "reviewing": subject[:160],
+            "letter_dated": letter_dated,
+            "published_on_edgar": appeared,
             "topics": topics,
             "cited_sections": citations(text),
             "why": SIGNAL_BLURBS[COMMENT_LETTER],
