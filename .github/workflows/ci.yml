@@ -13,6 +13,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - run: pip install -r requirements-dev.txt
       - name: Run tests
         # No network access is needed: every test runs off saved fixtures.

@@ -14,6 +14,9 @@
 
   var activeSignal = 'all';
   var activeSizes = null;              // null means any size
+  // Routine notices are hidden by default. On a deadline week they were 120 of
+  // 254 events and buried the restatements and auditor changes.
+  var showRoutine = false;
 
   var haystacks = cards.map(function (c) { return c.textContent.toLowerCase(); });
   var sizes = cards.map(function (c) { return c.dataset.size || ''; });

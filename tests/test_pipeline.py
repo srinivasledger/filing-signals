@@ -445,3 +445,27 @@ def test_firm_tiers():
     assert auditor.firm_tier("BDO USA, P.C.") == auditor.TIER_NATIONAL
     assert auditor.firm_tier("Smith & Co CPAs PLLC") == auditor.TIER_OTHER
     assert auditor.canonical_firm("Ernst & Young LLP") == "EY"
+
+
+# --- browser scripts --------------------------------------------------------
+def test_site_scripts_execute_without_reference_errors():
+    """Run the page scripts against a DOM stub.
+
+    `node --check` only parses. A ReferenceError shipped to production once -
+    filter.js read an undeclared variable and died on load, so every filter on
+    the live site was dead while the page looked perfectly normal. Parsing
+    cannot see that; executing can.
+    """
+    import shutil
+    import subprocess
+
+    node = shutil.which("node")
+    if not node:
+        import pytest
+        pytest.skip("node not available")
+
+    root = Path(__file__).resolve().parent.parent
+    result = subprocess.run(
+        [node, "tests/js/smoke.mjs"], cwd=root,
+        capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stdout + result.stderr
