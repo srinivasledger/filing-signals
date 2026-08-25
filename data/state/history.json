@@ -1,15 +1,9 @@
 {
   "companies": 271,
   "event_counts": {
-<<<<<<< HEAD
-    "auditor_change": 783,
-    "late_filing": 3403,
-    "restatement": 178
-=======
     "auditor_change": 781,
     "late_filing": 3403,
     "restatement": 177
->>>>>>> 36f2a4c (Make a failed job mean the output is wrong, not that the day was quiet)
   },
   "rows": [
     {
@@ -41,18 +35,10 @@
       "first": "restatement",
       "followed": 47,
       "label": "A non-reliance filing was followed by an auditor change",
-<<<<<<< HEAD
-      "rate": "49%",
-      "second": "auditor_change"
-    }
-  ],
-  "total_historical_events": 4364,
-=======
       "rate": "48%",
       "second": "auditor_change"
     }
   ],
   "total_historical_events": 4361,
->>>>>>> 36f2a4c (Make a failed job mean the output is wrong, not that the day was quiet)
   "window_days": 540
 }

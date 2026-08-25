@@ -734,3 +734,27 @@ def test_only_broken_output_fails_the_run():
     assert "return 1" in src
     # a block is not
     assert "return 2" not in src
+
+
+def test_a_badly_merged_event_file_repairs_itself(tmp_path, monkeypatch):
+    """These files are committed by an automated run and can be written from
+    two places at once. A union merge duplicates rows; a botched conflict
+    resolution leaves "<<<<<<<" in the data. Both happened, and five duplicate
+    entries reached the published site. The pipeline repairs what it finds
+    rather than trusting the file."""
+    monkeypatch.setattr(publish.config, "EVENTS_DIR", tmp_path)
+
+    e = models.Event(signal_type=models.RESTATEMENT, confidence=models.CONFIRMED,
+                     company="Acme", cik=1, form="8-K", filed="2026-08-24",
+                     accession="0001-26-000001", filing_url="u", headline="h")
+    row = json.dumps(e.to_dict(), sort_keys=True)
+    (tmp_path / "2026-08-24.jsonl").write_text(
+        "<<<<<<< HEAD\n" + row + "\n=======\n" + row + "\n>>>>>>> abc123\n")
+
+    loaded = publish.load_events_for_day("2026-08-24")
+    assert len(loaded) == 1, "duplicates and conflict markers should be dropped"
+
+    publish.append_events("2026-08-24", [])
+    on_disk = (tmp_path / "2026-08-24.jsonl").read_text().splitlines()
+    assert len(on_disk) == 1, "the file should be rewritten clean"
+    assert all(line.startswith("{") for line in on_disk)

@@ -3,3 +3,10 @@
 # them binary stops git attempting a line merge and producing a conflict.
 data/state/health.json    -merge -diff
 data/state/pipeline.json  -merge -diff
+data/state/history.json   -merge -diff
+
+# Append-only event logs. A union merge keeps both sides' lines instead of
+# writing conflict markers into the data - which happened, putting "<<<<<<<"
+# into a JSONL file and publishing five duplicate entries. Union can duplicate
+# rows, so the pipeline de-duplicates on load and on write.
+data/events/*.jsonl       merge=union

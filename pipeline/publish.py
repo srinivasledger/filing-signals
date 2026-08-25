@@ -52,18 +52,34 @@ def _event_file(day: str) -> Path:
 
 
 def load_events_for_day(day: str) -> List[Event]:
+    """Read a day's events, tolerating a file that has been merged badly.
+
+    These files are committed by an automated run and can be written from two
+    places at once. A union merge duplicates rows; a botched conflict
+    resolution can leave "<<<<<<<" markers in the data. Both have happened.
+    Rather than trust the file, drop anything unparseable and keep the first
+    occurrence of each event id.
+    """
     path = _event_file(day)
     if not path.exists():
         return []
     out: List[Event] = []
+    seen = set()
     for line in path.read_text().splitlines():
         line = line.strip()
-        if not line:
+        if not line or not line.startswith("{"):
+            if line:
+                log.warning("discarding non-JSON row in %s: %.30s", path.name, line)
             continue
         try:
-            out.append(Event.from_dict(json.loads(line)))
+            event = Event.from_dict(json.loads(line))
         except (ValueError, TypeError) as exc:
             log.warning("skipping malformed event row in %s: %s", path.name, exc)
+            continue
+        if event.id in seen:
+            continue
+        seen.add(event.id)
+        out.append(event)
     return out
 
 
@@ -74,13 +90,25 @@ def append_events(day: str, events: Iterable[Event]) -> int:
     (accession, signal_type) via Event.id.
     """
     config.EVENTS_DIR.mkdir(parents=True, exist_ok=True)
-    existing = {e.id for e in load_events_for_day(day)}
+    kept = load_events_for_day(day)          # already de-duplicated and cleaned
+    existing = {e.id for e in kept}
     fresh = [e for e in events if e.id not in existing]
-    if not fresh:
+
+    on_disk = _event_file(day)
+    raw = on_disk.read_text().splitlines() if on_disk.exists() else []
+    needs_repair = len(raw) != len(kept)
+
+    if not fresh and not needs_repair:
         return 0
-    with _event_file(day).open("a", encoding="utf-8") as fh:
-        for event in fresh:
-            fh.write(json.dumps(event.to_dict(), sort_keys=True) + "\n")
+
+    # Rewrite rather than append, so a file that arrived duplicated or with
+    # conflict markers is repaired by the next run instead of persisting.
+    if needs_repair:
+        log.warning("repairing %s: %d rows on disk, %d valid unique events",
+                    on_disk.name, len(raw), len(kept))
+    on_disk.write_text("".join(
+        json.dumps(e.to_dict(), sort_keys=True) + "\n" for e in kept + fresh),
+        encoding="utf-8")
     return len(fresh)
 
 
