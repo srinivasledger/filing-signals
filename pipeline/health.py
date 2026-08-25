@@ -73,6 +73,17 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
     else:
         checks.append(_check("Recent runs completed", UNKNOWN, "no run history"))
 
+    # --- was SEC access refused recently? ---
+    recent_blocks = [r for r in state.get("runs", [])[-10:] if r.get("blocked")]
+    if recent_blocks:
+        last = recent_blocks[-1].get("date", "?")
+        checks.append(_check(
+            "SEC access", WARN,
+            f"{len(recent_blocks)} of the last 10 runs were refused by SEC; "
+            f"most recently for {last}. The next run resumes from there."))
+    else:
+        checks.append(_check("SEC access", OK, "no refusals in the last 10 runs"))
+
     # --- every published claim is citable ---
     total = len(events)
     if not total:

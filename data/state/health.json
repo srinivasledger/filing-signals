@@ -11,6 +11,11 @@
       "status": "ok"
     },
     {
+      "detail": "no refusals in the last 10 runs",
+      "name": "SEC access",
+      "status": "ok"
+    },
+    {
       "detail": "297/297 link to sec.gov",
       "name": "Every entry links to its filing",
       "status": "ok"
@@ -56,12 +61,12 @@
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-24T13:50:33+00:00",
+  "generated_at": "2026-08-25T01:53:07+00:00",
   "summary": {
     "fail": 0,
-    "ok": 11,
+    "ok": 12,
     "overall": "ok",
-    "total": 11,
+    "total": 12,
     "unknown": 0,
     "warn": 0
   }

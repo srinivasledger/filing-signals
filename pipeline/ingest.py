@@ -114,16 +114,45 @@ def quarter(day: dt.date) -> int:
     return (day.month - 1) // 3 + 1
 
 
+def sec_reachable() -> bool:
+    """Probe a URL that certainly exists, to tell 'missing' from 'blocked'."""
+    today = dt.date.today()
+    url = f"{config.DAILY_INDEX}/{today.year}/QTR{quarter(today)}/"
+    try:
+        return bool(fetch.get(url, use_cache=False, accept_404=True))
+    except fetch.SECBlocked:
+        return False
+    except Exception:                            # noqa: BLE001
+        return False
+
+
 def fetch_day(day: dt.date) -> Optional[List[Filing]]:
-    """Fetch one business day's index. Returns None for weekends/holidays,
-    which EDGAR simply does not publish (404)."""
+    """Fetch one business day's index, or None when there is nothing to fetch.
+
+    EDGAR answers a request for a daily index that does not exist with **403,
+    not 404** - the same status it uses for a blocked client. Saturdays,
+    Sundays, holidays and days not yet published all come back 403.
+
+    That made the holiday skip dead code: it waited for a 404 that never
+    arrives. The first genuinely unattended run asked for a day with no index,
+    took the "blocked" path instead, and failed the job.
+
+    The two cases are separated by probing a URL known to exist. If that
+    answers, the index is simply absent; if it does not, we really are blocked.
+    """
     if day.weekday() >= 5:
         return None
     url = (
         f"{config.DAILY_INDEX}/{day.year}/QTR{quarter(day)}/"
         f"form.{day.strftime('%Y%m%d')}.idx"
     )
-    body = fetch.get(url, accept_404=True)
+    try:
+        body = fetch.get(url, accept_404=True)
+    except fetch.SECBlocked:
+        if sec_reachable():
+            log.info("no index published for %s (holiday or not yet released)", day)
+            return None
+        raise
     if body is None:
         log.info("no index for %s (holiday or not yet published)", day)
         return None

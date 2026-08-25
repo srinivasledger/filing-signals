@@ -213,6 +213,11 @@ def main(argv: Optional[List[str]] = None) -> int:
             log.error("SEC access blocked: %s", exc)
             log.error("stopping; the next run will resume from %s", day)
             blocked = True
+            publish.record_run(state, {
+                "date": day.isoformat(), "index_rows": 0, "candidates": 0,
+                "operating": 0, "events": 0, "events_written": 0,
+                "blocked": True, "analysis": "blocked",
+            })
             break
 
         if stats is None:
@@ -269,7 +274,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         from . import render
         render.build()
 
-    return 2 if blocked else 0
+    # A block is an expected, self-healing condition: the state is saved, the
+    # site still builds, and the next run resumes from the same day. Failing
+    # the job for it emails the owner an alarm about something the design
+    # already handles, and skips the deploy of anything else that changed. It
+    # is recorded in the run history and surfaced by a self-check instead.
+    return 0
 
 
 if __name__ == "__main__":

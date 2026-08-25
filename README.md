@@ -178,6 +178,11 @@ reasoning about the code. Each one changed the implementation.
 - **XBRL `frames` is numeric-only** — 404 for `TextBlock` tags, so policy text
   has to come from documents. It *is* the cheap route for numeric facts:
   ~5,900 filers' public float in eleven requests.
+- **EDGAR answers a missing daily index with 403, not 404** — the same status
+  it uses for a blocked client. Weekends, holidays and days not yet published
+  all come back 403, so a holiday skip that waits for a 404 is dead code. The
+  two cases are separated by probing a URL known to exist: if that answers, the
+  index is simply absent; if it does not, the client really is blocked.
 - **The daily index is not whitespace-separated.** Form types contain spaces
   (`DEF 14A`, `NT 10-K/A`), and the column header spans two lines and does not
   align with the data. Parse right-anchored.

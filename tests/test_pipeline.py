@@ -13,8 +13,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline import (auditor, compare, enrich, ingest, late, letters, models,
-                      officers, publish, sections, triage, universe)
+from pipeline import (auditor, compare, enrich, health, ingest, late, letters,
+                      models, officers, publish, sections, triage, universe)
 from pipeline.run import business_days, days_to_process
 
 FIX = Path(__file__).parent / "fixtures"
@@ -590,6 +590,45 @@ def test_unreadable_internal_control_is_unknown_not_severe():
         "Item 9A. Controls and Procedures. The Company evaluated its disclosure "
         "controls."
     )["state"] == sections.ICFR_UNKNOWN
+
+
+def test_missing_index_is_not_a_block(monkeypatch):
+    """EDGAR answers a request for a daily index that does not exist with 403,
+    not 404 - the same status it uses for a blocked client. Weekends, holidays
+    and days not yet published all come back 403, so the holiday skip was dead
+    code waiting for a 404 that never arrives. The first unattended run asked
+    for a day with no index and failed the job."""
+    import datetime as _dt
+
+    def blocked(*a, **k):
+        raise ingest.fetch.SECBlocked("HTTP 403")
+
+    monkeypatch.setattr(ingest.fetch, "get", blocked)
+    monkeypatch.setattr(ingest, "sec_reachable", lambda: True)
+    assert ingest.fetch_day(_dt.date(2026, 8, 24)) is None
+
+
+def test_real_block_still_raises(monkeypatch):
+    import datetime as _dt
+    import pytest as _pytest
+
+    def blocked(*a, **k):
+        raise ingest.fetch.SECBlocked("HTTP 403")
+
+    monkeypatch.setattr(ingest.fetch, "get", blocked)
+    monkeypatch.setattr(ingest, "sec_reachable", lambda: False)
+    with _pytest.raises(ingest.fetch.SECBlocked):
+        ingest.fetch_day(_dt.date(2026, 8, 24))
+
+
+def test_a_block_is_reported_not_hidden():
+    import datetime as _dt
+
+    state = {"last_processed": "2026-08-21",
+             "runs": [{"date": "2026-08-24", "blocked": True}]}
+    report = health.run_checks([], state, _dt.date(2026, 8, 25))
+    access = next(c for c in report["checks"] if c["name"] == "SEC access")
+    assert access["status"] == "warn"
 
 
 def test_comment_letters_are_dated_by_publication():
