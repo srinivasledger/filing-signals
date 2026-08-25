@@ -1,9 +1,9 @@
 {
   "companies": 271,
   "event_counts": {
-    "auditor_change": 781,
+    "auditor_change": 783,
     "late_filing": 3403,
-    "restatement": 177
+    "restatement": 178
   },
   "rows": [
     {
@@ -33,12 +33,12 @@
     {
       "eligible": 98,
       "first": "restatement",
-      "followed": 47,
+      "followed": 48,
       "label": "A non-reliance filing was followed by an auditor change",
-      "rate": "48%",
+      "rate": "49%",
       "second": "auditor_change"
     }
   ],
-  "total_historical_events": 4361,
+  "total_historical_events": 4364,
   "window_days": 540
 }
