@@ -42,8 +42,8 @@ COLD_START_DAYS = int(os.getenv("COLD_START_DAYS", "5"))
 SITE_TITLE = os.getenv("SITE_TITLE", "Filing Signals")
 SITE_TAGLINE = os.getenv(
     "SITE_TAGLINE",
-    "Daily tracking of restatements, auditor changes, going-concern language "
-    "and accounting-policy shifts in SEC filings.",
+    "Daily tracking of restatements, SEC comment letters, material weaknesses, "
+    "auditor and CFO changes, and going-concern language in SEC filings.",
 )
 SITE_URL = os.getenv("SITE_URL", "").rstrip("/")
 

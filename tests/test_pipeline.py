@@ -701,3 +701,16 @@ def test_every_chart_colour_is_defined_in_every_theme():
         body = match.group(1)
         missing = [v for v in needed if f"{v}:" not in body]
         assert not missing, f"{name} is missing {missing}"
+
+
+def test_the_page_states_the_right_number_of_signals():
+    """The lede claimed "six things" after the count reached nine. Copy drifts
+    silently when signals are added."""
+    from pipeline.render import SIGNAL_ORDER
+
+    words = {6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+    tpl = (Path(__file__).resolve().parent.parent
+           / "site" / "templates" / "index.html").read_text()
+    expected = words[len(SIGNAL_ORDER)]
+    assert f"reports {expected} things" in tpl, (
+        f"lede should say '{expected}' for {len(SIGNAL_ORDER)} signals")
