@@ -1,12 +1,12 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-08-24, today",
+      "detail": "last complete filing day 2026-08-24, 1 business days ago",
       "name": "Pipeline is current",
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 57,956 index rows read",
+      "detail": "10 runs recorded, 57,359 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,12 +16,12 @@
       "status": "ok"
     },
     {
-      "detail": "308/308 link to sec.gov",
+      "detail": "307/307 link to sec.gov",
       "name": "Every entry links to its filing",
       "status": "ok"
     },
     {
-      "detail": "308/308 carry a detection method",
+      "detail": "307/307 carry a detection method",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
@@ -31,37 +31,37 @@
       "status": "ok"
     },
     {
-      "detail": "59/59 cite what they were compared against",
+      "detail": "58/58 cite what they were compared against",
       "name": "Comparisons name the prior filing",
       "status": "ok"
     },
     {
-      "detail": "308 unique entries",
+      "detail": "307 unique entries",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 227 quoted passages begin mid-sentence",
+      "detail": "0 of 226 quoted passages begin mid-sentence",
       "name": "Quotes start at a sentence",
       "status": "ok"
     },
     {
-      "detail": "all 308 entries fit on the home page",
+      "detail": "all 307 entries fit on the home page",
       "name": "Home page window",
       "status": "ok"
     },
     {
-      "detail": "5,156 companies, refreshed 2 day(s) ago",
+      "detail": "5,156 companies, refreshed 3 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
     {
-      "detail": "271 companies, 4,364 historical events",
+      "detail": "271 companies, 4,361 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-25T02:06:00+00:00",
+  "generated_at": "2026-08-25T06:15:34+00:00",
   "summary": {
     "fail": 0,
     "ok": 12,

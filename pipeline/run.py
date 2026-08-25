@@ -258,6 +258,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             log.warning("history pass failed: %s", exc)
 
     # Self-checks last, so they see the finished state.
+    report = {}
     try:
         report = health.run_checks(publish.load_all_events(), state, today_et)
         publish.save_health(report)
@@ -274,11 +275,25 @@ def main(argv: Optional[List[str]] = None) -> int:
         from . import render
         render.build()
 
-    # A block is an expected, self-healing condition: the state is saved, the
-    # site still builds, and the next run resumes from the same day. Failing
-    # the job for it emails the owner an alarm about something the design
-    # already handles, and skips the deploy of anything else that changed. It
-    # is recorded in the run history and surfaced by a self-check instead.
+    # What counts as a failed run.
+    #
+    # Not: an unpublished index, a refused request, or a quiet day. All three
+    # are expected, self-healing, and already visible on the status page -
+    # failing the job for them alarms the owner about something the design
+    # handles, and skips deploying anything else that changed.
+    #
+    # Yes: output that is wrong. A failing self-check means an entry lacks its
+    # citation, a comparison cannot name what it compared against, or a
+    # re-run duplicated something. That is worth an email, because the site is
+    # publishing something it should not.
+    #
+    # An unhandled exception exits non-zero on its own and still fails.
+    failed = [c for c in (report or {}).get("checks", [])
+              if c.get("status") == "fail"]
+    if failed:
+        for c in failed:
+            log.error("integrity check failed: %s - %s", c["name"], c["detail"])
+        return 1
     return 0
 
 

@@ -714,3 +714,23 @@ def test_the_page_states_the_right_number_of_signals():
     expected = words[len(SIGNAL_ORDER)]
     assert f"reports {expected} things" in tpl, (
         f"lede should say '{expected}' for {len(SIGNAL_ORDER)} signals")
+
+
+def test_only_broken_output_fails_the_run():
+    """The exit code decides whether GitHub emails the owner.
+
+    A day with no published index, a refused request and a quiet day are all
+    expected and self-healing, and must exit 0 - the first scheduled run failed
+    on the first of those and sent an alarm about something the design already
+    handled. Output that is actually wrong must exit non-zero.
+    """
+    import inspect
+
+    from pipeline import run as run_mod
+
+    src = inspect.getsource(run_mod.main)
+    # a failing integrity check is the failure condition
+    assert 'c.get("status") == "fail"' in src
+    assert "return 1" in src
+    # a block is not
+    assert "return 2" not in src
