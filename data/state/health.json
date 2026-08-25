@@ -56,12 +56,12 @@
       "status": "ok"
     },
     {
-      "detail": "264 companies, 4,271 historical events",
+      "detail": "264 companies, 4,274 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-25T01:53:07+00:00",
+  "generated_at": "2026-08-25T01:54:56+00:00",
   "summary": {
     "fail": 0,
     "ok": 12,
