@@ -1,12 +1,12 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-08-24, 1 business days ago",
+      "detail": "last complete filing day 2026-08-26, 1 business days ago",
       "name": "Pipeline is current",
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 57,956 index rows read",
+      "detail": "10 runs recorded, 55,759 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,17 +16,17 @@
       "status": "ok"
     },
     {
-      "detail": "308/308 link to sec.gov",
+      "detail": "334/334 link to sec.gov",
       "name": "Every entry links to its filing",
       "status": "ok"
     },
     {
-      "detail": "308/308 carry a detection method",
+      "detail": "334/334 carry a detection method",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "21 entries from SEC item codes, 0 without one",
+      "detail": "24 entries from SEC item codes, 0 without one",
       "name": "Item-code entries carry an item code",
       "status": "ok"
     },
@@ -36,32 +36,32 @@
       "status": "ok"
     },
     {
-      "detail": "308 unique entries",
+      "detail": "334 unique entries",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 227 quoted passages begin mid-sentence",
+      "detail": "0 of 244 quoted passages begin mid-sentence",
       "name": "Quotes start at a sentence",
       "status": "ok"
     },
     {
-      "detail": "all 308 entries fit on the home page",
+      "detail": "all 334 entries fit on the home page",
       "name": "Home page window",
       "status": "ok"
     },
     {
-      "detail": "5,156 companies, refreshed 3 day(s) ago",
+      "detail": "5,156 companies, refreshed 5 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
     {
-      "detail": "271 companies, 4,364 historical events",
+      "detail": "284 companies, 4,447 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-25T23:45:43+00:00",
+  "generated_at": "2026-08-27T04:37:56+00:00",
   "summary": {
     "fail": 0,
     "ok": 12,

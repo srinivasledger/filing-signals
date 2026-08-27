@@ -1,5 +1,5 @@
 {
-  "last_processed": "2026-08-24",
+  "last_processed": "2026-08-26",
   "runs": [
     {
       "analysis": "deterministic-only",
@@ -100,6 +100,26 @@
       "finished_at": "2026-08-25T02:05:08+00:00",
       "index_rows": 5251,
       "operating": 149
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 298,
+      "date": "2026-08-25",
+      "events": 15,
+      "events_written": 15,
+      "finished_at": "2026-08-27T04:35:34+00:00",
+      "index_rows": 4825,
+      "operating": 275
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 265,
+      "date": "2026-08-26",
+      "events": 12,
+      "events_written": 12,
+      "finished_at": "2026-08-27T04:37:04+00:00",
+      "index_rows": 5690,
+      "operating": 238
     }
   ]
 }
