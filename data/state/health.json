@@ -16,37 +16,42 @@
       "status": "ok"
     },
     {
-      "detail": "382/382 link to sec.gov",
-      "name": "Every entry links to its filing",
+      "detail": "376/376 link to the accession they report",
+      "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "382/382 carry a detection method",
+      "detail": "376/376 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "25 entries from SEC item codes, 0 without one",
-      "name": "Item-code entries carry an item code",
+      "detail": "25 entries from SEC item codes, 0 carrying the wrong code for their signal",
+      "name": "Item codes match the signal they produced",
       "status": "ok"
     },
     {
-      "detail": "65/65 cite what they were compared against",
-      "name": "Comparisons name the prior filing",
+      "detail": "62/62 compare the same form type against an earlier filing",
+      "name": "Comparisons are like-for-like",
       "status": "ok"
     },
     {
-      "detail": "382 unique entries across 382 rows",
+      "detail": "376 unique entries across 376 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 277 quoted passages begin mid-sentence",
-      "name": "Quotes start at a sentence",
+      "detail": "0 of 270 begin mid-sentence, 0 do not open at the substance",
+      "name": "Quotes open with the substance",
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 382, as stated on the page; the full record is on the signals pages",
+      "detail": "0 of 49 going-concern and material-weakness entries quote a passage that negates the state they assert",
+      "name": "No entry contradicts its own quote",
+      "status": "ok"
+    },
+    {
+      "detail": "showing the most recent 150 of 376, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -56,7 +61,7 @@
       "status": "ok"
     },
     {
-      "detail": "314 companies, 4,635 historical events",
+      "detail": "311 companies, 4,557 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
@@ -66,12 +71,12 @@
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-28T08:50:17+00:00",
+  "generated_at": "2026-08-28T18:24:17+00:00",
   "summary": {
     "fail": 0,
-    "ok": 13,
+    "ok": 14,
     "overall": "ok",
-    "total": 13,
+    "total": 14,
     "unknown": 0,
     "warn": 0
   }
