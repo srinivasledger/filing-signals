@@ -89,11 +89,12 @@ daily index ──► filing headers ──► universe filter ──┬─► 8
    site ◄── render ◄── self-checks ◄── follow-on rates ◄── size index ◄── optional AI
 ```
 
-Thirteen **self-checks** run after every pass and publish to the
+Fourteen **self-checks** run after every pass and publish to the
 [status page](https://srinivasledger.github.io/filing-signals/status.html)
 rather than to a log — that every entry cites a filing, that comparisons name
-what they were compared against, that re-running never duplicates, that quotes
-begin at a sentence, and that no page has grown heavy enough to feel slow. They have caught real regressions.
+what they were compared against, that re-running never duplicates, that a
+quote never contradicts the state it is filed under, and that no page has
+grown heavy enough to feel slow. They have caught real regressions.
 
 ## Deployment
 
@@ -348,8 +349,9 @@ tracker already flagged**, not population base rates: with no matched control
 group they cannot show that one event makes another more likely, only how often
 one followed the other here.
 
-**Comment letters** are grouped by accounting topic, which EDGAR does not do —
-it shows letters one filing at a time. Two caveats are on the page itself
+**Comment letters** are grouped into reviews and by accounting topic, neither
+of which EDGAR does — it shows letters one filing at a time, so a single review
+appeared as eight near-identical entries. Two caveats are on the page itself
 because both change how it reads: a letter is not a finding (the SEC must review
 every issuer at least every three years, so getting one is routine), and the
 letters are historic, published a median of 331 days after they were written.

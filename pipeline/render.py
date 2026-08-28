@@ -208,8 +208,35 @@ def _letter_stats(events):
             continue
     lags.sort()
 
+    # One review is one conversation. EDGAR shows each letter separately, so
+    # Stanley Black & Decker's single review appeared as eight cards saying
+    # much the same thing. Threaded on the company plus the filing under
+    # review, which the "Re:" line already gives us.
+    threads: Dict[tuple, List[Event]] = defaultdict(list)
+    for e in letters:
+        threads[(e.cik, (e.evidence.get("reviewing") or "")[:60])].append(e)
+    threaded = []
+    for (cik, subject), rows in threads.items():
+        rows.sort(key=lambda e: e.filed)
+        threaded.append({
+            "cik": cik,
+            "company": rows[-1].company,
+            "ticker": next((e.ticker for e in rows if e.ticker), ""),
+            "subject": subject,
+            "letters": rows,
+            "opened": rows[0].filed,
+            "closed": rows[-1].filed,
+            "from_staff": sum(1 for e in rows
+                              if e.evidence.get("direction") == "staff to company"),
+            "topics": sorted({t for e in rows for t in e.evidence.get("topics", [])}),
+            "size_tier": next((e.size_tier for e in rows if e.size_tier), ""),
+        })
+    threaded.sort(key=lambda t: t["closed"], reverse=True)
+
     return {
         "letters": sorted(letters, key=lambda e: (e.filed, e.company), reverse=True),
+        "threads": threaded,
+        "reviews": len(threaded),
         "count": len(letters),
         "companies": len({e.cik for e in letters}),
         "topics": topics.most_common(),
@@ -400,6 +427,20 @@ def build(second_pass: bool = False) -> None:
 
     # --- home ---
     ranked = sorted(events, key=_rank, reverse=True)
+    # One registrant, one name. A company that renames itself keeps filing
+    # under both for a while, so CIK 1130713 appeared as "BED BATH & BEYOND"
+    # and "NEIGHBORHOOD INTELLIGENCE" on the same day, and every per-company
+    # count risked splitting in two. The newest filing carries the current
+    # name, and the earlier one is kept as context rather than discarded.
+    _newest_name: Dict[int, str] = {}
+    for e in sorted(events, key=lambda x: x.filed):
+        _newest_name[e.cik] = e.company
+    for e in events:
+        current = _newest_name.get(e.cik)
+        if current and e.company != current:
+            e.evidence.setdefault("formerly", e.company)
+            e.company = current
+
     home_events = ranked[:MAX_HOME_EVENTS]
     truncated = len(events) - len(home_events)
     _write(
@@ -496,7 +537,7 @@ def build(second_pass: bool = False) -> None:
                **common))
     letter_stats = _letter_stats(events)
     if letter_stats:
-        letter_stats["shown"] = letter_stats["letters"][:LETTER_CARDS]
+        letter_stats["shown"] = letter_stats["threads"][:LETTER_CARDS]
     if letter_stats:
         _write(config.PUBLIC / "letters.html",
                env.get_template("letters.html").render(

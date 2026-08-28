@@ -24,6 +24,7 @@ the letter being written and appearing on EDGAR (range
 {% endif %}
 
 <dl class="figures">
+  <div><dt>Reviews</dt><dd>{{ reviews }}</dd></div>
   <div><dt>Letters</dt><dd>{{ count }}</dd></div>
   <div><dt>Companies</dt><dd>{{ companies }}</dd></div>
   <div><dt>From the staff</dt><dd>{{ from_staff }}</dd></div>
@@ -44,43 +45,51 @@ letter itself, its date and the filing it reviews are read from the filing.</p>
   {% endfor %}
 </div>
 
-<p class="eyebrow"><span>{{ 'Every letter' if shown|length == count else 'Recent letters' }}</span>
-  <span>{% if shown|length < count %}{{ shown|length }} of {{ count }}{% else %}newest first{% endif %}</span></p>
-{% if shown|length < count %}
-<p class="muted">The {{ shown|length }} most recent are shown in full. The topic
-counts above are drawn from all {{ count }}; the complete list is on the
+<p class="eyebrow">
+  <span>{{ 'Every review' if shown|length == reviews else 'Recent reviews' }}</span>
+  <span>{% if shown|length < reviews %}{{ shown|length }} of {{ reviews }}{% else %}newest first{% endif %}</span></p>
+{% if shown|length < reviews %}
+<p class="muted">The {{ shown|length }} most recent reviews are shown. The topic
+counts above are drawn from all {{ count }} letters; the complete list is on the
 <a href="{{ rel }}signals/comment_letter.html">comment letter page</a>.</p>
 {% endif %}
+
 {% include "_sizefilter.html" %}
 <div class="feed feed-single" id="feed">
-  {% for e in shown %}
-  <article class="event" data-signal="comment_letter" data-size="{{ e.size_tier }}">
+  {% for t in shown %}
+  <article class="event" data-signal="comment_letter" data-size="{{ t.size_tier }}">
     <div class="event-head">
-      <span class="tag tag-comment_letter">{{ e.label }}</span>
-      <span class="tag tag-conf">{{ 'From SEC staff' if e.evidence.direction == 'staff to company' else 'Company reply' }}</span>
-      <time datetime="{{ e.filed }}">{{ e.filed }}</time>
+      <span class="tag tag-comment_letter">SEC comment letter</span>
+      <span class="tag tag-conf">{{ t.letters|length }} letter{{ '' if t.letters|length == 1 else 's' }}</span>
+      <time datetime="{{ t.closed }}">{{ t.opened }}{% if t.closed != t.opened %} &ndash; {{ t.closed }}{% endif %}</time>
     </div>
-    <h3 class="event-title">{{ e.headline }}</h3>
+    <h3 class="event-title">{{ t.subject or t.company }}</h3>
     <p class="event-meta">
-      <a href="{{ rel }}company/{{ e.cik }}.html">{{ e.company }}</a>
-      {% if e.ticker %}<span class="ticker">{{ e.ticker }}</span>{% endif %}
-      <span class="sep">&middot;</span>{{ e.form }}
+      <a href="{{ rel }}company/{{ t.cik }}.html">{{ t.company }}</a>
+      {% if t.ticker %}<span class="ticker">{{ t.ticker }}</span>{% endif %}
+      <span class="sep">&middot;</span>{{ t.from_staff }} from the staff,
+      {{ t.letters|length - t.from_staff }} in reply
     </p>
-    {% if e.evidence.letter_dated and e.evidence.letter_dated != e.filed %}
-    <p class="subclass"><span class="muted">Letter dated {{ e.evidence.letter_dated }};
-      published {{ e.filed }}.</span></p>
-    {% endif %}
-    {% if e.evidence.topics %}
+    {% if t.topics %}
     <p class="subclass">
-      {% for t in e.evidence.topics %}<span class="tag tag-conf">{{ t }}</span>{% endfor %}
+      {% for name in t.topics %}<span class="tag tag-conf">{{ name }}</span>{% endfor %}
     </p>
     {% endif %}
-    {% if e.evidence.cited_sections %}
-    <p class="subclass"><span class="muted">Cites:
-      {{ e.evidence.cited_sections | join(' · ') }}</span></p>
-    {% endif %}
-    {% if e.quote %}<blockquote>{{ e.quote }}</blockquote>{% endif %}
-    <p class="links"><a href="{{ e.filing_url }}" rel="nofollow noopener">Source filing &nearr;</a></p>
+    <ol class="exchange">
+      {% for e in t.letters %}
+      <li>
+        <p class="exchange-head">
+          <span class="tag tag-conf">{{ 'SEC staff' if e.evidence.direction == 'staff to company' else 'Company' }}</span>
+          <time datetime="{{ e.filed }}">{{ e.evidence.letter_dated or e.filed }}</time>
+          {% if e.evidence.letter_dated and e.evidence.letter_dated != e.filed %}
+          <span class="muted">published {{ e.filed }}</span>
+          {% endif %}
+        </p>
+        {% if e.quote %}<blockquote>{{ e.quote }}</blockquote>{% endif %}
+        <p class="links"><a href="{{ e.filing_url }}" rel="nofollow noopener">Source filing &nearr;</a></p>
+      </li>
+      {% endfor %}
+    </ol>
   </article>
   {% endfor %}
 </div>

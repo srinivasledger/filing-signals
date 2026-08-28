@@ -199,6 +199,37 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         f"{len(ragged)} of {len(quoted)} begin mid-sentence, "
         f"{len(headed)} do not open at the substance"))
 
+    # --- does any entry contradict its own quoted evidence? ---
+    # The defect that most damages the site is an event whose label says the
+    # opposite of the passage printed underneath it. Nothing on the status page
+    # would have caught the ChronoScale case, which published "substantial
+    # doubt" over a quote saying doubt was not raised.
+    CONTRADICTS = {
+        GOING_CONCERN: (
+            ("substantial_doubt",),
+            re.compile(r"\b(?:does|do|did)\s+not\s+raise\s+substantial\s+doubt"
+                       r"|substantial\s+doubt\s+(?:is|was)\s+not\s+raised"
+                       r"|\bno\s+substantial\s+doubt\b", re.I)),
+        MATERIAL_WEAKNESS: (
+            ("material_weakness",),
+            re.compile(r"concluded[^.]{0,80}?internal\s+control[^.]{0,60}?"
+                       r"\b(?:was|were|is|are)\s+effective", re.I)),
+    }
+    contradictions = []
+    for e in events:
+        rule = CONTRADICTS.get(e.signal_type)
+        if not rule or not e.quote:
+            continue
+        adverse_states, pattern = rule
+        if e.evidence.get("current_state") in adverse_states and pattern.search(e.quote):
+            contradictions.append(e)
+    checks.append(_check(
+        "No entry contradicts its own quote",
+        OK if not contradictions else FAIL,
+        f"{len(contradictions)} of {sum(1 for e in events if e.signal_type in CONTRADICTS)} "
+        "going-concern and material-weakness entries quote a passage that "
+        "negates the state they assert"))
+
     # --- is the home page still showing everything? ---
     # Truncation here is deliberate and stated on the page itself, so it is
     # reported, not warned about. It was a WARN while the cap sat above the

@@ -455,3 +455,10 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
     display:flex;align-items:center}
   .site-head nav a[aria-current="page"]{box-shadow:inset 0 -3px 0 var(--series-2)}
 }
+
+/* ── a review, as a conversation ──────────────────────────── */
+.exchange{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:14px}
+.exchange li{border-left:2px solid var(--line);padding-left:14px}
+.exchange-head{display:flex;gap:9px;align-items:baseline;flex-wrap:wrap;margin:0 0 6px;
+  font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.exchange blockquote{margin:0 0 6px}

@@ -9,6 +9,13 @@ informative thing.</p>
 change &rarr; going concern &rarr; non-reliance. Not every company follows it,
 and reaching one step does not imply the next. Dates are filing dates.</p>
 
+<p class="notice"><strong>What is not a sequence.</strong> A Form 12b-25
+followed by the report it deferred is Rule 12b-25 working, not a company
+deteriorating: the rule grants five calendar days for a 10-Q and fifteen for a
+10-K, and the disclosure the tracker then reports comes from that very report.
+Those pairs are excluded, as are two signals read out of a single filing. One
+filing is one occasion.</p>
+
 {% if history and history.rows %}
 <h2>How often one signal follows another</h2>
 <p>Across the <b>{{ history.companies }}</b> companies recorded here, using
@@ -69,7 +76,7 @@ sequence is on its own page.</p>
     <h3 class="event-title">
       <a href="{{ rel }}company/{{ s.cik }}.html">{{ s.company }}</a>
       {% if s.ticker %}<span class="ticker">{{ s.ticker }}</span>{% endif %}
-      {% if s.span_days %}<span class="chain-span">{{ s.span_days }} days end to end</span>{% endif %}
+      {% if s.span_days %}<span class="chain-span">{{ s.span_days }} day{{ '' if s.span_days == 1 else 's' }} end to end</span>{% endif %}
     </h3>
     <ol class="chain">
       {% for step in s.steps %}

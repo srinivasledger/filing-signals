@@ -135,7 +135,33 @@ def reviews_a_periodic_report(subject: str) -> bool:
 
 
 def classify_topics(text: str) -> List[str]:
-    return [name for name, pat in TOPICS.items() if pat.search(text)]
+    """Topics raised, most prominent first.
+
+    Ordered by where each topic first appears, not by the order the patterns
+    happen to be declared in. The declaration order put "Non-GAAP measures"
+    near the front, so it became the headline topic on letters whose first
+    substantive comment was about business combinations or segment reporting -
+    the headline named one subject and the quote beneath it discussed another.
+    """
+    found = []
+    for name, pat in TOPICS.items():
+        m = pat.search(text)
+        if m:
+            found.append((m.start(), name))
+    found.sort()
+    return [name for _, name in found]
+
+
+def headline_topic(quote: str, topics: List[str]) -> str:
+    """The topic the quoted passage is actually about, where that can be told.
+
+    The excerpt is what a reader sees under the headline, so the headline has
+    to describe it. Falls back to the most prominent topic in the letter.
+    """
+    if quote:
+        for name in classify_topics(quote):
+            return name
+    return topics[0] if topics else ""
 
 
 def citations(text: str, limit: int = 4) -> List[str]:
@@ -189,7 +215,7 @@ def analyse_letter(filing, disclosed_on: str = "") -> List[Event]:
     letter_dated = filing.filed
     appeared = disclosed_on or filing.filed
 
-    topic = mid_sentence(topics[0])
+    topic = mid_sentence(headline_topic(_first_comment(text), topics))
     headline = (
         f"SEC staff questioned {filing.company}'s accounting for {topic}"
         if is_staff else

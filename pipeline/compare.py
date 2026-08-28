@@ -217,6 +217,40 @@ def _severity_direction(prior_state: str, current_state: str) -> str:
     return "escalated" if c > p else "eased"
 
 
+# A blank-check company discloses substantial doubt because it may not complete
+# a business combination inside its permitted period. Every one of them says
+# this, and it describes the structure rather than a business - there isn't one
+# yet. Reported, but marked, so it is not read as the same fact as an operating
+# company running out of money.
+# Naming alone is unreliable - these trade as "Acquisition Corp", "Capital
+# Corp", "Holdings" and plain company names alike. The wording is the tell: an
+# operating company never says its going-concern doubt is about completing a
+# business combination inside a permitted period.
+_BLANK_CHECK_NAME = re.compile(
+    r"\bacquisition\s+(?:corp|holdings)|\bblank\s+check\b|\bcapital\s+corp\b", re.I)
+_COMBINATION_PERIOD = re.compile(
+    r"(?:initial\s+)?business\s+combination[^.]{0,160}?"
+    r"(?:combination\s+period|within\s+the\s+(?:required|prescribed|permitted)"
+    r"|mandatory\s+liquidation|by\s+\w+\s+\d{1,2},?\s*\d{4})"
+    r"|mandatory\s+liquidation", re.I)
+_TRUST = re.compile(r"\btrust\s+account\b", re.I)
+
+
+def is_blank_check(company: str, sic, quote: str) -> bool:
+    """True when the going-concern conclusion is structural, not distress.
+
+    SIC 6770 is definitive. Failing that, the combination-period wording is
+    specific enough on its own; a trust account plus a blank-check name is the
+    weaker fallback for filers whose note words it differently.
+    """
+    if str(sic or "").strip() == "6770":
+        return True
+    text = quote or ""
+    if _COMBINATION_PERIOD.search(text):
+        return True
+    return bool(_BLANK_CHECK_NAME.search(company or "") and _TRUST.search(text))
+
+
 def amendment_without_the_section(form: str, state: str, quote) -> bool:
     """True when an amendment simply did not re-file the section being compared.
 
@@ -439,9 +473,19 @@ def analyse_periodic(filing) -> List[Event]:
                 "direction": (_severity_direction(pri_gc["state"], cur_gc["state"])
                               if comparable else "not comparable"),
                 "registrant_changed_from": former_name,
-                "caveat": (None if comparable else
-                           "The prior filing was made by a different business under the "
-                           "same CIK, so this is a new disclosure rather than a change."),
+                "blank_check": is_blank_check(
+                    filing.company, getattr(filing, "sic", None), cur_gc.get("quote", "")),
+                "caveat": (
+                    "The prior filing was made by a different business under the "
+                    "same CIK, so this is a new disclosure rather than a change."
+                    if not comparable else
+                    "This is a blank-check company: the doubt is about completing a "
+                    "business combination within its permitted period, which every "
+                    "such company discloses. It describes the structure, not a "
+                    "trading business."
+                    if is_blank_check(filing.company, getattr(filing, "sic", None),
+                                      cur_gc.get("quote", ""))
+                    else None),
                 "located_in": cur_gc.get("source", ""),
                 "prior_form": prior["form"],
                 "prior_filed": prior["filingDate"],
