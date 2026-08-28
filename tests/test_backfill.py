@@ -55,3 +55,40 @@ def test_days_queued_this_run_count_as_held():
 
 def test_a_bad_floor_disables_it_rather_than_crashing():
     assert _fill(_state(["2026-08-12"]), floor="not-a-date") == []
+
+
+def test_the_fill_yields_to_the_budget_but_the_day_s_filings_do_not():
+    """A hosted job is killed at a hard limit, and the kill lands before the
+    commit step -- so an over-long run discards everything it did. The fill
+    must stop in time; catching up on today must not."""
+    import time as _time
+
+    forward = [dt.date(2026, 8, 28)]
+    fill = [dt.date(2026, 8, 10), dt.date(2026, 8, 7)]
+    processed = []
+
+    def fake_process(day):
+        processed.append(day)
+        return [], {"date": day.isoformat(), "index_rows": 1, "candidates": 0,
+                    "operating": 0, "events": 0}
+
+    clock = iter([0.0] + [10_000.0] * 20)        # first call inside budget, then over
+    with mock.patch.object(config, "require_user_agent", lambda: None), \
+         mock.patch.object(config, "HISTORY_FROM", "2026-01-01"), \
+         mock.patch.object(config, "HISTORY_BUDGET_SECONDS", 3600), \
+         mock.patch.object(run, "days_to_backfill", return_value=fill), \
+         mock.patch.object(run, "days_to_process", return_value=forward), \
+         mock.patch.object(run, "process_day", side_effect=fake_process), \
+         mock.patch.object(_time, "monotonic", lambda: next(clock)), \
+         mock.patch.object(run.analyze, "get_analyzer"), \
+         mock.patch.object(run.size, "load_or_refresh", return_value={}), \
+         mock.patch.object(run.publish, "append_events", return_value=0), \
+         mock.patch.object(run.publish, "save_state"), \
+         mock.patch.object(run.publish, "load_state", return_value={"runs": []}), \
+         mock.patch.object(run.history, "refresh", create=True), \
+         mock.patch.object(run.health, "run_checks", return_value={"checks": []}), \
+         mock.patch.object(run.publish, "save_health"):
+        run.main(["--no-render"])
+
+    assert forward[0] in processed, "the day's own filings must always run"
+    assert fill[0] not in processed, "the fill must yield once the budget is spent"

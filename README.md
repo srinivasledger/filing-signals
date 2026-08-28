@@ -169,6 +169,7 @@ whether something is a signal.
 | `MAX_BACKFILL_DAYS` | `10` | Cap on catch-up work per run |
 | `HISTORY_FROM` | *(unset)* | Fill history back to this date, a chunk per run |
 | `HISTORY_CHUNK` | `12` | Older days added per run while filling |
+| `HISTORY_BUDGET_SECONDS` | `10800` | Fill stops after this; the day's own filings never do |
 | `COLD_START_DAYS` | `5` | Reach-back on a first run |
 | `MAX_PERIODIC_PER_DAY` | `120` | Bound on the expensive comparison path |
 | `POLICY_SIMILARITY_THRESHOLD` | `0.60` | Revenue-note rewrite sensitivity |

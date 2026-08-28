@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import logging
+import time
 import sys
 from typing import List, Optional
 
@@ -240,8 +241,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         return events
     total_new = 0
     blocked = False
+    started_at = time.monotonic()
+    filling_set = {d for d in filling}
 
     for day in targets:
+        # Today's filings are never abandoned; only the history fill yields.
+        if day in filling_set:
+            spent = time.monotonic() - started_at
+            if spent > config.HISTORY_BUDGET_SECONDS:
+                left = sum(1 for d in filling_set if d >= day)
+                log.warning("history fill stopping after %.0f min (budget %.0f min); "
+                            "%d day(s) left for the next run",
+                            spent / 60, config.HISTORY_BUDGET_SECONDS / 60, left)
+                break
         try:
             events, stats = process_day(day)
         except fetch.SECBlocked as exc:

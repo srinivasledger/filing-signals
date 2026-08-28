@@ -47,6 +47,13 @@ COLD_START_DAYS = int(os.getenv("COLD_START_DAYS", "5"))
 HISTORY_FROM = os.getenv("HISTORY_FROM", "").strip() or None
 HISTORY_CHUNK = int(os.getenv("HISTORY_CHUNK", "12"))
 
+# Wall-clock budget for the history fill. A hosted job is killed at a hard
+# limit, and the kill lands before the step that commits, so an over-long run
+# throws away everything it did. Filing volume varies a lot by season - 10-K
+# season days are far heavier than August ones - so the bound has to be time,
+# not a day count. The fill stops early and the next run continues.
+HISTORY_BUDGET_SECONDS = int(os.getenv("HISTORY_BUDGET_SECONDS", str(3 * 3600)))
+
 # --- Site -------------------------------------------------------------------
 SITE_TITLE = os.getenv("SITE_TITLE", "Filing Signals")
 SITE_TAGLINE = os.getenv(
