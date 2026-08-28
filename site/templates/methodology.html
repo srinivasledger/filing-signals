@@ -77,6 +77,58 @@ compared against its own previous filing of the same type. A company that has
 disclosed substantial doubt for eight consecutive quarters generates no event,
 because nothing changed.</p>
 
+<h2>SEC comment letters</h2>
+<p>When the staff reviews a company's annual or quarterly report they may write
+to it with questions about the accounting. Those letters (<strong>UPLOAD</strong>)
+and the company's replies (<strong>CORRESP</strong>) are published on EDGAR.
+The <a href="{{ rel }}letters.html">comment letters page</a> groups them by the
+accounting topic raised.</p>
+<p><strong>A comment letter is not a finding.</strong> The SEC is required to
+review every reporting company at least once every three years, so receiving one
+is routine, and most reviews close with no change to the accounts. A letter
+records a question that was asked &mdash; nothing about the answer.</p>
+<p><strong>They are historic, not current.</strong> The SEC releases
+correspondence only after a review closes, no earlier than 20 business days
+afterwards. In practice a median of about eleven months passes between a letter
+being written and appearing on EDGAR, so every entry shows both dates.</p>
+<p>Most staff letters review <em>registration statements</em> rather than
+periodic reports. Those are a different activity &mdash; a company raising money,
+not a review of published accounts &mdash; so the "Re:" line is parsed and only
+periodic-report reviews are kept.</p>
+
+<h2>Material weakness</h2>
+<p>Every annual report states management's conclusion on internal control over
+financial reporting under <strong>Item 9A</strong>. A material weakness means a
+deficiency severe enough that a material misstatement might not be prevented or
+detected in time.</p>
+<p>As with going concern, only a <em>change</em> is published: control reported
+effective and then not, or a weakness reported and then cleared. A company
+carrying the same weakness for several years produces no event.</p>
+<p><strong>Where a weakness clears, the site reports how long it had been
+reported.</strong> That cannot be read off the filing announcing the fix &mdash;
+it requires walking back through the company's own annual reports until control
+was last reported effective. Where that history is unreadable or runs out, no
+duration is shown rather than a floor presented as a fact.</p>
+<p>Note that a filing reciting the <em>definition</em> of a material weakness is
+not disclosing one; the definition appears in filings that report no weakness at
+all.</p>
+
+<h2>Finance chief departures</h2>
+<p><strong>Item 5.02</strong> covers appointments and departures of directors
+and officers. It is one of the commonest 8-K items, so the item code alone is
+noise. Only departures of the <strong>CFO, chief accounting officer or
+controller</strong> are kept &mdash; the roles that own the financial statements
+&mdash; and the role and the departure must appear in the same sentence, or a
+director's resignation gets joined to whichever CFO is named further down.</p>
+<p>Whether a successor was named, an interim appointed, or the seat left vacant
+is recorded, as is whether the filing states there was no disagreement. That
+last sentence is standard and its presence is <em>reassuring</em>, not adverse
+&mdash; reading it as a disclosed disagreement is a mistake this pipeline made
+and corrected.</p>
+<p>A finance chief leaving is an ordinary event. It is published because it is
+worth knowing alongside the other signals, not because it implies anything is
+wrong.</p>
+
 <h2>Accounting policy and revenue recognition <span class="tag tag-beta">beta</span></h2>
 <p>The pipeline extracts the significant-accounting-policies note and the
 revenue-recognition note, strips out figures, dates and quarter labels, and
@@ -107,6 +159,10 @@ publish &mdash; with evidence and quotes intact.</p>
   a change cannot be shown without a baseline.</li>
   <li>Amended filings are compared against the original series, which can
   surface wording differences that are procedural rather than substantive.</li>
+  <li>Comment letters describe reviews that closed months earlier, so they are a
+  record of what was asked at the time, not of anything current.</li>
+  <li>The history here is short. Counts show what has been flagged since the
+  pipeline started, which is not a base rate to compare a company against.</li>
 </ul>
 
 <h2>Corrections</h2>

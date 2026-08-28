@@ -64,7 +64,7 @@ Open `public/index.html`. Other entry points:
 ./.venv/bin/python -m pipeline.run --date 2026-08-21   # one specific day
 ./.venv/bin/python -m pipeline.run --no-render         # collect without building
 ./.venv/bin/python -m pipeline.render                  # rebuild site only
-./.venv/bin/python -m pytest tests/ -q                 # 51 tests, no network
+./.venv/bin/python -m pytest tests/ -q                 # 84 tests, no network
 ```
 
 ## How it runs itself
@@ -77,16 +77,19 @@ duplicates anything.
 
 ```
 daily index ──► filing headers ──► universe filter ──┬─► 8-K item codes ──────┐
-   (1 req)      (~1 KB each)      (form + SIC)       │   + sub-classification │
+   (1 req)      (~1 KB each)      (form + SIC)       │   4.02 / 4.01 / 5.02   │
                                                      ├─► Form 12b-25 parse ───┤
+                                                     ├─► UPLOAD / CORRESP ────┤
+                                                     │   (topic + "Re:" line) │
                                                      └─► prior-filing compare ┤
-                                                         (going concern, ASU, │
-                                                          revenue policy)     │
+                                                         (going concern,      │
+                                                          Item 9A control,    │
+                                                          ASU, revenue policy)│
                                                                               ▼
    site ◄── render ◄── self-checks ◄── follow-on rates ◄── size index ◄── optional AI
 ```
 
-Eleven **self-checks** run after every pass and publish to the
+Twelve **self-checks** run after every pass and publish to the
 [status page](https://srinivasledger.github.io/filing-signals/status.html)
 rather than to a log — that every entry cites a filing, that comparisons name
 what they were compared against, that re-running never duplicates, that quotes
@@ -98,9 +101,18 @@ Served directly from **GitHub Pages** at `srinivasledger.github.io`, built and
 deployed by the workflow itself — there is no external host and no custom
 domain in front of it.
 
-The workflow runs weekdays at **23:30 UTC** (after EDGAR's 17:30 ET cutoff), or
-on demand via *Actions → Daily filing scan → Run workflow*, which accepts a
-`days` input to reprocess recent dates.
+Two workflows deploy. **Daily filing scan** runs weekdays at **23:30 UTC**
+(after EDGAR's 17:30 ET cutoff), or on demand via *Actions → Daily filing scan →
+Run workflow*, which accepts a `days` input to reprocess recent dates.
+**Publish site** runs on any push touching `site/` or `pipeline/`, rebuilding
+from the data already committed.
+
+The second exists because the scan used to be the only thing that deployed, so a
+template fix sat unpublished until the next night — a page could be committed,
+tested and still 404 on the live site. It never contacts SEC, so it adds no load
+there and a block cannot affect it. Both share one concurrency group: two Pages
+deployments must never run at once, and a push landing mid-scan queues behind
+it rather than racing it.
 
 Configured: secret `SEC_USER_AGENT`; variables `SITE_URL` and `REPO_URL`; Pages
 source *GitHub Actions*; workflow permissions **write**, so each run commits
@@ -132,7 +144,7 @@ returns 404 outright — while setting a custom domain **does** 301-redirect the
 
 ### Hosting it elsewhere (e.g. Hostinger)
 
-The build output in `public/` is ~250 files, ~3 MB, and uses only relative
+The build output in `public/` is ~320 files, ~4 MB, and uses only relative
 paths, so it works from any web root. Keep GitHub Actions as the scheduler and
 replace the three `actions/*-pages` steps in `daily.yml` with an FTP upload of
 `public/`. Running the pipeline itself on shared hosting is not recommended:
@@ -230,7 +242,9 @@ reasoning about the code. Each one changed the implementation.
 - **Most comment letters are not about accounting.** Of thirty staff letters
   sampled, seventeen reviewed registration statements and four reviewed a
   periodic report. Only the last group is the signal, so the "Re:" line is
-  parsed and everything else discarded — about two a week survive.
+  parsed and everything else discarded. Roughly nine letters a week survive,
+  covering about three companies — staff letter and company reply are separate
+  filings and both are published.
 - **UPLOAD documents are PDFs**, unlike everything else on EDGAR that this
   pipeline reads. CORRESP is HTML.
 - **"lease" matched every letter in the first sample**, because "please"
@@ -243,6 +257,17 @@ reasoning about the code. Each one changed the implementation.
   and again in the contents, so the first match scoped a 312,000-character 10-K
   to the wrong 30,000. Use the first occurrence that actually reaches a
   conclusion.
+- **A walk-back loop counted the report it stopped on.** Measuring how long a
+  material weakness had been reported means walking back until control was last
+  reported *effective* — and that final clean report was being counted among the
+  reports affected, overstating every count by one. Aviat Networks read three
+  annual reports; it is two. The days figure was right and the count beside it
+  was not, which is the harder kind to notice.
+- **Lowercasing a label to fit a sentence destroys acronyms.** Topic labels are
+  capitalised for display and dropped mid-headline, so `.lower()` published
+  "non-gaap measures" on sixteen letters and would have made MD&A "md&a". Only
+  the leading capital may drop, and not even that when the first word is itself
+  an acronym.
 
 ### Negation, three times over
 
@@ -292,6 +317,11 @@ so adjacency is not enough.
   the `main { … }` rule.
 - **`justify-content: flex-end` pushes overflow off the left edge**, where
   scrolling cannot reach it. Four of seven mobile nav links were unreachable.
+- **Passing tests are not a deployment.** The Pages deploy lived inside the
+  daily scan, which only runs on a schedule, so a push ran the test suite, went
+  green, and published nothing. A new page was committed, tested and still 404'd
+  live. Whatever builds the site has to be reachable from the event that changes
+  it.
 
 ## What the derived pages do and don't claim
 
@@ -307,6 +337,20 @@ tracker already flagged**, not population base rates: with no matched control
 group they cannot show that one event makes another more likely, only how often
 one followed the other here.
 
+**Comment letters** are grouped by accounting topic, which EDGAR does not do —
+it shows letters one filing at a time. Two caveats are on the page itself
+because both change how it reads: a letter is not a finding (the SEC must review
+every issuer at least every three years, so getting one is routine), and the
+letters are historic, published a median of 331 days after they were written.
+The topic counts describe what the staff asked this small set of companies, not
+what the SEC focuses on generally.
+
+**Material weakness duration** — where a weakness clears, how long it had been
+reported. It is derived by walking back through the company's own annual reports
+until control was last reported effective, so it is a count of *reported*
+duration, not of how long the weakness existed. Where that history runs out or
+cannot be read, no number is published.
+
 **Audit firm movement** counts firms named in flagged Item 4.01 filings. Not a
 market-share measure; the population is small and skewed small-cap.
 
@@ -316,8 +360,8 @@ derived from EDGAR.
 
 ## Known limitations
 
-- **History is shallow.** Eight filing days is not enough to give the flag rate
-  a reference range, or to show a sequence completing. A one-to-three-year
+- **History is shallow.** Twelve filing days is not enough to give the flag
+  rate a reference range, or to show a sequence completing. A one-to-three-year
   backfill is the next substantial piece of work.
 - **Revenue recognition is beta** and remains the signal most likely to produce
   a wrong entry, being the only one resting on text similarity.
@@ -341,7 +385,9 @@ including the filer, via the repository's issue tracker.
 
 Filings on EDGAR are the registrants' own documents, not works of the US
 Government, so they are **not** public domain — an earlier version of this file
-said otherwise and was wrong. What holds is narrower and enough: the facts drawn
+said otherwise and was wrong. The one real exception is the staff comment letter
+(UPLOAD), which *is* written by SEC employees and so is a US Government work
+under 17 U.S.C. §105; the company's reply (CORRESP) is not. What holds is narrower and enough: the facts drawn
 from filings (dates, item codes, disclosure states) are not copyrightable, and
 the quoted passages are short excerpts reproduced with a link to the source.
 
