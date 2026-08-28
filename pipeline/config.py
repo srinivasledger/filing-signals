@@ -38,6 +38,15 @@ MAX_BACKFILL_DAYS = int(os.getenv("MAX_BACKFILL_DAYS", "10"))
 # Earliest date the tracker will ever reach back to on a cold start.
 COLD_START_DAYS = int(os.getenv("COLD_START_DAYS", "5"))
 
+# Optional history fill. With HISTORY_FROM set to a date, each run also works
+# backwards from the oldest day it has, a chunk at a time, until it reaches
+# that date. Done this way rather than as one long job because it needs no
+# supervision, cannot exceed a job time limit, and a blocked or failed night
+# simply resumes the next night. Today's filings always come first: the fill
+# only uses what is left of the run.
+HISTORY_FROM = os.getenv("HISTORY_FROM", "").strip() or None
+HISTORY_CHUNK = int(os.getenv("HISTORY_CHUNK", "12"))
+
 # --- Site -------------------------------------------------------------------
 SITE_TITLE = os.getenv("SITE_TITLE", "Filing Signals")
 SITE_TAGLINE = os.getenv(

@@ -51,6 +51,10 @@ jobs:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
           # Optional. Absent => deterministic-only, zero cost.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # With HISTORY_FROM set, each run also fills a chunk of history
+          # backwards until it reaches that date, then stops on its own.
+          HISTORY_FROM: ${{ vars.HISTORY_FROM }}
+          HISTORY_CHUNK: ${{ vars.HISTORY_CHUNK }}
           SITE_URL: ${{ vars.SITE_URL }}
           CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
           REPO_URL: ${{ vars.REPO_URL }}

@@ -142,6 +142,36 @@ def process_day(day: dt.date) -> tuple:
     return events, stats
 
 
+def days_to_backfill(state: dict, already: List[dt.date]) -> List[dt.date]:
+    """Business days older than anything held, working back to HISTORY_FROM.
+
+    Returns at most HISTORY_CHUNK, so a run's cost stays bounded whether it is
+    filling in eight months or nothing at all.
+    """
+    if not config.HISTORY_FROM:
+        return []
+    try:
+        floor = dt.date.fromisoformat(config.HISTORY_FROM)
+    except ValueError:
+        log.warning("HISTORY_FROM is not a date: %r", config.HISTORY_FROM)
+        return []
+
+    earliest = state.get("earliest_processed")
+    known = [dt.date.fromisoformat(r["date"]) for r in state.get("runs", [])
+             if r.get("date")]
+    if earliest:
+        known.append(dt.date.fromisoformat(earliest))
+    known += already
+    if not known:
+        return []
+
+    start = min(known) - dt.timedelta(days=1)
+    if start < floor:
+        return []
+    days = business_days(floor, start)
+    return days[-config.HISTORY_CHUNK:]
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Run the filing signals pipeline.")
     parser.add_argument("--date", help="process a single YYYY-MM-DD instead of catching up")
@@ -168,10 +198,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         targets = days_to_process(state, today_et, end=end)
 
-    if not targets:
+    # Catching up on today comes first; history fills whatever is left.
+    filling = [] if (args.date or args.days) else days_to_backfill(state, targets)
+    if filling:
+        log.info("filling history: %d day(s) back to %s (floor %s)",
+                 len(filling), filling[0], config.HISTORY_FROM)
+
+    if not targets and not filling:
         log.info("nothing to process; already current through %s", state.get("last_processed"))
-    else:
+    elif targets:
         log.info("processing %d day(s): %s to %s", len(targets), targets[0], targets[-1])
+    targets = targets + filling
 
     analyzer = analyze.get_analyzer()
 
@@ -235,6 +272,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         last = state.get("last_processed")
         if not last or day.isoformat() > last:
             state["last_processed"] = day.isoformat()
+        # Only ever moves earlier, so a filled day is never re-fetched.
+        first = state.get("earliest_processed")
+        if not first or day.isoformat() < first:
+            state["earliest_processed"] = day.isoformat()
 
         log.info("%s: %d new event(s)", day, written)
 

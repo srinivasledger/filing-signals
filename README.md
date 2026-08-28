@@ -89,11 +89,11 @@ daily index ──► filing headers ──► universe filter ──┬─► 8
    site ◄── render ◄── self-checks ◄── follow-on rates ◄── size index ◄── optional AI
 ```
 
-Twelve **self-checks** run after every pass and publish to the
+Thirteen **self-checks** run after every pass and publish to the
 [status page](https://srinivasledger.github.io/filing-signals/status.html)
 rather than to a log — that every entry cites a filing, that comparisons name
 what they were compared against, that re-running never duplicates, that quotes
-begin at a sentence. They have caught real regressions.
+begin at a sentence, and that no page has grown heavy enough to feel slow. They have caught real regressions.
 
 ## Deployment
 
@@ -167,6 +167,8 @@ whether something is a signal.
 | `ANTHROPIC_API_KEY` | *(unset)* | Enables analysis; unset = free |
 | `SEC_RATE_LIMIT` | `5` | Requests/sec (SEC's ceiling is 10) |
 | `MAX_BACKFILL_DAYS` | `10` | Cap on catch-up work per run |
+| `HISTORY_FROM` | *(unset)* | Fill history back to this date, a chunk per run |
+| `HISTORY_CHUNK` | `12` | Older days added per run while filling |
 | `COLD_START_DAYS` | `5` | Reach-back on a first run |
 | `MAX_PERIODIC_PER_DAY` | `120` | Bound on the expensive comparison path |
 | `POLICY_SIMILARITY_THRESHOLD` | `0.60` | Revenue-note rewrite sensitivity |
@@ -351,6 +353,11 @@ until control was last reported effective, so it is a count of *reported*
 duration, not of how long the weakness existed. Where that history runs out or
 cannot be read, no number is published.
 
+**Per-signal pages** hold the complete record for one signal, grouped by year.
+The overview previews the most recent twelve of each. Nothing is pruned; the
+split exists so that no single page grows without bound, and the page-weight
+check reports when the largest one is getting close.
+
 **Audit firm movement** counts firms named in flagged Item 4.01 filings. Not a
 market-share measure; the population is small and skewed small-cap.
 
@@ -360,9 +367,11 @@ derived from EDGAR.
 
 ## Known limitations
 
-- **History is shallow.** Twelve filing days is not enough to give the flag
-  rate a reference range, or to show a sequence completing. A one-to-three-year
-  backfill is the next substantial piece of work.
+- **History is being filled in.** `HISTORY_FROM` is set to 2026-01-01, and
+  each nightly run adds twelve older days until it reaches that date, then
+  stops. Until it finishes, counts describe a partial period. This runs
+  unattended rather than as one long job because it cannot exceed a job time
+  limit that way, and a blocked or failed night simply resumes the next night.
 - **Revenue recognition is beta** and remains the signal most likely to produce
   a wrong entry, being the only one resting on text similarity.
 - **Section extraction depends on filing structure.** Unusual formatting causes
