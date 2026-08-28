@@ -14,7 +14,21 @@ and reaching one step does not imply the next. Dates are filing dates.</p>
 <p>Across the <b>{{ history.companies }}</b> companies recorded here, using
 their full filing history from SEC EDGAR &mdash;
 <b>{{ '{:,}'.format(history.total_historical_events) }}</b> historical events
-in total, within a {{ history.window_days }}-day window.</p>
+in total.</p>
+
+<p class="notice"><strong>The rule, exactly.</strong> A company counts once, not
+once per event. For each pair, the denominator is every company whose EDGAR
+history contains the first event at all; it counts as a follow-on if the second
+event appears strictly after the company&rsquo;s <em>first</em> occurrence of
+the first event and within {{ history.window_days }} days of it. Same-day pairs
+are excluded, and two signals read out of one filing are never a pair.</p>
+
+<p class="muted">Measuring from the first occurrence matters. Counting from any
+occurrence gave a company one chance per event &mdash; a filer submitting an NT
+form every quarter had eight or ten overlapping windows in which an auditor
+change could land &mdash; which roughly doubled every rate, and doubled them
+most for the frequent filers this population is full of.</p>
+
 {{ rates_chart|safe }}
 <details class="evidence">
   <summary>View as a table</summary>
@@ -35,7 +49,10 @@ in total, within a {{ history.window_days }}-day window.</p>
 rates inside a population this tracker already flagged, not population base
 rates. There is no matched control group, so they cannot tell you that one
 event makes another more likely &mdash; only how often, among these companies,
-one followed the other. The sample is small and skewed toward smaller issuers.</p>
+one followed the other. The sample is small and skewed toward smaller issuers,
+which file NT forms and change auditors far more often than listed companies
+generally: within a window of this length, common events co-occur readily. The
+counts beside each rate are the more useful figure.</p>
 {% endif %}
 
 {% if sequences_total and sequences_total > sequences|length %}

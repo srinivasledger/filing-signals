@@ -9,33 +9,33 @@
     {
       "eligible": 235,
       "first": "auditor_change",
-      "followed": 55,
+      "followed": 33,
       "label": "An auditor change was followed by a non-reliance filing",
-      "rate": "23%",
+      "rate": "14%",
       "second": "restatement"
     },
     {
       "eligible": 251,
       "first": "late_filing",
-      "followed": 85,
+      "followed": 31,
       "label": "A late filing was followed by a non-reliance filing",
-      "rate": "34%",
+      "rate": "12%",
       "second": "restatement"
     },
     {
       "eligible": 251,
       "first": "late_filing",
-      "followed": 178,
+      "followed": 90,
       "label": "A late filing was followed by an auditor change",
-      "rate": "71%",
+      "rate": "36%",
       "second": "auditor_change"
     },
     {
       "eligible": 110,
       "first": "restatement",
-      "followed": 55,
+      "followed": 44,
       "label": "A non-reliance filing was followed by an auditor change",
-      "rate": "50%",
+      "rate": "40%",
       "second": "auditor_change"
     }
   ],

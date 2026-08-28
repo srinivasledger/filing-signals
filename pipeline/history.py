@@ -66,18 +66,24 @@ def company_history(cik: int) -> List[Dict]:
 
 def _followed_within(history: List[Dict], first: str, second: str,
                      window_days: int = WINDOW_DAYS) -> Optional[bool]:
-    """True if a `second` event follows a `first` within the window.
-    None when the company never had a `first` event at all."""
+    """True if a `second` event follows the company's FIRST `first` within the
+    window. None when the company never had a `first` event at all.
+
+    Measured from the first occurrence, deliberately. Taking any occurrence
+    gave a company one chance per event: a filer that files an NT form every
+    quarter had eight or ten overlapping 540-day windows in which an auditor
+    change could land, and counted as a follow-on if any of them caught one.
+    That inflates every rate, and inflates them most for exactly the frequent
+    filers this population is full of.
+    """
     firsts = [e for e in history if e["kind"] == first]
     if not firsts:
         return None
-    seconds = [e for e in history if e["kind"] == second]
-    for f in firsts:
-        fd = dt.date.fromisoformat(f["date"])
-        for sec in seconds:
-            sd = dt.date.fromisoformat(sec["date"])
-            if 0 < (sd - fd).days <= window_days:
-                return True
+    fd = dt.date.fromisoformat(firsts[0]["date"])       # history is date-sorted
+    for sec in (e for e in history if e["kind"] == second):
+        sd = dt.date.fromisoformat(sec["date"])
+        if 0 < (sd - fd).days <= window_days:
+            return True
     return False
 
 

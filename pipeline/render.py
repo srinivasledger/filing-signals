@@ -89,6 +89,41 @@ def _scan_totals(runs):
             sum(v["candidates"] for v in per_day.values()))
 
 
+# What each notice defers, and how long Rule 12b-25 allows for it. The windows
+# are widened slightly over the statutory five and fifteen days, because the
+# extension runs in calendar days and filings land on business days.
+_EXTENSION_WINDOW = {
+    "NT 10-Q": ({"10-Q"}, 10),
+    "NT 10-K": ({"10-K"}, 25),
+    "NT 20-F": ({"20-F"}, 25),
+}
+
+
+def _is_extension_of(event, later) -> bool:
+    """True when this late notice is answered by the report it deferred.
+
+    The pair is one situation. Reporting it as a progression asserts a
+    sequence that the filing calendar produced, not the company.
+    """
+    import datetime as _dt
+
+    window = _EXTENSION_WINDOW.get(event.form.upper().rstrip("/A"))
+    if not window:
+        return False
+    forms, days = window
+    for other in later:
+        if other.form.upper().rstrip("/A") not in forms:
+            continue
+        try:
+            gap = (_dt.date.fromisoformat(other.filed)
+                   - _dt.date.fromisoformat(event.filed)).days
+        except ValueError:
+            continue
+        if 0 <= gap <= days:
+            return True
+    return False
+
+
 def _company_sequence(events):
     """Distinct signals for one company, oldest first, with the gap between.
 
@@ -103,6 +138,26 @@ def _company_sequence(events):
         if e.signal_type not in seen:
             seen.add(e.signal_type)
             ordered.append(e)
+
+    # One filing is one occasion, however many signals it carries. Two events
+    # read out of the same accession were being drawn as a progression with a
+    # nought-day gap between them.
+    by_filing, collapsed = set(), []
+    for e in ordered:
+        if e.accession in by_filing:
+            continue
+        by_filing.add(e.accession)
+        collapsed.append(e)
+    ordered = collapsed
+
+    # A Form 12b-25 followed by the report it covered is Rule 12b-25 working,
+    # not a company deteriorating: the rule grants five calendar days for a
+    # 10-Q and fifteen for a 10-K, and the going-concern note the tracker then
+    # reports comes from that very report. It is one reporting event split
+    # across two filings, and it accounted for 28 of 48 chains on this page.
+    ordered = [e for i, e in enumerate(ordered)
+               if not _is_extension_of(e, ordered[i + 1:])]
+
     if len(ordered) < 2:
         return []
 
