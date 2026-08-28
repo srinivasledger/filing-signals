@@ -6,7 +6,7 @@
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 52,300 index rows read",
+      "detail": "10 runs recorded, 51,901 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,42 +16,42 @@
       "status": "ok"
     },
     {
-      "detail": "376/376 link to the accession they report",
+      "detail": "395/395 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "376/376 name a detection method the pipeline implements",
+      "detail": "395/395 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "25 entries from SEC item codes, 0 carrying the wrong code for their signal",
+      "detail": "28 entries from SEC item codes, 0 carrying the wrong code for their signal",
       "name": "Item codes match the signal they produced",
       "status": "ok"
     },
     {
-      "detail": "62/62 compare the same form type against an earlier filing",
+      "detail": "67/67 compare the same form type against an earlier filing",
       "name": "Comparisons are like-for-like",
       "status": "ok"
     },
     {
-      "detail": "376 unique entries across 376 rows",
+      "detail": "395 unique entries across 395 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 270 begin mid-sentence, 0 do not open at the substance",
+      "detail": "0 of 280 begin mid-sentence, 0 do not open at the substance",
       "name": "Quotes open with the substance",
       "status": "ok"
     },
     {
-      "detail": "0 of 49 going-concern and material-weakness entries quote a passage that negates the state they assert",
+      "detail": "0 of 55 going-concern and material-weakness entries quote a passage that negates the state they assert",
       "name": "No entry contradicts its own quote",
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 376, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 395, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -61,17 +61,17 @@
       "status": "ok"
     },
     {
-      "detail": "311 companies, 4,557 historical events",
+      "detail": "328 companies, 4,649 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page index.html is 39 KB over the wire (limit 250 KB), 330 pages checked",
+      "detail": "heaviest page index.html is 40 KB over the wire (limit 250 KB), 347 pages checked",
       "name": "Page weight",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-28T18:24:17+00:00",
+  "generated_at": "2026-08-28T18:28:16+00:00",
   "summary": {
     "fail": 0,
     "ok": 14,
