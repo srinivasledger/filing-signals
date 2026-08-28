@@ -197,6 +197,14 @@ reasoning about the code. Each one changed the implementation.
   all come back 403, so a holiday skip that waits for a 404 is dead code. The
   two cases are separated by probing a URL known to exist: if that answers, the
   index is simply absent; if it does not, the client really is blocked.
+- **A refusal must not be catchable as an ordinary failure.** `SECBlocked`
+  subclasses `RuntimeError`, so five `except Exception` handlers in the fetch
+  path swallowed it — including the two every comparison signal is built on.
+  Nothing crashed, which is why it lasted: a block simply made every filing
+  unreadable, so the day produced no events and was recorded as processed and
+  quiet. The history fill made it serious, because it writes days unattended
+  and never revisits them. An error that means *stop* has to be raised past
+  handlers written for errors that mean *skip this one*.
 - **The daily index is not whitespace-separated.** Form types contain spaces
   (`DEF 14A`, `NT 10-K/A`), and the column header spans two lines and does not
   align with the data. Parse right-anchored.
