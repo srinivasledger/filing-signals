@@ -215,7 +215,7 @@ def page_weight_check(public: "pathlib.Path") -> Dict:
     """
     import gzip
 
-    pages = sorted(public.glob("*.html")) + sorted(public.glob("company/*.html"))
+    pages = sorted(public.rglob("*.html"))     # every page, at any depth
     if not pages:
         return _check("Page weight", UNKNOWN, "nothing built yet")
 

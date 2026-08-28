@@ -38,6 +38,12 @@ event makes another more likely &mdash; only how often, among these companies,
 one followed the other. The sample is small and skewed toward smaller issuers.</p>
 {% endif %}
 
+{% if sequences_total and sequences_total > sequences|length %}
+<p class="muted">{{ sequences|length }} of {{ sequences_total }} companies are
+shown, ordered by how many signals each reached. Every company&rsquo;s full
+sequence is on its own page.</p>
+{% endif %}
+
 {% if sequences %}
 <div class="feed">
   {% for s in sequences %}

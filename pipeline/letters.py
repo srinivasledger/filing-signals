@@ -25,7 +25,8 @@ import re
 from typing import Dict, List, Optional
 
 from . import compare, config, fetch
-from .models import COMMENT_LETTER, DERIVED, SIGNAL_BLURBS, Event
+from .models import (COMMENT_LETTER, DERIVED, SIGNAL_BLURBS, Event,
+                     mid_sentence)
 
 log = logging.getLogger(__name__)
 
@@ -133,19 +134,6 @@ def reviews_a_periodic_report(subject: str) -> bool:
     return bool(_PERIODIC_REVIEW.search(subject))
 
 
-def _mid_sentence(label: str) -> str:
-    """A topic label as it should read inside a sentence.
-
-    Lowercasing the whole label turns "Non-GAAP measures" into "non-gaap
-    measures" and "MD&A" into "md&a", so only the leading capital is dropped,
-    and not even that when the first word is itself an acronym.
-    """
-    first = label.split(" ", 1)[0]
-    if first.isupper() or any(c.isupper() for c in first[1:]):
-        return label if first.isupper() else label[0].lower() + label[1:]
-    return label[0].lower() + label[1:]
-
-
 def classify_topics(text: str) -> List[str]:
     return [name for name, pat in TOPICS.items() if pat.search(text)]
 
@@ -201,7 +189,7 @@ def analyse_letter(filing, disclosed_on: str = "") -> List[Event]:
     letter_dated = filing.filed
     appeared = disclosed_on or filing.filed
 
-    topic = _mid_sentence(topics[0])
+    topic = mid_sentence(topics[0])
     headline = (
         f"SEC staff questioned {filing.company}'s accounting for {topic}"
         if is_staff else
@@ -231,7 +219,11 @@ def analyse_letter(filing, disclosed_on: str = "") -> List[Event]:
             "why": SIGNAL_BLURBS[COMMENT_LETTER],
         },
         quote=_first_comment(text),
-        beta=True,
+        # Not beta: whether a letter exists, who wrote it, and which filing it
+        # reviews are read from the filing itself. Only the topic labels are
+        # keyword-derived, and the letters page says so rather than marking the
+        # whole entry provisional.
+        beta=False,
     )]
 
 

@@ -64,10 +64,15 @@ def test_unreadable_prior_report_does_not_extend_the_span():
     assert span["annual_reports_affected"] == 1
 
 
-def test_topic_labels_keep_their_acronyms_inside_a_headline():
-    """Headlines put the topic mid-sentence. Lowercasing the whole label turned
-    "Non-GAAP measures" into "non-gaap measures" on every published letter."""
-    from pipeline.letters import _mid_sentence
-    assert _mid_sentence("Non-GAAP measures") == "non-GAAP measures"
-    assert _mid_sentence("MD&A") == "MD&A"
-    assert _mid_sentence("Income taxes") == "income taxes"
+def test_labels_keep_their_acronyms_inside_a_sentence():
+    """Labels are dropped mid-sentence in letter headlines and in the "All N
+    ... entries" links. Lowercasing the whole label produced "non-gaap
+    measures" on every published letter and "sec comment letter" on the
+    signals page - the same defect twice, which is why the rule lives in one
+    place now."""
+    from pipeline.models import mid_sentence
+    assert mid_sentence("Non-GAAP measures") == "non-GAAP measures"
+    assert mid_sentence("SEC comment letter") == "SEC comment letter"
+    assert mid_sentence("MD&A") == "MD&A"
+    assert mid_sentence("Income taxes") == "income taxes"
+    assert mid_sentence("Late filing") == "late filing"

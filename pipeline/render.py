@@ -21,7 +21,7 @@ from . import charts, config, health as health_mod, preview, publish, size as si
 from .models import (AUDITOR_CHANGE, COMMENT_LETTER, GOING_CONCERN, LATE_FILING,
                      MATERIAL_WEAKNESS, OFFICER_DEPARTURE, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_BLURBS,
-                     SIGNAL_LABELS, Event)
+                     SIGNAL_LABELS, Event, mid_sentence)
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +40,14 @@ SIGNAL_ORDER = [
 # What matters most is that the truncation is stated rather than silent: a
 # filter applied to a quietly-truncated set gives wrong answers.
 MAX_HOME_EVENTS = 150
+
+# How many of each signal the overview previews before linking to the full page.
+SIGNAL_PREVIEW = 12
+# The letters page leads with topic counts drawn from every letter; the cards
+# beneath it are a window, since a card costs ~15x what a list row does. The
+# sequences page is bounded the same way. Both name the full list.
+LETTER_CARDS = 60
+MAX_SEQUENCES = 120
 
 # A company reaching several of these signals in sequence is the thing a raw
 # EDGAR feed cannot show. Ordered by how far along the progression they sit.
@@ -204,6 +212,9 @@ def _env() -> Environment:
         lstrip_blocks=True,
     )
     env.filters["floatformat"] = size_mod.format_float
+    # One rule for dropping a display label into a sentence, shared with the
+    # letter headlines. Lowercasing wholesale ate the acronym in both places.
+    env.filters["mid_sentence"] = mid_sentence
     env.filters["evidence"] = _evidence_value
     return env
 
@@ -353,15 +364,43 @@ def build(second_pass: bool = False) -> None:
         ),
     )
 
-    # --- signals overview ---
+    # --- signals overview, and one complete page per signal ---
+    #
+    # The overview used to carry every entry ever recorded, which grows without
+    # bound. Splitting per signal keeps each page to roughly a ninth of the
+    # record, and grouping by year inside it means a page only grows for as
+    # long as a year lasts. The overview keeps a preview of each so it stays
+    # the useful landing page.
     by_signal: Dict[str, List[Event]] = defaultdict(list)
     for e in events:
         by_signal[e.signal_type].append(e)
+
+    (config.PUBLIC / "signals").mkdir(parents=True, exist_ok=True)
+    signal_tpl = env.get_template("signal.html")
+    for key in SIGNAL_ORDER:
+        label = SIGNAL_LABELS[key]
+        rows = by_signal.get(key) or []
+        if not rows:
+            continue
+        by_year: Dict[str, List[Event]] = defaultdict(list)
+        for e in rows:
+            by_year[e.filed[:4]].append(e)
+        _write(
+            config.PUBLIC / "signals" / f"{key}.html",
+            signal_tpl.render(
+                rel="../", page_path=f"signals/{key}.html", key=key, label=label,
+                blurb=SIGNAL_BLURBS.get(key, ""), total=len(rows),
+                years=sorted(by_year.items(), reverse=True), **common,
+            ),
+        )
+
     _write(
         config.PUBLIC / "signals.html",
         env.get_template("signals.html").render(
-            rel="", page_path="signals.html", by_signal=by_signal,
-            counts=Counter(e.signal_type for e in events), **common,
+            rel="", page_path="signals.html",
+            by_signal={k: v[:SIGNAL_PREVIEW] for k, v in by_signal.items()},
+            counts=Counter(e.signal_type for e in events),
+            preview=SIGNAL_PREVIEW, **common,
         ),
     )
 
@@ -393,11 +432,15 @@ def build(second_pass: bool = False) -> None:
     # --- sequences + auditor concentration ---
     _write(config.PUBLIC / "sequences.html",
            env.get_template("sequences.html").render(
-               rel="", page_path="sequences.html", sequences=sequences, history=publish.load_history(),
+               rel="", page_path="sequences.html",
+               sequences=sequences[:MAX_SEQUENCES],
+               sequences_total=len(sequences), history=publish.load_history(),
                rates_chart=charts.rates_chart(
                    publish.load_history().get("rows", [])),
                **common))
     letter_stats = _letter_stats(events)
+    if letter_stats:
+        letter_stats["shown"] = letter_stats["letters"][:LETTER_CARDS]
     if letter_stats:
         _write(config.PUBLIC / "letters.html",
                env.get_template("letters.html").render(

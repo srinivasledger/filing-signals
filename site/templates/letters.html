@@ -31,6 +31,9 @@ the letter being written and appearing on EDGAR (range
 </dl>
 
 <p class="eyebrow"><span>Topics raised</span><span>a letter may raise several</span></p>
+<p class="muted">Topics are assigned by matching accounting terms in the letter,
+so a letter may carry more than one and an unusual phrasing can be missed. The
+letter itself, its date and the filing it reviews are read from the filing.</p>
 <div class="topics">
   {% for topic, n in topics %}
   <div class="topic">
@@ -41,9 +44,15 @@ the letter being written and appearing on EDGAR (range
   {% endfor %}
 </div>
 
-<p class="eyebrow"><span>Every letter</span><span>newest first</span></p>
+<p class="eyebrow"><span>{{ 'Every letter' if shown|length == count else 'Recent letters' }}</span>
+  <span>{% if shown|length < count %}{{ shown|length }} of {{ count }}{% else %}newest first{% endif %}</span></p>
+{% if shown|length < count %}
+<p class="muted">The {{ shown|length }} most recent are shown in full. The topic
+counts above are drawn from all {{ count }}; the complete list is on the
+<a href="{{ rel }}signals/comment_letter.html">comment letter page</a>.</p>
+{% endif %}
 <div class="feed feed-single">
-  {% for e in letters %}
+  {% for e in shown %}
   <article class="event" data-signal="comment_letter">
     <div class="event-head">
       <span class="tag tag-comment_letter">{{ e.label }}</span>

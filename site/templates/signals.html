@@ -3,8 +3,8 @@
 {% block content %}
 <h1>What this tracks</h1>
 <p class="lede">{{ signal_labels|length }} signals, split by how much
-interpretation each requires. These lists are complete &mdash; every entry ever
-recorded.</p>
+interpretation each requires. Each shows its most recent {{ preview }}; the
+complete list for a signal is one click away.</p>
 {% for key, label in signal_labels %}
 <section class="signal-block">
   <h2><span class="tag tag-{{ key }}">{{ label }}</span>
@@ -18,6 +18,10 @@ recorded.</p>
       <span class="muted">{{ e.form }}</span></li>
     {% endfor %}
   </ul>
+  {% if counts.get(key, 0) > preview %}
+  <p class="links"><a href="{{ rel }}signals/{{ key }}.html">All
+    {{ counts.get(key, 0) }} {{ label|mid_sentence }} entries &rarr;</a></p>
+  {% endif %}
   {% else %}<p class="muted">Nothing recorded yet.</p>{% endif %}
 </section>
 {% endfor %}

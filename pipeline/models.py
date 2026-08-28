@@ -151,3 +151,16 @@ class Event:
             "size_tier", "public_float",
         }
         return cls(**{k: v for k, v in d.items() if k in known})
+
+
+def mid_sentence(label: str) -> str:
+    """A topic label as it should read inside a sentence.
+
+    Lowercasing the whole label turns "Non-GAAP measures" into "non-gaap
+    measures" and "MD&A" into "md&a", so only the leading capital is dropped,
+    and not even that when the first word is itself an acronym.
+    """
+    first = label.split(" ", 1)[0]
+    if first.isupper() or any(c.isupper() for c in first[1:]):
+        return label if first.isupper() else label[0].lower() + label[1:]
+    return label[0].lower() + label[1:]

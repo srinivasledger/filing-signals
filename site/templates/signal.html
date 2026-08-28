@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<p class="eyebrow"><span><a href="{{ rel }}signals.html">Signals</a></span>
+  <span>{{ total }} recorded</span></p>
+<h1>{{ label }}</h1>
+<p class="lede">{{ blurb }}</p>
+<p class="muted">Every entry ever recorded, newest first. Each links to the
+company&rsquo;s page, where the entry appears in full with its quoted filing text.</p>
+
+{% for year, rows in years %}
+<p class="eyebrow"><span>{{ year }}</span><span>{{ rows|length }} entries</span></p>
+<ul class="mini">
+  {% for e in rows %}
+  <li><time>{{ e.filed }}</time>
+    <a href="{{ rel }}company/{{ e.cik }}.html">{{ e.company }}</a>
+    <span class="muted">{{ e.form }}</span>
+    {% if e.ticker %}<span class="ticker">{{ e.ticker }}</span>{% endif %}</li>
+  {% endfor %}
+</ul>
+{% endfor %}
+{% endblock %}
