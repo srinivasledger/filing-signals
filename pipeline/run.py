@@ -257,6 +257,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         except Exception as exc:                 # noqa: BLE001
             log.warning("history pass failed: %s", exc)
 
+    # Repair any file that arrived duplicated before the checks look at it.
+    try:
+        removed = publish.repair_all()
+        if removed:
+            log.warning("removed %d duplicated row(s) from the event log", removed)
+    except Exception as exc:                     # noqa: BLE001
+        log.warning("event log repair failed: %s", exc)
+
     # Self-checks last, so they see the finished state.
     report = {}
     try:

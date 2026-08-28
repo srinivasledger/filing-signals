@@ -758,3 +758,88 @@ def test_a_badly_merged_event_file_repairs_itself(tmp_path, monkeypatch):
     on_disk = (tmp_path / "2026-08-24.jsonl").read_text().splitlines()
     assert len(on_disk) == 1, "the file should be rewritten clean"
     assert all(line.startswith("{") for line in on_disk)
+
+
+def test_duplicate_check_reads_disk_not_the_loader(tmp_path, monkeypatch):
+    """The loader repairs as it reads, so counting its output made the
+    duplicate check blind to exactly what it exists to detect: a real duplicate
+    sat in a committed file while the check reported "no duplicates"."""
+    monkeypatch.setattr(publish.config, "EVENTS_DIR", tmp_path)
+
+    e = models.Event(signal_type=models.RESTATEMENT, confidence=models.CONFIRMED,
+                     company="Acme", cik=1, form="8-K", filed="2026-08-25",
+                     accession="0001-26-000001", filing_url="https://sec.gov/x",
+                     headline="h", evidence={"source": "SEC 8-K item code",
+                                             "item_code": "4.02"})
+    row = json.dumps(e.to_dict(), sort_keys=True)
+    (tmp_path / "2026-08-25.jsonl").write_text(row + "\n" + row + "\n")
+
+    assert publish.raw_row_count() == 2
+    assert len(publish.load_events_for_day("2026-08-25")) == 1
+
+    report = health.run_checks(publish.load_all_events(),
+                               {"last_processed": "2026-08-25", "runs": []},
+                               dt.date(2026, 8, 26))
+    check = next(c for c in report["checks"] if c["name"] == "No duplicated entries")
+    assert check["status"] == "fail", check
+
+    assert publish.repair_all() == 1
+    report = health.run_checks(publish.load_all_events(),
+                               {"last_processed": "2026-08-25", "runs": []},
+                               dt.date(2026, 8, 26))
+    check = next(c for c in report["checks"] if c["name"] == "No duplicated entries")
+    assert check["status"] == "ok", check
+
+
+# --- link preview -----------------------------------------------------------
+def test_preview_card_is_within_whatsapp_limits(tmp_path):
+    """WhatsApp declines previews over roughly 300 KB and expects a raster
+    image at 1200x630. SVG is not rendered by it, so this has to be a PNG."""
+    from pipeline import preview
+
+    out = preview.build({"events": 334, "companies": 284, "days": 11,
+                         "flag_rate": "6.6%", "through": "2026-08-26"},
+                        out=tmp_path / "og.png")
+    if out is None:
+        import pytest
+        pytest.skip("Pillow not installed")
+
+    from PIL import Image
+    assert Image.open(out).size == (preview.WIDTH, preview.HEIGHT) == (1200, 630)
+    assert out.stat().st_size < 300 * 1024, "over WhatsApp's preview size limit"
+
+
+def test_missing_font_fails_loudly(monkeypatch):
+    """A silent fallback to Pillow's bitmap font would publish an unreadable
+    card instead of failing where someone can see it."""
+    import pytest
+
+    from pipeline import preview
+
+    monkeypatch.setattr(preview, "_FONT_CANDIDATES",
+                        {"bold": ["/nonexistent.ttf"], "regular": [], "mono": []})
+    with pytest.raises(RuntimeError, match="no bold font"):
+        preview._font("bold", 40)
+
+
+def test_preview_tags_are_absolute_and_per_page():
+    """Sharing services resolve og:image against nothing - a relative URL
+    yields no preview at all."""
+    import re
+
+    root = Path(__file__).resolve().parent.parent / "public"
+    index = (root / "index.html")
+    if not index.exists():
+        import pytest
+        pytest.skip("site not built")
+
+    html = index.read_text()
+    for prop in ("og:image", "og:url", "twitter:image"):
+        m = re.search(rf'"{prop}" content="([^"]+)"', html)
+        assert m, f"{prop} missing"
+        assert m.group(1).startswith("https://"), f"{prop} is not absolute"
+
+    status = (root / "status.html").read_text()
+    def url(h):
+        return re.search(r'"og:url" content="([^"]+)"', h).group(1)
+    assert url(html) != url(status), "every page claimed the same canonical URL"

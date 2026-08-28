@@ -120,11 +120,18 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         "were compared against"))
 
     # --- idempotency ---
-    ids = [e.id for e in events]
-    dupes = len(ids) - len(set(ids))
+    # Counted from the rows on disk, not from the loaded events: the loader
+    # de-duplicates as it reads, so measuring its output reported "no
+    # duplicates" while a duplicate sat in the file.
+    from . import publish as _publish
+
+    unique = len({e.id for e in events})
+    on_disk = _publish.raw_row_count()
+    dupes = max(0, on_disk - unique)
     checks.append(_check(
         "No duplicated entries", OK if not dupes else FAIL,
-        f"{len(set(ids))} unique entries" + (f", {dupes} duplicates" if dupes else "")))
+        f"{unique} unique entries across {on_disk} rows"
+        + (f", {dupes} duplicated" if dupes else "")))
 
     # --- quote hygiene (a real past defect) ---
     ragged = [e for e in events

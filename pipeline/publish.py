@@ -152,3 +152,44 @@ def load_health() -> Dict:
         except ValueError:
             log.warning("health file corrupt; ignoring")
     return {}
+
+
+def raw_row_count() -> int:
+    """Rows physically on disk, before de-duplication.
+
+    The integrity check must count these, not the loaded events: the loader
+    repairs as it reads, so counting its output made the duplicate check blind
+    to the exact thing it exists to detect.
+    """
+    total = 0
+    if not config.EVENTS_DIR.exists():
+        return 0
+    for path in config.EVENTS_DIR.glob("*.jsonl"):
+        for line in path.read_text().splitlines():
+            if line.strip().startswith("{"):
+                total += 1
+    return total
+
+
+def repair_all() -> int:
+    """Rewrite every event file de-duplicated. Returns rows removed.
+
+    A union merge keeps both sides' lines, so a day committed from two places
+    can carry duplicates. Repairing only the days a run happens to process
+    leaves older files damaged indefinitely.
+    """
+    if not config.EVENTS_DIR.exists():
+        return 0
+    removed = 0
+    for path in sorted(config.EVENTS_DIR.glob("*.jsonl")):
+        raw = [l for l in path.read_text().splitlines() if l.strip()]
+        events = load_events_for_day(path.stem)
+        if len(raw) == len(events):
+            continue
+        removed += len(raw) - len(events)
+        log.warning("repairing %s: %d rows -> %d unique events",
+                    path.name, len(raw), len(events))
+        path.write_text("".join(
+            json.dumps(e.to_dict(), sort_keys=True) + "\n" for e in events),
+            encoding="utf-8")
+    return removed

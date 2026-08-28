@@ -17,7 +17,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import charts, config, publish, size as size_mod
+from . import charts, config, preview, publish, size as size_mod
 from .models import (AUDITOR_CHANGE, COMMENT_LETTER, GOING_CONCERN, LATE_FILING,
                      MATERIAL_WEAKNESS, OFFICER_DEPARTURE, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_BLURBS,
@@ -223,9 +223,15 @@ def build() -> None:
 
     common = {
         "asset_v": asset_versions(),
+        "og_description": (
+            f"{len(events):,} events found in SEC filings and published "
+            "automatically each weekday: restatements, SEC comment letters, "
+            "material weaknesses, auditor and CFO changes, late filings and "
+            "going-concern transitions."),
         "status_state": status_state,
         "status_label": status_label,
         "site_title": config.SITE_TITLE,
+        "site_url": config.SITE_URL,
         "repo_url": config.REPO_URL,
         "site_tagline": config.SITE_TAGLINE,
         "built_at": built_at,
@@ -240,6 +246,19 @@ def build() -> None:
     flag_rate = (f"{len(events) / candidates * 100:.1f}%"
                  if candidates else "—")
 
+    # The link-preview card, drawn with the live figures. After flag_rate,
+    # which it puts on the card.
+    try:
+        preview.build({
+            "events": len(events),
+            "companies": len({e.cik for e in events}),
+            "days": len({e.filed for e in events}),
+            "flag_rate": flag_rate,
+            "through": state.get("last_processed") or "",
+        })
+    except Exception as exc:                     # noqa: BLE001
+        log.warning("link-preview card not generated: %s", exc)
+
     # --- home ---
     ranked = sorted(events, key=_rank, reverse=True)
     home_events = ranked[:MAX_HOME_EVENTS]
@@ -247,7 +266,7 @@ def build() -> None:
     _write(
         config.PUBLIC / "index.html",
         env.get_template("index.html").render(
-            rel="", events=home_events,
+            rel="", page_path="", events=home_events,
             total_events=len(events),
             companies=len({e.cik for e in events}),
             situations=situations, routine_n=routine_n,
@@ -268,7 +287,7 @@ def build() -> None:
     _write(
         config.PUBLIC / "signals.html",
         env.get_template("signals.html").render(
-            rel="", by_signal=by_signal,
+            rel="", page_path="signals.html", by_signal=by_signal,
             counts=Counter(e.signal_type for e in events), **common,
         ),
     )
@@ -289,7 +308,7 @@ def build() -> None:
         _write(
             config.PUBLIC / "company" / f"{cik}.html",
             company_tpl.render(
-                rel="../", cik=cik, company=newest.company,
+                rel="../", page_path=f"company/{cik}.html", cik=cik, company=newest.company,
                 ticker=next((e.ticker for e in evs if e.ticker), ""),
                 sic_desc=next((e.sic_desc for e in evs if e.sic_desc), ""),
                 events=sorted(evs, key=_rank, reverse=True), sequence=seq, **common,
@@ -300,24 +319,24 @@ def build() -> None:
     # --- sequences + auditor concentration ---
     _write(config.PUBLIC / "sequences.html",
            env.get_template("sequences.html").render(
-               rel="", sequences=sequences, history=publish.load_history(),
+               rel="", page_path="sequences.html", sequences=sequences, history=publish.load_history(),
                rates_chart=charts.rates_chart(
                    publish.load_history().get("rows", [])),
                **common))
     _write(config.PUBLIC / "auditors.html",
            env.get_template("auditors.html").render(
-               rel="", firms=_auditor_stats(events),
+               rel="", page_path="auditors.html", firms=_auditor_stats(events),
                changes=[e for e in events if e.signal_type == AUDITOR_CHANGE],
                **common))
 
     # --- static pages ---
     _write(config.PUBLIC / "methodology.html",
            env.get_template("methodology.html").render(
-               rel="", filings_scanned=scanned, candidates_scanned=candidates,
+               rel="", page_path="methodology.html", filings_scanned=scanned, candidates_scanned=candidates,
                total_events=len(events), flag_rate=flag_rate, **common))
     _write(config.PUBLIC / "status.html",
            env.get_template("status.html").render(
-               rel="", runs=runs, last_run=state.get("last_processed"),
+               rel="", page_path="status.html", runs=runs, last_run=state.get("last_processed"),
                analysis_on=analysis_on, health=health, **common))
 
     # --- machine-readable ---

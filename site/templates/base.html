@@ -5,6 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ site_title }}{% endblock %}</title>
 <meta name="description" content="{{ site_tagline }}">
+{% if site_url %}
+<link rel="canonical" href="{{ site_url }}/{{ page_path | default('') }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ site_title }}">
+<meta property="og:title" content="{% block og_title %}{{ site_title }}{% endblock %}">
+<meta property="og:description" content="{{ og_description }}">
+<meta property="og:url" content="{{ site_url }}/{{ page_path | default('') }}">
+<meta property="og:image" content="{{ site_url }}/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ site_title }} — {{ site_tagline }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ site_title }}">
+<meta name="twitter:description" content="{{ og_description }}">
+<meta name="twitter:image" content="{{ site_url }}/og.png">
+{% endif %}
 <script>
   // Runs before paint: reading the stored choice after the stylesheet would
   // show a flash of the other theme on every navigation.
