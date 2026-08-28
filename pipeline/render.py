@@ -17,7 +17,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import charts, config, preview, publish, size as size_mod
+from . import charts, config, health as health_mod, preview, publish, size as size_mod
 from .models import (AUDITOR_CHANGE, COMMENT_LETTER, GOING_CONCERN, LATE_FILING,
                      MATERIAL_WEAKNESS, OFFICER_DEPARTURE, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_BLURBS,
@@ -259,7 +259,7 @@ def _feed_xml(events: List[Event], built_at: str) -> str:
     )
 
 
-def build() -> None:
+def build(second_pass: bool = False) -> None:
     events = publish.load_all_events()
     state = publish.load_state()
     env = _env()
@@ -435,6 +435,25 @@ def build() -> None:
 
     log.info("site built: %d events, %d companies -> %s",
              len(events), len(by_company), config.PUBLIC)
+
+    # Page weight can only be measured once the pages exist, but its result
+    # shows in the header of every page. So it is measured after a full build
+    # and, if that changed the report, everything is rendered once more. The
+    # alternative - reporting it only on the status page - leaves the header
+    # counting a different number of checks from the list underneath it.
+    if not second_pass:
+        try:
+            weight = health_mod.page_weight_check(config.PUBLIC)
+            log.info("%s", weight["detail"])
+            checks = [c for c in health.get("checks", [])
+                      if c["name"] != weight["name"]] + [weight]
+            if checks != health.get("checks"):
+                health["checks"] = checks
+                health["summary"] = health_mod._summarise(checks)
+                publish.save_health(health)
+                build(second_pass=True)
+        except Exception as exc:                 # noqa: BLE001
+            log.warning("page weight check did not run: %s", exc)
 
 
 if __name__ == "__main__":

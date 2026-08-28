@@ -142,12 +142,17 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         "begin mid-sentence"))
 
     # --- is the home page still showing everything? ---
+    # Truncation here is deliberate and stated on the page itself, so it is
+    # reported, not warned about. It was a WARN while the cap sat above the
+    # record and crossing it would have been a surprise; with the cap set to a
+    # window the page is meant to hold, a permanent warning would sit in the
+    # header of every page and bury the ones that mean something.
     from .render import MAX_HOME_EVENTS
     if total > MAX_HOME_EVENTS:
         checks.append(_check(
-            "Home page window", WARN,
-            f"showing the most recent {MAX_HOME_EVENTS} of {total}; the full "
-            "record is on the signals pages and in events.json"))
+            "Home page window", OK,
+            f"showing the most recent {MAX_HOME_EVENTS} of {total}, as stated "
+            "on the page; the full record is on the signals pages"))
     else:
         checks.append(_check("Home page window", OK,
                              f"all {total} entries fit on the home page"))
@@ -192,6 +197,43 @@ def _size_check(today: dt.date) -> Dict:
         status = WARN
     return _check("Company size index", status,
                   f"{count:,} companies, refreshed {age} day(s) ago")
+
+
+# What a page may weigh before it stops feeling instant. Pages are served
+# gzipped, so this is measured over the wire, not on disk. 250 KB is generous:
+# the home page is ~39 KB today and the whole record page ~8 KB.
+MAX_PAGE_WIRE_BYTES = 250 * 1024
+
+
+def page_weight_check(public: "pathlib.Path") -> Dict:
+    """Warn before a page gets slow, rather than after someone notices.
+
+    Every list page grows with the record, and nothing prunes them. Rather than
+    guessing when that becomes a problem, the build measures itself: this fails
+    nothing, but it turns "it will stay fast" from a promise into something
+    observed on every run.
+    """
+    import gzip
+
+    pages = sorted(public.glob("*.html")) + sorted(public.glob("company/*.html"))
+    if not pages:
+        return _check("Page weight", UNKNOWN, "nothing built yet")
+
+    weighed = []
+    for path in pages:
+        try:
+            weighed.append((len(gzip.compress(path.read_bytes())), path))
+        except OSError:
+            continue
+    if not weighed:
+        return _check("Page weight", UNKNOWN, "pages unreadable")
+
+    worst, path = max(weighed)
+    detail = (f"heaviest page {path.name} is {worst / 1024:.0f} KB over the wire "
+              f"(limit {MAX_PAGE_WIRE_BYTES // 1024} KB), {len(weighed)} pages checked")
+    if worst > MAX_PAGE_WIRE_BYTES:
+        return _check("Page weight", WARN, detail + " - time to split it by year")
+    return _check("Page weight", OK, detail)
 
 
 def _summarise(checks: List[Dict]) -> Dict:
