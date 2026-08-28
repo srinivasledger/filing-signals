@@ -133,6 +133,19 @@ def reviews_a_periodic_report(subject: str) -> bool:
     return bool(_PERIODIC_REVIEW.search(subject))
 
 
+def _mid_sentence(label: str) -> str:
+    """A topic label as it should read inside a sentence.
+
+    Lowercasing the whole label turns "Non-GAAP measures" into "non-gaap
+    measures" and "MD&A" into "md&a", so only the leading capital is dropped,
+    and not even that when the first word is itself an acronym.
+    """
+    first = label.split(" ", 1)[0]
+    if first.isupper() or any(c.isupper() for c in first[1:]):
+        return label if first.isupper() else label[0].lower() + label[1:]
+    return label[0].lower() + label[1:]
+
+
 def classify_topics(text: str) -> List[str]:
     return [name for name, pat in TOPICS.items() if pat.search(text)]
 
@@ -188,10 +201,11 @@ def analyse_letter(filing, disclosed_on: str = "") -> List[Event]:
     letter_dated = filing.filed
     appeared = disclosed_on or filing.filed
 
+    topic = _mid_sentence(topics[0])
     headline = (
-        f"SEC staff questioned {filing.company}'s accounting for "
-        f"{topics[0].lower()}" if is_staff else
-        f"{filing.company} responded to SEC staff comments on {topics[0].lower()}")
+        f"SEC staff questioned {filing.company}'s accounting for {topic}"
+        if is_staff else
+        f"{filing.company} responded to SEC staff comments on {topic}")
 
     return [Event(
         signal_type=COMMENT_LETTER,

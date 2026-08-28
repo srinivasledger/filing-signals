@@ -16,10 +16,13 @@
 <section class="chain-box">
   <h2>Progression</h2>
   <ol class="chain">
-    {% for e in sequence %}
-    <li><time datetime="{{ e.filed }}">{{ e.filed }}</time>
-      <span class="tag tag-{{ e.signal_type }}">{{ e.label }}</span>
-      <span class="chain-note">{{ e.form }}</span></li>
+    {% for step in sequence %}
+    <li><time datetime="{{ step.event.filed }}">{{ step.event.filed }}</time>
+      <span class="tag tag-{{ step.event.signal_type }}">{{ step.event.label }}</span>
+      <span class="chain-note">{{ step.event.form }}</span>
+      {% if step.days_since_previous is not none %}
+      <span class="chain-gap">+{{ step.days_since_previous }}d</span>
+      {% endif %}</li>
     {% endfor %}
   </ol>
 </section>

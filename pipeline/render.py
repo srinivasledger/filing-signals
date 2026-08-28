@@ -77,13 +77,81 @@ def _scan_totals(runs):
 
 
 def _company_sequence(events):
-    """Distinct signals for one company, oldest first, as a progression."""
+    """Distinct signals for one company, oldest first, with the gap between.
+
+    Order alone understates what a progression means: a late filing followed
+    by an auditor change six weeks later reads very differently from the same
+    pair eighteen months apart.
+    """
+    import datetime as _dt
+
     seen, ordered = set(), []
     for e in sorted(events, key=lambda x: x.filed):
         if e.signal_type not in seen:
             seen.add(e.signal_type)
             ordered.append(e)
-    return ordered if len(ordered) > 1 else []
+    if len(ordered) < 2:
+        return []
+
+    steps = []
+    previous = None
+    for e in ordered:
+        gap = None
+        if previous is not None:
+            try:
+                gap = (_dt.date.fromisoformat(e.filed)
+                       - _dt.date.fromisoformat(previous)).days
+            except ValueError:
+                gap = None
+        steps.append({"event": e, "days_since_previous": gap})
+        previous = e.filed
+    steps[0]["span_days"] = None
+    try:
+        steps[0]["span_days"] = (_dt.date.fromisoformat(ordered[-1].filed)
+                                 - _dt.date.fromisoformat(ordered[0].filed)).days
+    except ValueError:
+        pass
+    return steps
+
+
+def _letter_stats(events):
+    """What the SEC staff is asking about, and how old the letters are.
+
+    Aggregated by topic because that is the view nobody publishes: EDGAR shows
+    letters one filing at a time. The lag is reported alongside because it is
+    large and changes how the whole page should be read.
+    """
+    import datetime as _dt
+
+    letters = [e for e in events if e.signal_type == COMMENT_LETTER]
+    if not letters:
+        return {}
+
+    topics = Counter(t for e in letters for t in e.evidence.get("topics", []))
+    lags = []
+    for e in letters:
+        dated = e.evidence.get("letter_dated")
+        if not dated:
+            continue
+        try:
+            lags.append((_dt.date.fromisoformat(e.filed)
+                         - _dt.date.fromisoformat(dated)).days)
+        except ValueError:
+            continue
+    lags.sort()
+
+    return {
+        "letters": sorted(letters, key=lambda e: (e.filed, e.company), reverse=True),
+        "count": len(letters),
+        "companies": len({e.cik for e in letters}),
+        "topics": topics.most_common(),
+        "topic_max": max(topics.values()) if topics else 1,
+        "from_staff": sum(1 for e in letters
+                          if e.evidence.get("direction") == "staff to company"),
+        "median_lag": lags[len(lags) // 2] if lags else None,
+        "min_lag": lags[0] if lags else None,
+        "max_lag": lags[-1] if lags else None,
+    }
 
 
 def _auditor_stats(events):
@@ -304,6 +372,7 @@ def build() -> None:
         if seq:
             sequences.append({"cik": cik, "company": newest.company,
                               "ticker": next((e.ticker for e in evs if e.ticker), ""),
+                              "span_days": seq[0].get("span_days"),
                               "steps": seq})
         _write(
             config.PUBLIC / "company" / f"{cik}.html",
@@ -323,6 +392,12 @@ def build() -> None:
                rates_chart=charts.rates_chart(
                    publish.load_history().get("rows", [])),
                **common))
+    letter_stats = _letter_stats(events)
+    if letter_stats:
+        _write(config.PUBLIC / "letters.html",
+               env.get_template("letters.html").render(
+                   rel="", page_path="letters.html", **letter_stats, **common))
+
     _write(config.PUBLIC / "auditors.html",
            env.get_template("auditors.html").render(
                rel="", page_path="auditors.html", firms=_auditor_stats(events),

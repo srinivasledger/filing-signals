@@ -11,6 +11,7 @@ enormously for purely structural reasons and produce constant false positives.
 """
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import re
 from typing import Dict, List, Optional, Tuple
@@ -235,6 +236,81 @@ def _gc_headline(company: str, prior_state: str, current_state: str) -> str:
     return f"{company}'s going-concern disclosure changed"
 
 
+MAX_HISTORY_FILINGS = 6
+
+
+def material_weakness_span(cik: int, accession: str, form: str) -> Optional[Dict]:
+    """How long a material weakness had been reported before it cleared.
+
+    Walks back through the filer's own annual reports until internal control
+    was last reported effective. Remediation duration is a number nobody
+    publishes, and it cannot be read off a single filing - only off the run of
+    filings either side of it.
+
+    Bounded to MAX_HISTORY_FILINGS, since each step costs a document fetch and
+    remediations are rare enough that the cost is small.
+    """
+    sub = submissions(cik)
+    if not sub:
+        return None
+    rows = [r for r in _recent_rows(sub)
+            if _base_form(r["form"] or "") == _base_form(form)]
+    rows.sort(key=lambda r: r["filingDate"] or "", reverse=True)
+
+    current = next((i for i, r in enumerate(rows)
+                    if r["accessionNumber"] == accession), None)
+    if current is None:
+        return None
+
+    first_bad = None
+    affected = 0
+    for row in rows[current + 1: current + 1 + MAX_HISTORY_FILINGS]:
+        url = document_url(cik, row["accessionNumber"], row["primaryDocument"] or "")
+        text = load_text(url)
+        if not text:
+            break
+        state = sections.internal_control_state(text)["state"]
+        if state == sections.ICFR_MATERIAL_WEAKNESS:
+            first_bad = row
+            affected += 1                        # count only reports that carried it
+            continue
+        break                    # effective, or unreadable: either way stop here
+
+    if not first_bad:
+        return None
+
+    try:
+        days = (dt.date.fromisoformat(rows[current]["filingDate"])
+                - dt.date.fromisoformat(first_bad["filingDate"])).days
+    except (TypeError, ValueError):
+        return None
+
+    return {
+        "first_reported": first_bad["filingDate"],
+        "first_reported_accession": first_bad["accessionNumber"],
+        "days_reported": days,
+        "annual_reports_affected": affected,
+    }
+
+
+def _weakness_span(filing) -> Dict:
+    """Duration fields for a remediation, or nothing if it cannot be read."""
+    try:
+        span = material_weakness_span(filing.cik, filing.accession, filing.form)
+    except fetch.SECBlocked:
+        raise
+    except Exception as exc:                     # noqa: BLE001
+        log.warning("weakness span lookup failed for %s: %s", filing.company, exc)
+        return {}
+    if not span:
+        return {}
+    return {
+        "weakness_first_reported": span["first_reported"],
+        "weakness_days_reported": span["days_reported"],
+        "weakness_annual_reports": span["annual_reports_affected"],
+    }
+
+
 def analyse_periodic(filing) -> List[Event]:
     """Produce going-concern and policy-change events for one periodic report.
 
@@ -357,6 +433,7 @@ def analyse_periodic(filing) -> List[Event]:
                 "current_state_label": sections.ICFR_LABELS.get(cur_ic["state"], ""),
                 "direction": "newly reported" if newly else "remediated",
                 "remediation_stated": cur_ic["remediated"],
+                **(_weakness_span(filing) if not newly else {}),
                 "severity": "high" if newly else "normal",
                 "prior_form": prior["form"],
                 "prior_filed": prior["filingDate"],

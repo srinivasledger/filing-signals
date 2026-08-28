@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}SEC comment letters &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<p class="eyebrow"><span>SEC comment letters</span><span>{{ count }} letters</span></p>
+<h1>What the SEC staff is asking about</h1>
+<p class="lede">When the staff reviews a company's annual or quarterly report
+they may write to it with questions about the accounting. Those letters, and
+the company's replies, are published on EDGAR. Here they are grouped by the
+accounting topic raised &mdash; a view EDGAR itself does not offer, because it
+shows letters one filing at a time.</p>
+
+<p class="notice"><strong>A comment letter is not a finding.</strong> The SEC is
+required to review every reporting company at least once every three years, so
+receiving one is routine and most reviews close with no change to the accounts.
+A letter records a question that was asked, nothing more. This page reports what
+was asked; it draws no conclusion about the answer.</p>
+
+{% if median_lag %}
+<p class="notice"><strong>These are historic, not current.</strong> Letters are
+released only after the review closes &mdash; no earlier than 20 business days
+after, and in this set a median of <b>{{ median_lag }} days</b> passed between
+the letter being written and appearing on EDGAR (range
+{{ min_lag }}&ndash;{{ max_lag }}). Every entry shows both dates.</p>
+{% endif %}
+
+<dl class="figures">
+  <div><dt>Letters</dt><dd>{{ count }}</dd></div>
+  <div><dt>Companies</dt><dd>{{ companies }}</dd></div>
+  <div><dt>From the staff</dt><dd>{{ from_staff }}</dd></div>
+  <div><dt>Median lag</dt><dd>{{ median_lag or '—' }}d</dd></div>
+</dl>
+
+<p class="eyebrow"><span>Topics raised</span><span>a letter may raise several</span></p>
+<div class="topics">
+  {% for topic, n in topics %}
+  <div class="topic">
+    <span class="topic-name">{{ topic }}</span>
+    <span class="topic-bar"><i style="width:{{ (n / topic_max * 100)|round(1) }}%"></i></span>
+    <span class="topic-n">{{ n }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<p class="eyebrow"><span>Every letter</span><span>newest first</span></p>
+<div class="feed feed-single">
+  {% for e in letters %}
+  <article class="event" data-signal="comment_letter">
+    <div class="event-head">
+      <span class="tag tag-comment_letter">{{ e.label }}</span>
+      <span class="tag tag-conf">{{ 'From SEC staff' if e.evidence.direction == 'staff to company' else 'Company reply' }}</span>
+      <time datetime="{{ e.filed }}">{{ e.filed }}</time>
+    </div>
+    <h3 class="event-title">{{ e.headline }}</h3>
+    <p class="event-meta">
+      <a href="{{ rel }}company/{{ e.cik }}.html">{{ e.company }}</a>
+      {% if e.ticker %}<span class="ticker">{{ e.ticker }}</span>{% endif %}
+      <span class="sep">&middot;</span>{{ e.form }}
+    </p>
+    {% if e.evidence.letter_dated and e.evidence.letter_dated != e.filed %}
+    <p class="subclass"><span class="muted">Letter dated {{ e.evidence.letter_dated }};
+      published {{ e.filed }}.</span></p>
+    {% endif %}
+    {% if e.evidence.topics %}
+    <p class="subclass">
+      {% for t in e.evidence.topics %}<span class="tag tag-conf">{{ t }}</span>{% endfor %}
+    </p>
+    {% endif %}
+    {% if e.evidence.cited_sections %}
+    <p class="subclass"><span class="muted">Cites:
+      {{ e.evidence.cited_sections | join(' · ') }}</span></p>
+    {% endif %}
+    {% if e.quote %}<blockquote>{{ e.quote }}</blockquote>{% endif %}
+    <p class="links"><a href="{{ e.filing_url }}" rel="nofollow noopener">Source filing &nearr;</a></p>
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

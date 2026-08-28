@@ -45,13 +45,17 @@ one followed the other. The sample is small and skewed toward smaller issuers.</
     <h3 class="event-title">
       <a href="{{ rel }}company/{{ s.cik }}.html">{{ s.company }}</a>
       {% if s.ticker %}<span class="ticker">{{ s.ticker }}</span>{% endif %}
+      {% if s.span_days %}<span class="chain-span">{{ s.span_days }} days end to end</span>{% endif %}
     </h3>
     <ol class="chain">
-      {% for e in s.steps %}
+      {% for step in s.steps %}
       <li>
-        <time datetime="{{ e.filed }}">{{ e.filed }}</time>
-        <span class="tag tag-{{ e.signal_type }}">{{ e.label }}</span>
-        <span class="chain-note">{{ e.form }}</span>
+        <time datetime="{{ step.event.filed }}">{{ step.event.filed }}</time>
+        <span class="tag tag-{{ step.event.signal_type }}">{{ step.event.label }}</span>
+        <span class="chain-note">{{ step.event.form }}</span>
+        {% if step.days_since_previous is not none %}
+        <span class="chain-gap">+{{ step.days_since_previous }}d</span>
+        {% endif %}
       </li>
       {% endfor %}
     </ol>

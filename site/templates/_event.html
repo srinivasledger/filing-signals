@@ -41,6 +41,14 @@
   </p>
   {% endif %}
 
+  {% if e.evidence.weakness_days_reported %}
+  <p class="subclass"><span class="muted">The weakness was first reported on
+    {{ e.evidence.weakness_first_reported }} &mdash;
+    <b>{{ e.evidence.weakness_days_reported }} days</b> and
+    {{ e.evidence.weakness_annual_reports }} annual report{{ '' if e.evidence.weakness_annual_reports == 1 else 's' }}
+    before this one.</span></p>
+  {% endif %}
+
   {% if e.evidence.letter_dated and e.evidence.letter_dated != e.filed %}
   <p class="subclass"><span class="muted">Letter dated
     {{ e.evidence.letter_dated }}; published on EDGAR {{ e.filed }} &mdash; the

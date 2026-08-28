@@ -396,3 +396,19 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 .event.is-context{opacity:.72}
 .event.is-context:hover{opacity:1}
 .event.is-context::before{opacity:.45}
+.chain-gap{font-family:var(--mono);font-size:.72rem;color:var(--muted);
+  border:1px solid var(--line);padding:1px 6px;border-radius:3px}
+.chain-span{font-family:var(--mono);font-size:.72rem;color:var(--muted);
+  font-weight:400;letter-spacing:.04em;margin-left:10px}
+
+/* ── comment letter topics ────────────────────────────────── */
+.topics{display:grid;gap:9px;margin:14px 0 26px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.topic{display:grid;grid-template-columns:minmax(140px,190px) 1fr 44px;gap:14px;align-items:center}
+.topic-name{font-size:.88rem}
+.topic-bar{background:var(--surface-3);height:10px;display:block}
+.topic-bar i{display:block;height:100%;background:var(--series-2);min-width:3px}
+.topic-n{font-family:var(--mono);font-size:.8rem;color:var(--muted);text-align:right;
+  font-variant-numeric:tabular-nums}
+.feed-single{grid-template-columns:1fr!important}
+@media (max-width:620px){ .topic{grid-template-columns:1fr;gap:4px} .topic-n{text-align:left} }
