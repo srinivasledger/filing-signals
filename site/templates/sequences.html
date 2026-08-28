@@ -45,9 +45,10 @@ sequence is on its own page.</p>
 {% endif %}
 
 {% if sequences %}
-<div class="feed">
+{% include "_sizefilter.html" %}
+<div class="feed" id="feed">
   {% for s in sequences %}
-  <article class="event">
+  <article class="event" data-size="{{ s.size_tier }}">
     <h3 class="event-title">
       <a href="{{ rel }}company/{{ s.cik }}.html">{{ s.company }}</a>
       {% if s.ticker %}<span class="ticker">{{ s.ticker }}</span>{% endif %}
@@ -71,4 +72,5 @@ sequence is on its own page.</p>
 {% else %}
 <p class="empty">No company has reached more than one signal yet.</p>
 {% endif %}
+<p class="muted" id="noresults" hidden>No companies of that size reached more than one signal.</p>
 {% endblock %}

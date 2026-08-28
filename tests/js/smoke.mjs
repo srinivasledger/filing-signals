@@ -51,7 +51,13 @@ const byId = {
 global.document = {
   documentElement: el(),
   getElementById: (id) => byId[id] || null,
-  querySelector: (sel) => sel === ".chart svg" ? chartSvg
+  querySelector: (sel) => sel === ".site-head nav" ? el({
+      scrollLeft: 0, clientWidth: 300,
+      getBoundingClientRect: () => ({left: 0, right: 300, width: 300, height: 44, top: 0}),
+      querySelector: () => el({offsetLeft: 500, offsetWidth: 80,
+        getBoundingClientRect: () => ({left: 500, right: 580, width: 80, height: 44, top: 0})}),
+    })
+    : sel === ".chart svg" ? chartSvg
     : sel === ".chart-legend" ? el()
     : sel.includes("theme") ? el({dataset: {}}) : null,
   querySelectorAll: () => [],
@@ -64,6 +70,11 @@ global.window = {redrawActivityChart: undefined, matchMedia: () => ({matches: fa
 global.localStorage = {getItem: () => null, setItem() {}, removeItem() {}};
 
 let failed = 0;
+function check(label, cond) {
+  console.log(`  ${cond ? "ok  " : "FAIL"}  ${label}`);
+  if (!cond) failed = 1;
+}
+
 for (const name of ["chart", "filter", "theme"]) {
   try {
     // eslint-disable-next-line no-eval
@@ -74,4 +85,29 @@ for (const name of ["chart", "filter", "theme"]) {
     failed = 1;
   }
 }
+// --- a signal page has a feed and a size filter, and nothing else ---
+// The home page supplies every control, so running only that shape would not
+// notice filter.js reaching for a search box or chip group that is not there.
+{
+  const rows = [
+    el({dataset: {size: "mega"}}),
+    el({dataset: {size: "small"}}),
+    el({dataset: {size: "mega"}}),
+  ];
+  const feed2 = el({querySelectorAll: () => rows});
+  const sizechips = el();
+  for (const id of Object.keys(byId)) delete byId[id];
+  byId.feed = feed2;
+  byId.sizechips = sizechips;          // no q, chips, routinechips, count, noresults
+  global.window.matchMedia = () => ({matches: false});
+
+  let err = null;
+  try {
+    (0, eval)(fs.readFileSync("site/static/filter.js", "utf8"));
+  } catch (e) { err = e; }
+  check(`filter.js runs with only a feed and size chips${err ? ` -> ${err.message}` : ""}`,
+        err === null);
+  check("every row starts visible", rows.every((r) => !r.hidden));
+}
+
 process.exit(failed);

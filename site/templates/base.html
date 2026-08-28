@@ -39,15 +39,25 @@
       <span class="dot" aria-hidden="true"></span>
       <span class="brand-name">{{ site_title }}</span>
     </a>
+    {# The current page is marked with aria-current, which both styles the tab
+       and tells a screen reader where it is. A signal page counts as Signals,
+       so the nav never shows nothing selected while you are inside one. #}
     <nav>
-      <a href="{{ rel }}index.html">Latest</a>
-      <a href="{{ rel }}signals.html">Signals</a>
-      <a href="{{ rel }}letters.html">Comment letters</a>
-      <a href="{{ rel }}sequences.html">Sequences</a>
-      <a href="{{ rel }}auditors.html">Auditors</a>
-      <a href="{{ rel }}methodology.html">Methodology</a>
-      <a href="{{ rel }}status.html">Status</a>
-      <a href="{{ rel }}feed.xml">RSS</a>
+      {% for href, text, match in [
+           ("index.html", "Latest", "index.html"),
+           ("signals.html", "Signals", "signals"),
+           ("letters.html", "Comment letters", "letters.html"),
+           ("sequences.html", "Sequences", "sequences.html"),
+           ("auditors.html", "Auditors", "auditors.html"),
+           ("methodology.html", "Methodology", "methodology.html"),
+           ("status.html", "Status", "status.html"),
+           ("feed.xml", "RSS", "feed.xml")] %}
+      {# the home page's canonical path is the bare URL, so page_path is empty #}
+      {% set path = page_path or "index.html" %}
+      {% set here = path == match or (match == "signals" and (
+           path == "signals.html" or path.startswith("signals/"))) %}
+      <a href="{{ rel }}{{ href }}"{% if here %} aria-current="page"{% endif %}>{{ text }}</a>
+      {% endfor %}
     </nav>
     <div class="theme-toggle" role="group" aria-label="Colour theme">
       <button type="button" data-theme-set="light">Light</button>
@@ -83,5 +93,9 @@
   </div>
 </footer>
 <script src="{{ rel }}static/theme.js?v={{ asset_v["theme.js"] }}" defer></script>
+{# Loaded everywhere: it does nothing without a #feed, and this way a page that
+   gains a filter cannot end up rendering the controls with no script behind
+   them - which is exactly what happened when it lived in the home template. #}
+<script src="{{ rel }}static/filter.js?v={{ asset_v["filter.js"] }}" defer></script>
 </body>
 </html>

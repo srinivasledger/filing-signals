@@ -61,16 +61,7 @@
     {% endfor %}
   </div>
 </section>
-<section class="controls controls-size">
-  <span class="filter-label">Company size</span>
-  <div class="chips" id="sizechips">
-    <button class="chip is-on" data-size="all">Any</button>
-    <button class="chip" data-size="mega">$10B+</button>
-    <button class="chip" data-size="mega,large">$700M+</button>
-    <button class="chip" data-size="mid,small">Under $700M</button>
-  </div>
-  <span class="filter-note">Public float from the 10-K cover &mdash; the SEC&rsquo;s own size test</span>
-</section>
+{% include "_sizefilter.html" %}
 {% if routine_n %}
 <section class="controls controls-size">
   <span class="filter-label">Routine late filings</span>
@@ -99,5 +90,4 @@
 </section>
 {% endif %}
 <script src="{{ rel }}static/chart.js?v={{ asset_v["chart.js"] }}" defer></script>
-<script src="{{ rel }}static/filter.js?v={{ asset_v["filter.js"] }}" defer></script>
 {% endblock %}

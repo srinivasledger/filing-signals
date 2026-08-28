@@ -5,7 +5,10 @@
   var feed = document.getElementById('feed');
   if (!feed) return;
 
-  var cards = Array.prototype.slice.call(feed.querySelectorAll('.event'));
+  // Cards on the home, letters and sequences pages; list rows on a signal
+  // page. Anything carrying a size tier is filterable.
+  var cards = Array.prototype.slice.call(
+    feed.querySelectorAll('.event, li[data-size]'));
   var q = document.getElementById('q');
   var chips = document.getElementById('chips');
   var sizeChips = document.getElementById('sizechips');
@@ -23,7 +26,7 @@
   var routine = cards.map(function (c) { return c.dataset.routine === 'yes'; });
 
   function apply() {
-    var term = (q.value || '').trim().toLowerCase();
+    var term = ((q && q.value) || '').trim().toLowerCase();
     var shown = 0;
     cards.forEach(function (card, i) {
       var okSignal = activeSignal === 'all' || card.dataset.signal === activeSignal;
@@ -36,10 +39,12 @@
       card.hidden = !show;
       if (show) shown++;
     });
-    count.textContent = shown === cards.length
-      ? cards.length + ' events'
-      : shown + ' of ' + cards.length + ' events';
-    noresults.hidden = shown !== 0;
+    if (count) {
+      count.textContent = shown === cards.length
+        ? cards.length + ' events'
+        : shown + ' of ' + cards.length + ' events';
+    }
+    if (noresults) noresults.hidden = shown !== 0;
 
     // Keep the chart showing the same population as the cards. Search text is
     // deliberately excluded: it matches card text, which the chart rows do not
@@ -56,11 +61,11 @@
 
   function describeScope() {
     var parts = [];
-    if (activeSignal !== 'all') {
+    if (activeSignal !== 'all' && chips) {
       var btn = chips.querySelector('[data-filter="' + activeSignal + '"]');
       if (btn) parts.push(btn.textContent.trim());
     }
-    if (activeSizes) {
+    if (activeSizes && sizeChips) {
       var sbtn = sizeChips.querySelector('.chip.is-on');
       if (sbtn) parts.push(sbtn.textContent.trim());
     }
@@ -86,7 +91,7 @@
     });
   }
 
-  q.addEventListener('input', apply);
+  if (q) q.addEventListener('input', apply);
   wire(chips, function (btn) { activeSignal = btn.dataset.filter; });
   wire(document.getElementById('routinechips'), function (btn) {
     showRoutine = btn.dataset.routine === 'show';

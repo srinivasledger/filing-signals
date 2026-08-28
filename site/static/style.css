@@ -23,6 +23,8 @@
   --series-7:#4a3aa7; --series-8:#e34948; --series-muted:#5f6a75;
 
   --radius:2px; --wrap:1340px; --reading:76ch;
+  --wrap-pad:clamp(14px,2.4vw,28px);   /* used by .wrap and by anything
+                                          that needs to bleed past it */
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
 }
@@ -57,7 +59,7 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
   font-size:15.5px;line-height:1.58;-webkit-font-smoothing:antialiased}
-.wrap{max-width:var(--wrap);margin:0 auto;padding:0 clamp(14px,2.4vw,28px)}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 var(--wrap-pad)}
 a{color:var(--ink);text-decoration-color:var(--line-strong);text-underline-offset:3px}
 a:hover{text-decoration-color:currentColor}
 .skip{position:absolute;left:-9999px}
@@ -299,17 +301,23 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
      viewport. Collapsed to one row: the wordmark holds its width and the nav
      scrolls beside it. The provenance line moves to the footer, where it is
      read once rather than carried forever. */
-  .site-head .wrap{flex-wrap:nowrap;gap:10px;padding-top:0;padding-bottom:0;
-    min-height:44px;align-items:center}
+  /* The nav gets its own full-width row. Sharing one line with the brand and
+     the theme toggle left it about 190px -- barely one and a half tabs -- so
+     reaching anything meant scrolling a strip most of which was off-screen. */
+  .site-head .wrap{flex-wrap:wrap;gap:0 10px;padding-top:0;padding-bottom:0;
+    align-items:center}
+  .site-head .brand{min-height:44px;display:inline-flex;align-items:center}
   .brand{font-size:.8rem;letter-spacing:.05em;flex:none}
   .brand .dot{width:6px;height:6px}
   /* flex-start, not flex-end: with flex-end the overflow runs off the LEFT
      edge, where scrolling cannot reach it - the first four links were simply
      unreachable. Overflow must run right so the scroll gesture recovers it. */
   .site-head nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;min-width:0;
-    justify-content:flex-start;flex:1}
+    justify-content:flex-start;
+    flex:0 0 100%;order:3;border-top:1px solid var(--line);
+    margin-inline:calc(-1 * var(--wrap-pad));padding-inline:var(--wrap-pad)}
   .site-head nav::-webkit-scrollbar{display:none}
-  .site-head nav a{padding:13px 8px;white-space:nowrap;border-left:none;font-size:.68rem}
+  .site-head nav a{white-space:nowrap;border-left:none}
   .figures{grid-template-columns:1fr}
   .figures dd{font-size:1.15rem}
   .event{padding:13px 14px 13px 16px}
@@ -420,3 +428,27 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
    layout -- not download -- is the expensive part. */
 .feed .event { content-visibility: auto; contain-intrinsic-size: auto 280px; }
 .mini li     { content-visibility: auto; contain-intrinsic-size: auto 26px; }
+
+/* ── current page, and a nav you can hit on a phone ───────────
+   The tabs scroll horizontally on a narrow screen, so "where am I" is not
+   obvious from position alone: the current tab is marked rather than implied.
+   Targets are sized for a thumb -- 44px is the usual minimum -- which the
+   previous 13px/8px padding did not reach. */
+.site-head nav a[aria-current="page"]{color:var(--ink);background:var(--surface-2);
+  box-shadow:inset 0 -2px 0 var(--series-2)}
+.site-head nav a:focus-visible{outline:2px solid var(--series-2);outline-offset:-2px}
+
+@media (max-width:760px){
+  /* A tab sliced mid-word at the scroll edge reads as a rendering fault. The
+     fade says "there is more this way" instead, and snapping stops tabs
+     landing half-cut. */
+  .site-head nav{scroll-padding-inline:12px;scroll-snap-type:x proximity;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,
+      #000 calc(100% - 14px),transparent 100%);
+    mask-image:linear-gradient(90deg,transparent 0,#000 14px,
+      #000 calc(100% - 14px),transparent 100%)}
+  .site-head nav a{scroll-snap-align:center}
+  .site-head nav a{padding:14px 13px;font-size:.72rem;min-height:44px;
+    display:flex;align-items:center}
+  .site-head nav a[aria-current="page"]{box-shadow:inset 0 -3px 0 var(--series-2)}
+}

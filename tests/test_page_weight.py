@@ -38,3 +38,19 @@ def test_a_heavy_page_warns_rather_than_failing(tmp_path):
 
 def test_an_empty_build_is_unknown_not_ok(tmp_path):
     assert health.page_weight_check(tmp_path)["status"] == health.UNKNOWN
+
+
+def test_filter_controls_are_never_rendered_without_their_script():
+    """The size filter shipped on three pages with no filter.js behind it: the
+    chips rendered, clicked, and did nothing, because the script tag lived in
+    the home page's own template. Loading it from the base template is what
+    makes a new filtered page work without a second edit."""
+    from pipeline import config
+
+    base = (config.TEMPLATES / "base.html").read_text()
+    assert "static/filter.js" in base
+
+    # and no page template may re-declare it, or it would load twice
+    others = [p for p in config.TEMPLATES.glob("*.html") if p.name != "base.html"]
+    dupes = [p.name for p in others if "static/filter.js" in p.read_text()]
+    assert not dupes, f"filter.js also included by {dupes}"

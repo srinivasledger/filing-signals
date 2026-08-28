@@ -51,9 +51,10 @@ letter itself, its date and the filing it reviews are read from the filing.</p>
 counts above are drawn from all {{ count }}; the complete list is on the
 <a href="{{ rel }}signals/comment_letter.html">comment letter page</a>.</p>
 {% endif %}
-<div class="feed feed-single">
+{% include "_sizefilter.html" %}
+<div class="feed feed-single" id="feed">
   {% for e in shown %}
-  <article class="event" data-signal="comment_letter">
+  <article class="event" data-signal="comment_letter" data-size="{{ e.size_tier }}">
     <div class="event-head">
       <span class="tag tag-comment_letter">{{ e.label }}</span>
       <span class="tag tag-conf">{{ 'From SEC staff' if e.evidence.direction == 'staff to company' else 'Company reply' }}</span>
@@ -83,4 +84,5 @@ counts above are drawn from all {{ count }}; the complete list is on the
   </article>
   {% endfor %}
 </div>
+<p class="muted" id="noresults" hidden>No letters from companies of that size.</p>
 {% endblock %}

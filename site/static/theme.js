@@ -48,3 +48,21 @@
 
   sync();
 })();
+
+// The nav scrolls horizontally on a narrow screen, so the current tab can sit
+// off-screen -- leaving no visible answer to "which page am I on". Bring it
+// into view, without smooth scrolling, so it is simply already correct on load.
+(function () {
+  var nav = document.querySelector('.site-head nav');
+  if (!nav) return;
+  var here = nav.querySelector('[aria-current="page"]');
+  if (!here) return;
+  // Only when it is actually out of view, so a nav that fits is left alone.
+  var navBox = nav.getBoundingClientRect();
+  var box = here.getBoundingClientRect();
+  if (box.left >= navBox.left && box.right <= navBox.right) return;
+  // Measured against the nav itself: offsetLeft is relative to the nearest
+  // positioned ancestor, which is not the nav, so using it overshot by the
+  // width of everything to its left and scrolled the tab half out of view.
+  nav.scrollLeft += (box.left - navBox.left) - (nav.clientWidth - box.width) / 2;
+})();

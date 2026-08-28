@@ -416,6 +416,7 @@ def build(second_pass: bool = False) -> None:
         if seq:
             sequences.append({"cik": cik, "company": newest.company,
                               "ticker": next((e.ticker for e in evs if e.ticker), ""),
+                              "size_tier": next((e.size_tier for e in evs if e.size_tier), ""),
                               "span_days": seq[0].get("span_days"),
                               "steps": seq})
         _write(
