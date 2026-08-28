@@ -412,3 +412,11 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
   font-variant-numeric:tabular-nums}
 .feed-single{grid-template-columns:1fr!important}
 @media (max-width:620px){ .topic{grid-template-columns:1fr;gap:4px} .topic-n{text-align:left} }
+
+/* ── long-list rendering cost ─────────────────────────────────
+   Cards and register rows are skipped entirely by the browser until they
+   approach the viewport. The size hints stop the scrollbar jumping as each
+   one is realised. This is what keeps a long feed cheap on a phone, where
+   layout -- not download -- is the expensive part. */
+.feed .event { content-visibility: auto; contain-intrinsic-size: auto 280px; }
+.mini li     { content-visibility: auto; contain-intrinsic-size: auto 26px; }

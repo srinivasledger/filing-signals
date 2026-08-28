@@ -30,11 +30,16 @@ SIGNAL_ORDER = [
     OFFICER_DEPARTURE, GOING_CONCERN, POLICY_CHANGE, REVENUE_RECOGNITION,
     LATE_FILING,
 ]
-# The home page holds a recent window, not the whole record. At ~31 events a
-# weekday the full set outgrows a single page quickly, and a 600KB page is
-# already large. What matters is that the truncation is stated rather than
-# silent: a filter applied to a quietly-truncated set gives wrong answers.
-MAX_HOME_EVENTS = 400
+# The home page holds a recent window, not the whole record. Pages are served
+# gzipped, so bytes are not the constraint - 344 full cards are 851 KB on disk
+# but 79 KB over the wire. The cost that matters is the DOM: every card is a
+# dozen nodes the phone must parse, lay out and paint. 150 is about five filing
+# days, which is what a "latest" page should be; the complete record lives on
+# the signals pages, where an entry is a link rather than a card.
+#
+# What matters most is that the truncation is stated rather than silent: a
+# filter applied to a quietly-truncated set gives wrong answers.
+MAX_HOME_EVENTS = 150
 
 # A company reaching several of these signals in sequence is the thing a raw
 # EDGAR feed cannot show. Ordered by how far along the progression they sit.

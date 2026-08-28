@@ -2,8 +2,9 @@
 {% block title %}Signals &middot; {{ site_title }}{% endblock %}
 {% block content %}
 <h1>What this tracks</h1>
-<p class="lede">Six signals, split by how much interpretation each requires.
-These lists are complete &mdash; every entry ever recorded.</p>
+<p class="lede">{{ signal_labels|length }} signals, split by how much
+interpretation each requires. These lists are complete &mdash; every entry ever
+recorded.</p>
 {% for key, label in signal_labels %}
 <section class="signal-block">
   <h2><span class="tag tag-{{ key }}">{{ label }}</span>
