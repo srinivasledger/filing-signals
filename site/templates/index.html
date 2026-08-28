@@ -38,7 +38,17 @@
 {% endif %}
 
 {% if events %}
-<p class="eyebrow"><span>The record</span><span>{{ total_events }} entries</span></p>
+<p class="eyebrow"><span>The record</span>
+  <span>{% if truncated %}most recent {{ total_events - truncated }} of
+  {{ total_events }}{% else %}{{ total_events }} entries{% endif %}</span></p>
+{% if truncated %}
+<p class="notice"><strong>This page holds a window, not the whole record.</strong>
+  The {{ total_events - truncated }} most recent entries are shown; {{ truncated }}
+  older {{ 'entry is' if truncated == 1 else 'entries are' }} not on this page,
+  so the search and filters below apply to the window only. The complete record
+  is on the <a href="{{ rel }}signals.html">signals pages</a> and in
+  <a href="{{ rel }}events.json">events.json</a>.</p>
+{% endif %}
 <section class="controls">
   <label class="search">
     <span class="visually-hidden">Filter events</span>
