@@ -92,7 +92,18 @@ def append_events(day: str, events: Iterable[Event]) -> int:
     config.EVENTS_DIR.mkdir(parents=True, exist_ok=True)
     kept = load_events_for_day(day)          # already de-duplicated and cleaned
     existing = {e.id for e in kept}
-    fresh = [e for e in events if e.id not in existing]
+    # De-duplicated against what is on disk AND against itself: one pass can
+    # produce the same (accession, signal_type) twice - a filing carrying two
+    # item codes that map to one signal, say - and without this the duplicate
+    # was written, counted in the returned total, and only removed later by the
+    # repair pass. That made the reported count wrong and left correctness
+    # depending on a downstream sweep.
+    fresh, seen = [], set(existing)
+    for e in events:
+        if e.id in seen:
+            continue
+        seen.add(e.id)
+        fresh.append(e)
 
     on_disk = _event_file(day)
     raw = on_disk.read_text().splitlines() if on_disk.exists() else []

@@ -6,7 +6,7 @@
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 51,234 index rows read",
+      "detail": "10 runs recorded, 52,300 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,37 +16,37 @@
       "status": "ok"
     },
     {
-      "detail": "344/344 link to sec.gov",
+      "detail": "382/382 link to sec.gov",
       "name": "Every entry links to its filing",
       "status": "ok"
     },
     {
-      "detail": "344/344 carry a detection method",
+      "detail": "382/382 carry a detection method",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "24 entries from SEC item codes, 0 without one",
+      "detail": "25 entries from SEC item codes, 0 without one",
       "name": "Item-code entries carry an item code",
       "status": "ok"
     },
     {
-      "detail": "61/61 cite what they were compared against",
+      "detail": "65/65 cite what they were compared against",
       "name": "Comparisons name the prior filing",
       "status": "ok"
     },
     {
-      "detail": "344 unique entries across 344 rows",
+      "detail": "382 unique entries across 382 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 250 quoted passages begin mid-sentence",
+      "detail": "0 of 277 quoted passages begin mid-sentence",
       "name": "Quotes start at a sentence",
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 344, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 382, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -56,17 +56,17 @@
       "status": "ok"
     },
     {
-      "detail": "291 companies, 4,508 historical events",
+      "detail": "314 companies, 4,635 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page index.html is 39 KB over the wire (limit 250 KB), 307 pages checked",
+      "detail": "heaviest page index.html is 39 KB over the wire (limit 250 KB), 330 pages checked",
       "name": "Page weight",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-28T08:16:40+00:00",
+  "generated_at": "2026-08-28T08:50:17+00:00",
   "summary": {
     "fail": 0,
     "ok": 13,
