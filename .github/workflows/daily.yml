@@ -13,9 +13,10 @@ on:
         description: "Reprocess the last N business days (leave blank to catch up)"
         required: false
 
-# Never let two runs write state at once.
+# Never let two runs write state at once. Shared with "Publish site" so the
+# two workflows cannot deploy Pages simultaneously.
 concurrency:
-  group: daily-scan
+  group: site
   cancel-in-progress: false
 
 permissions:

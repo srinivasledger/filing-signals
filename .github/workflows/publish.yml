@@ -1,0 +1,56 @@
+name: Publish site
+
+# The daily scan is what normally deploys the site, but it only runs on a
+# schedule. Without this, a fix to a template or a page sits unpublished until
+# the next scan -- a new page could be committed, tested, and still 404 on the
+# live site for a day.
+#
+# This rebuilds from the data already committed and deploys. It never contacts
+# SEC, so it adds no load there and cannot be affected by a block.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "pipeline/**"
+      - ".github/workflows/publish.yml"
+  workflow_dispatch:
+
+# Shared with the daily scan: two Pages deployments must never run at once,
+# and a push landing mid-scan should queue rather than race it.
+concurrency:
+  group: site
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Render the site from committed data
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
+          REPO_URL: ${{ vars.REPO_URL }}
+        run: python -m pipeline.render
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: deployment
+        uses: actions/deploy-pages@v4
