@@ -54,6 +54,11 @@ def submissions(cik: int) -> Optional[Dict]:
     url = f"{config.SUBMISSIONS}/CIK{cik:010d}.json"
     try:
         return fetch.get_json(url, accept_404=True)
+    except fetch.SECBlocked:
+        # A refusal is not a missing document. Swallowing it here would turn a
+        # blocked run into a day that merely looks quiet, and the day would be
+        # recorded as processed and never retried.
+        raise
     except Exception as exc:                     # noqa: BLE001
         log.warning("submissions lookup failed for CIK %s: %s", cik, exc)
         return None
@@ -139,6 +144,11 @@ def current_document(cik: int, accession: str) -> Optional[str]:
 def load_text(url: str) -> Optional[str]:
     try:
         raw = fetch.get(url, accept_404=True)
+    except fetch.SECBlocked:
+        # A refusal is not a missing document. Swallowing it here would turn a
+        # blocked run into a day that merely looks quiet, and the day would be
+        # recorded as processed and never retried.
+        raise
     except Exception as exc:                     # noqa: BLE001
         log.warning("could not load %s: %s", url, exc)
         return None

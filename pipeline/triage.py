@@ -12,6 +12,7 @@ import unicodedata
 from typing import List, Optional
 
 from . import auditor as auditor_mod
+from . import fetch
 from . import officers as officers_mod
 from .enrich import ITEM_TITLES
 from .models import (AUDITOR_CHANGE, CONFIRMED, DERIVED, OFFICER_DEPARTURE,
@@ -104,6 +105,8 @@ def _subclassify(signal: str, filing) -> dict:
     try:
         url = compare.current_document(filing.cik, filing.accession)
         text = compare.load_text(url) if url else None
+    except fetch.SECBlocked:
+        raise                                    # see compare.load_text
     except Exception:                            # noqa: BLE001
         text = None
     if not text:
@@ -122,6 +125,8 @@ def _officer_event(filing) -> List[Event]:
     try:
         url = compare.current_document(filing.cik, filing.accession)
         text = compare.load_text(url) if url else None
+    except fetch.SECBlocked:
+        raise                                    # see compare.load_text
     except Exception:                            # noqa: BLE001
         return []
     if not text:

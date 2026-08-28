@@ -82,6 +82,11 @@ def enrich(filing) -> bool:
         return False
     try:
         text = fetch.get(header_url(filing.cik, filing.accession), accept_404=True)
+    except fetch.SECBlocked:
+        # A refusal is not a missing document. Swallowing it here would turn a
+        # blocked run into a day that merely looks quiet, and the day would be
+        # recorded as processed and never retried.
+        raise
     except Exception as exc:                     # noqa: BLE001
         log.warning("header fetch failed for %s: %s", filing.accession, exc)
         return False
