@@ -14,11 +14,16 @@ ITEM_OFFICERS = "5.02"
 
 # Roles whose departure bears on financial reporting. A departing head of sales
 # is an Item 5.02 event too, and is not this signal.
+#
+# Treasurer was in this list and should not have been: treasury is cash and
+# capital management, not financial reporting, and the methodology page says
+# the signal covers "the roles that own the financial statements". The code
+# disagreed with its own documentation and flagged three departures on it.
 _FINANCE_ROLE = re.compile(
     r"\bchief\s+financial\s+officer\b|\bCFO\b"
     r"|\bchief\s+accounting\s+officer\b|\bCAO\b"
     r"|\bprincipal\s+financial\s+officer\b|\bprincipal\s+accounting\s+officer\b"
-    r"|\bcontroller\b|\btreasurer\b",
+    r"|\bcontroller\b",
     re.I,
 )
 _CHIEF_EXEC = re.compile(r"\bchief\s+executive\s+officer\b|\bCEO\b", re.I)
@@ -87,7 +92,6 @@ ROLE_LABELS = {
     "cfo": "Chief Financial Officer",
     "cao": "Chief Accounting Officer",
     "controller": "Controller",
-    "treasurer": "Treasurer",
 }
 
 
@@ -98,9 +102,7 @@ def _role(text: str) -> str:
     if re.search(r"\bchief\s+accounting\s+officer\b|\bCAO\b|\bprincipal\s+accounting\s+officer\b",
                  text, re.I):
         return "cao"
-    if re.search(r"\bcontroller\b", text, re.I):
-        return "controller"
-    return "treasurer"
+    return "controller"          # the only role left that _FINANCE_ROLE admits
 
 
 def classify(text: str) -> Dict[str, object]:

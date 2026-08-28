@@ -227,11 +227,56 @@ def analyse_letter(filing, disclosed_on: str = "") -> List[Event]:
     )]
 
 
+# The standard opening of a staff letter. It is identical on every one and
+# carries nothing about the company, so quoting it wastes the whole excerpt.
+# Each of these sentences appears verbatim on essentially every staff letter.
+# They are removed one at a time and repeatedly, because they appear in
+# different orders and stripping only the first left the next one as the quote.
+_BOILERPLATE_SENTENCES = [
+    r"We\s+have\s+reviewed\s+your\s+filings?[^.]*\.",
+    r"We\s+have\s+limited\s+our\s+review[^.]*\.",
+    r"Please\s+respond\s+to\s+this\s+letter[^.]*\.",
+    r"In\s+some\s+of\s+our\s+comments[^.]*\.",
+    r"If\s+you\s+do\s+not\s+believe\s+(?:our\s+comments?\s+apply|a\s+comment\s+applies)[^.]*\.",
+    r"After\s+reviewing\s+(?:any\s+information\s+you\s+provide|your\s+response)[^.]*\.",
+    r"Please\s+(?:be\s+advised\s+that\s+)?we\s+may\s+have\s+further\s+comments[^.]*\.",
+]
+_REVIEW_PREAMBLE = re.compile("|".join(_BOILERPLATE_SENTENCES), re.I)
+
+# A CORRESP begins with EDGAR's own document header, then the letterhead: form
+# type, filename, company address, routing line, date, salutation. None of it
+# is the company's answer.
+_DOC_HEADER = re.compile(
+    r"^\s*(?:CORRESP|UPLOAD)\b[^A-Za-z]*\d*\s*"
+    r"(?:\S*filename\S*\s*)?"
+    r"(?:CORRESP|Document)?\s*", re.I)
+
+
 def _first_comment(text: str) -> str:
-    """The opening of the first substantive comment, for quotation."""
+    """The opening of the first substantive comment, for quotation.
+
+    The quote used to start wherever the document did, which on a CORRESP is
+    "CORRESP 1 filename1.htm" followed by an address block, and on a staff
+    letter is the identical review preamble. Both are a sentence start, which
+    is why the self-check passed on them, and neither says anything.
+    """
     from . import sections
 
-    anchor = re.search(r"We\s+note\s+|We\s+have\s+reviewed|Please\s+(?:tell|revise|explain)", text)
+    body = _DOC_HEADER.sub("", text)
+    # Repeatedly, because the sentences appear in different orders.
+    for _ in range(len(_BOILERPLATE_SENTENCES)):
+        stripped = _REVIEW_PREAMBLE.sub(" ", body).strip()
+        if stripped == body.strip():
+            break
+        body = stripped
+    anchor = re.search(
+        r"We\s+note\s+|Please\s+(?:tell|revise|explain|advise)"
+        r"|We\s+have\s+reviewed\s+your\s+response", body)
     if not anchor:
-        return sections.truncate_words(text[:600], 420)
-    return sections.truncate_words(text[anchor.start(): anchor.start() + 700], 420)
+        # No substantive comment could be located. Publishing the letterhead
+        # instead - a date, an address, the EDGAR routing line - looks like
+        # evidence and is not, so publish no quote at all. The card still links
+        # to the filing. Trying to salvage something with more patterns is how
+        # the header ended up quoted in the first place.
+        return ""
+    return sections.truncate_words(body[anchor.start(): anchor.start() + 700], 420)

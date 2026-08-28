@@ -209,6 +209,9 @@ h1{font-family:var(--sans);font-size:clamp(1.55rem,3.1vw,2.35rem);line-height:1.
 .tag-beta{color:var(--muted);letter-spacing:.06em;font-weight:600}
 .tag-conf{color:var(--muted);border-style:dashed;font-weight:500;letter-spacing:.05em}
 .tag-sev-high{color:var(--alert-ink);background:var(--alert);border-color:var(--alert)}
+/* Elevated sits below high and must read that way: outlined in the alert
+   colour rather than filled with it, so the two are ranked at a glance. */
+.tag-sev-elevated{color:var(--alert);border-color:var(--alert);background:transparent}
 
 .ai{background:var(--surface-2);border-left:2px solid var(--line-strong);
   padding:11px 13px;margin:0 0 11px}

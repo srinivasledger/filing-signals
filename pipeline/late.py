@@ -120,8 +120,43 @@ def extract_reason(text: str) -> str:
     return sections.truncate_words(" ".join(kept), 700)
 
 
+# EDGAR's <PERIOD> header is not the report period on an NT filing: for some
+# filers it carries the notification date instead (PLAYSTUDIOS' NT 10-Q reports
+# 2026-08-11, its own filing date), which produced due dates in the future and
+# "days past due" values as low as -45. The form states the period itself, so
+# read it from the document and treat the header as a fallback.
+_PERIOD_ON_FORM = re.compile(
+    r"[Ff]or\s+(?:the\s+)?[Pp]eriod\s+[Ee]nded[:\s]*"
+    r"([A-Z][a-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}/\d{1,2}/\d{2,4}|\d{4}-\d{2}-\d{2})")
+
+_MONTHS = {m: i for i, m in enumerate(
+    ["january", "february", "march", "april", "may", "june", "july",
+     "august", "september", "october", "november", "december"], 1)}
+
+
+def period_on_form(text: str) -> str:
+    """The period end the notice itself states, as YYYY-MM-DD, or ""."""
+    import datetime as _dt
+    m = _PERIOD_ON_FORM.search(text)
+    if not m:
+        return ""
+    raw = m.group(1).strip().rstrip(",")
+    try:
+        if "-" in raw:
+            return _dt.date.fromisoformat(raw).isoformat()
+        if "/" in raw:
+            a, b, c = (int(x) for x in raw.split("/"))
+            c += 2000 if c < 100 else 0
+            return _dt.date(c, a, b).isoformat()
+        month, day, year = raw.replace(",", "").split()
+        return _dt.date(int(year), _MONTHS[month.lower()], int(day)).isoformat()
+    except (ValueError, KeyError):
+        return ""
+
+
 def parse_form(text: str) -> Dict:
     return {
+        "period_on_form": period_on_form(text),
         "reason": extract_reason(text),
         "anticipates_significant_change": _answer_near(text, _ANTICIPATED_Q),
         "other_reports_filed": _answer_near(text, _OTHER_Q),
@@ -165,12 +200,18 @@ def deadline_for(period_end, form: str, tier: str):
     return end + _dt.timedelta(days=_DUE_DAYS[kind][bucket])
 
 
-def _severity(form: str, parsed: Dict) -> str:
+# How overdue a report has to be before lateness alone decides the grade.
+_VERY_OVERDUE_DAYS = 90
+_OVERDUE_DAYS = 30
+
+
+def _severity(form: str, parsed: Dict, days_late: Optional[int] = None) -> str:
     """Grade the notice.
 
-    Content first. Keying off the form's checkboxes alone made a boilerplate
-    notice rank equal to one disclosing an identified accounting error, which
-    left the field carrying no information.
+    Content first, then how late the report actually is. Grading on content
+    alone left a 730-day delinquency at "normal" while a four-day slip that
+    mentioned an internal review was "high" - the tier was uncorrelated with
+    the thing a reader cares about, and in the worst cases inverted.
     """
     reason = parsed.get("reason") or ""
 
@@ -181,7 +222,13 @@ def _severity(form: str, parsed: Dict) -> str:
     if _SUBSTANTIVE_REASON.search(reason):
         return "high"
 
-    if (parsed.get("anticipates_significant_change") is True
+    # A report months past its statutory date is a serious fact on its own,
+    # whatever the notice says about why.
+    if days_late is not None and days_late >= _VERY_OVERDUE_DAYS:
+        return "high"
+
+    if (days_late is not None and days_late >= _OVERDUE_DAYS
+            or parsed.get("anticipates_significant_change") is True
             or parsed.get("other_reports_filed") is False
             or form.upper() in ANNUAL_LATE):
         return "elevated"
@@ -206,22 +253,35 @@ def analyse_late_filing(filing) -> List[Event]:
         return []
 
     parsed = parse_form(raw)
-    severity = _severity(filing.form, parsed)
 
     ticker = ""
     sub = compare.submissions(filing.cik)
     if sub and sub.get("tickers"):
         ticker = sub["tickers"][0]
 
-    due = deadline_for(getattr(filing, "period", ""), filing.form,
+    # The form's own statement of the period beats the SGML header, which on an
+    # NT filing sometimes carries the notification date. A period that is not
+    # comfortably before the filing date cannot be the one being reported late,
+    # so it is discarded rather than used to compute a due date in the future.
+    import datetime as _dt
+    period = parsed.get("period_on_form") or getattr(filing, "period", "")
+    if period:
+        try:
+            if (_dt.date.fromisoformat(filing.filed)
+                    - _dt.date.fromisoformat(period)).days < 20:
+                period = ""
+        except (TypeError, ValueError):
+            period = ""
+    due = deadline_for(period, filing.form,
                        getattr(filing, "size_tier", "") or "small")
     days_late = None
     if due:
         try:
-            import datetime as _dt
             days_late = (_dt.date.fromisoformat(filing.filed) - due).days
         except (TypeError, ValueError):
             days_late = None
+
+    severity = _severity(filing.form, parsed, days_late)
 
     # A notice filed on or around the statutory due date is the filing
     # calendar, not distress: 101 of 251 events landed on 14 August 2026, the

@@ -41,8 +41,12 @@ departures. Read it as a description of this dataset, nothing wider.</p>
   <li><time>{{ e.filed }}</time>
     <a href="{{ rel }}company/{{ e.cik }}.html">{{ e.company }}</a>
     <span class="muted">
-      {% if e.evidence.predecessor_auditor and e.evidence.successor_auditor %}
-        {{ e.evidence.predecessor_auditor }} &rarr; {{ e.evidence.successor_auditor }}
+      {# "firms not identified" was shown whenever either side was missing, so
+         9 of 18 rows hid a name the data held - and that the table above was
+         already counting. Reserve it for rows where neither side parsed. #}
+      {% if e.evidence.predecessor_auditor or e.evidence.successor_auditor %}
+        {{ e.evidence.predecessor_auditor or 'not stated' }} &rarr;
+        {{ e.evidence.successor_auditor or 'not stated' }}
       {% else %}firms not identified{% endif %}
       {% if e.evidence.direction %}&middot; {{ e.evidence.direction }}{% endif %}
     </span>

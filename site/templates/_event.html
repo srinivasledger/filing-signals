@@ -4,7 +4,12 @@
   data-routine="{{ 'yes' if e.routine else 'no' }}" data-confidence="{{ e.confidence }}">
   <div class="event-head">
     <span class="tag tag-{{ e.signal_type }}">{{ e.label }}</span>
-    {% if e.evidence.severity == 'high' %}<span class="tag tag-sev-high">elevated</span>{% endif %}
+    {# The badge used to read "elevated" whenever severity was `high`, and show
+       nothing at all for `elevated` - so the more serious tier carried the
+       milder word and the milder tier was invisible. Each tier now shows its
+       own name; `normal` stays unbadged. #}
+    {% if e.evidence.severity == 'high' %}<span class="tag tag-sev-high">high</span>
+    {% elif e.evidence.severity == 'elevated' %}<span class="tag tag-sev-elevated">elevated</span>{% endif %}
     {% if e.beta %}<span class="tag tag-beta" title="Derived from comparing two filings; higher chance of noise">beta</span>{% endif %}
     <span class="tag tag-conf tag-conf-{{ e.confidence }}">
       {{ 'SEC item code' if e.confidence == 'confirmed' else 'Filing comparison' }}
@@ -62,9 +67,11 @@
   {% if e.evidence.predecessor_auditor or e.evidence.direction_label %}
   <p class="subclass">
     {% if e.evidence.direction_label %}{{ e.evidence.direction_label }}.{% endif %}
-    {% if e.evidence.predecessor_auditor and e.evidence.successor_auditor %}
-      <span class="firms">{{ e.evidence.predecessor_auditor }}
-      <span class="arrow">&rarr;</span> {{ e.evidence.successor_auditor }}</span>
+    {# Show whichever side parsed. Requiring both hid a firm name that was in
+       the data on 9 of 18 changes, while the summary table above counted it. #}
+    {% if e.evidence.predecessor_auditor or e.evidence.successor_auditor %}
+      <span class="firms">{{ e.evidence.predecessor_auditor or 'not stated' }}
+      <span class="arrow">&rarr;</span> {{ e.evidence.successor_auditor or 'not stated' }}</span>
       {% if e.evidence.tier_downgrade %}<span class="tag tag-sev-high">tier downgrade</span>{% endif %}
     {% endif %}
     {% if e.evidence.disagreements_disclosed is defined %}
@@ -89,9 +96,16 @@
       <span class="muted">{{ e.evidence.filings_in_batch }} notices filed the same day
       ({{ e.evidence.other_forms|join(', ') }}).</span>
     {% endif %}
+    {# Rule 12b-25 lets a company file the notice before the deadline, so a
+       negative number here is normal and "-3 day(s) past the due date" was
+       simply the wrong sentence for it. Say which side of the date it fell on,
+       and use the singular when it is one day. #}
     {% if e.evidence.days_past_due_date is not none and e.evidence.days_past_due_date is defined %}
-      <span class="muted">{{ e.evidence.days_past_due_date }} day(s) past the
-      statutory due date.</span>
+      {% set d = e.evidence.days_past_due_date %}
+      <span class="muted">
+      {%- if d > 0 %}{{ d }} day{{ '' if d == 1 else 's' }} past the statutory due date.
+      {%- elif d == 0 %}Filed on the statutory due date.
+      {%- else %}Filed {{ -d }} day{{ '' if d == -1 else 's' }} before the statutory due date.{% endif %}</span>
     {% endif %}
     {% if e.evidence.other_periodic_reports_filed is false %}
       <span class="tag tag-sev-high">other reports also outstanding</span>
@@ -111,7 +125,10 @@
     <summary>Evidence</summary>
     <dl>
       {% for k, v in e.evidence.items() %}
-        {% if k not in hidden_evidence and v is not none %}
+        {# Empty strings and empty lists rendered as a bare label with nothing
+           after it - "Cited sections" on 45 of 59 cards. False and 0 are kept,
+           because "disagreements disclosed: no" is the informative case. #}
+        {% if k not in hidden_evidence and (v is boolean or v is number or v) %}
         <dt>{{ k.replace('_',' ')|capitalize }}</dt><dd>{{ v|evidence }}</dd>
         {% endif %}
       {% endfor %}

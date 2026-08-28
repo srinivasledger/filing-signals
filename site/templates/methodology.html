@@ -89,8 +89,10 @@ is routine, and most reviews close with no change to the accounts. A letter
 records a question that was asked &mdash; nothing about the answer.</p>
 <p><strong>They are historic, not current.</strong> The SEC releases
 correspondence only after a review closes, no earlier than 20 business days
-afterwards. In practice a median of about eleven months passes between a letter
-being written and appearing on EDGAR, so every entry shows both dates.</p>
+afterwards. In practice a median of
+{% if letter_median_lag %}<b>{{ letter_median_lag }} days</b>{% else %}many months{% endif %}
+passes between a letter being written and appearing on EDGAR, so every entry
+shows both dates.</p>
 <p>Most staff letters review <em>registration statements</em> rather than
 periodic reports. Those are a different activity &mdash; a company raising money,
 not a review of published accounts &mdash; so the "Re:" line is parsed and only

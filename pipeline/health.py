@@ -18,7 +18,8 @@ import re
 from typing import Dict, List
 
 from . import config
-from .models import (AUDITOR_CHANGE, CONFIRMED, GOING_CONCERN, POLICY_CHANGE,
+from .models import (AUDITOR_CHANGE, COMMENT_LETTER, CONFIRMED, GOING_CONCERN, LATE_FILING,
+                     MATERIAL_WEAKNESS, OFFICER_DEPARTURE, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION)
 
 log = logging.getLogger(__name__)
@@ -92,32 +93,68 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
                 "checks": checks, "summary": _summarise(checks)}
 
     uncited = [e for e in events if not e.filing_url or "sec.gov" not in e.filing_url]
+    # Asserting the link resolves to THIS filing, not merely to sec.gov. The
+    # weaker version passed for any sec.gov URL, including the wrong one.
+    wrong_filing = [e for e in events if e.filing_url and e.accession
+                    and e.accession.replace("-", "") not in e.filing_url.replace("-", "")]
     checks.append(_check(
-        "Every entry links to its filing", OK if not uncited else FAIL,
-        f"{total - len(uncited)}/{total} link to sec.gov"))
+        "Every entry links to its own filing", OK if not (uncited or wrong_filing) else FAIL,
+        f"{total - len(uncited) - len(wrong_filing)}/{total} link to the "
+        "accession they report"))
 
-    no_evidence = [e for e in events if not e.evidence.get("source")]
+    # A non-empty string was the old bar, which any typo cleared. The method
+    # has to name something the pipeline actually does.
+    KNOWN_METHOD = ("item code", "comparison", "compared", "Item 9A", "Form 12b-25",
+                    "Item 5.02", "Re:", "note", "cover", "letter", "CORRESP", "UPLOAD")
+    no_evidence = [e for e in events
+                   if not any(k.lower() in (e.evidence.get("source") or "").lower()
+                              for k in KNOWN_METHOD)]
     checks.append(_check(
         "Every entry states how it was found", OK if not no_evidence else FAIL,
-        f"{total - len(no_evidence)}/{total} carry a detection method"))
+        f"{total - len(no_evidence)}/{total} name a detection method the "
+        "pipeline implements"))
 
     # --- the deterministic promise ---
+    # The code has to be the one that produces this signal. Merely carrying
+    # "4.01 or 4.02" would pass an auditor change built from a restatement code.
+    CODE_FOR = {RESTATEMENT: "4.02", AUDITOR_CHANGE: "4.01",
+                OFFICER_DEPARTURE: "5.02"}
     confirmed = [e for e in events if e.confidence == CONFIRMED]
     bad_codes = [e for e in confirmed
-                 if e.evidence.get("item_code") not in ("4.01", "4.02")]
+                 if e.signal_type in CODE_FOR
+                 and e.evidence.get("item_code") != CODE_FOR[e.signal_type]]
     checks.append(_check(
-        "Item-code entries carry an item code",
+        "Item codes match the signal they produced",
         OK if not bad_codes else FAIL,
-        f"{len(confirmed)} entries from SEC item codes, {len(bad_codes)} without one"))
+        f"{len(confirmed)} entries from SEC item codes, {len(bad_codes)} "
+        "carrying the wrong code for their signal"))
 
     # --- the comparison promise ---
+    # Naming a prior filing was the old bar. It passed while amendments were
+    # being compared against the previous filing in the series instead of the
+    # one they amend - which published "no longer discloses going concern"
+    # about companies whose amendment simply did not re-file the note.
     comparisons = [e for e in events if e.signal_type in COMPARISON_SIGNALS]
     no_prior = [e for e in comparisons if not e.prior_accession]
+    unsound = []
+    for e in comparisons:
+        if not e.prior_accession:
+            continue
+        prior_form = (e.evidence.get("prior_form") or "").upper()
+        cur = e.form.upper()
+        if prior_form.rstrip("/A") != cur.rstrip("/A"):
+            unsound.append((e, "compared across form types"))
+        elif (e.evidence.get("prior_filed") or "") >= e.filed:
+            unsound.append((e, "prior filing is not earlier"))
+        elif cur.endswith("/A") and e.evidence.get("disclosure_absent"):
+            # An amendment that simply omits the section is not a change.
+            unsound.append((e, "amendment inferred from an absent section"))
     checks.append(_check(
-        "Comparisons name the prior filing",
-        OK if not no_prior else FAIL,
-        f"{len(comparisons) - len(no_prior)}/{len(comparisons)} cite what they "
-        "were compared against"))
+        "Comparisons are like-for-like",
+        OK if not (no_prior or unsound) else FAIL,
+        f"{len(comparisons) - len(no_prior) - len(unsound)}/{len(comparisons)} "
+        "compare the same form type against an earlier filing"
+        + (f"; {len(unsound)} unsound" if unsound else "")))
 
     # --- idempotency ---
     # Counted from the rows on disk, not from the loaded events: the loader
@@ -134,12 +171,33 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         + (f", {dupes} duplicated" if dupes else "")))
 
     # --- quote hygiene (a real past defect) ---
-    ragged = [e for e in events
-              if e.quote and not re.match(r'^[A-Z“("•]', e.quote.strip())]
+    # "Starts with a capital" passed on "CORRESP 1 filename1.htm ...", because
+    # a document header is a sentence start. The property that matters is that
+    # the quote opens with the substance, so that is what is asserted.
+    JUNK_OPENING = re.compile(
+        r'^\s*(?:CORRESP|UPLOAD)\b'
+        r'|^\s*\S*filename\d'
+        r'|^\s*We\s+have\s+reviewed\s+your\s+filing'
+        r'|^\s*(?:VIA|BY)\s+EDGAR\b',
+        re.I)
+    quoted = [e for e in events if e.quote]
+    ragged = [e for e in quoted if not re.match(r'^[A-Z“("•]', e.quote.strip())]
+    # For a comment letter the property is positive: the quote has to open at a
+    # comment. Listing header patterns to exclude is a blacklist, and the last
+    # version of it accepted "January 15, 2026 By EDGAR Division of..." because
+    # that is not a pattern I had thought of.
+    COMMENT_OPENING = re.compile(
+        r'^\s*(?:We\s+note|We\s+have\s+reviewed\s+your\s+response'
+        r'|Please\s+(?:tell|revise|explain|advise)|In\s+your\s+response)', re.I)
+    headed = [e for e in quoted
+              if e.signal_type == COMMENT_LETTER and not COMMENT_OPENING.match(e.quote)]
+    headed += [e for e in quoted
+               if e.signal_type != COMMENT_LETTER and JUNK_OPENING.search(e.quote)]
     checks.append(_check(
-        "Quotes start at a sentence", OK if not ragged else WARN,
-        f"{len(ragged)} of {sum(1 for e in events if e.quote)} quoted passages "
-        "begin mid-sentence"))
+        "Quotes open with the substance",
+        OK if not (ragged or headed) else WARN,
+        f"{len(ragged)} of {len(quoted)} begin mid-sentence, "
+        f"{len(headed)} do not open at the substance"))
 
     # --- is the home page still showing everything? ---
     # Truncation here is deliberate and stated on the page itself, so it is

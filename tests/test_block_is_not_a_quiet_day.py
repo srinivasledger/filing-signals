@@ -54,3 +54,25 @@ def test_triage_document_reads_let_a_block_through(fn):
          pytest.raises(fetch.SECBlocked):
         getattr(triage, fn)("restatement", filing) if fn == "_subclassify" \
             else getattr(triage, fn)(filing)
+
+
+def test_an_amendment_that_omits_the_note_is_not_a_downgrade():
+    """Artelo and Global Arena both amended within eight days of the original
+    and were published as no longer disclosing substantial doubt. The note was
+    absent because it was not re-filed, not because the conclusion changed."""
+    from pipeline import sections
+    from pipeline.compare import amendment_without_the_section as skip
+
+    assert skip("10-Q/A", sections.GC_NONE, "") is True
+    assert skip("10-K/A", sections.GC_NONE, None) is True
+
+
+def test_the_guard_does_not_swallow_amendments_that_say_something():
+    """Three material-weakness amendments state a real conclusion for the
+    period and are correct. Suppressing amendments wholesale would lose them."""
+    from pipeline import sections
+    from pipeline.compare import amendment_without_the_section as skip
+
+    assert skip("10-Q/A", sections.GC_SUBSTANTIAL_DOUBT, "substantial doubt exists") is False
+    assert skip("10-Q/A", sections.GC_NONE, "no going-concern conditions were identified") is False
+    assert skip("10-Q", sections.GC_NONE, "") is False        # not an amendment

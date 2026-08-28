@@ -217,6 +217,19 @@ def _severity_direction(prior_state: str, current_state: str) -> str:
     return "escalated" if c > p else "eased"
 
 
+def amendment_without_the_section(form: str, state: str, quote) -> bool:
+    """True when an amendment simply did not re-file the section being compared.
+
+    Absence in an amendment is not a disclosure being withdrawn: an amendment
+    commonly re-files only part of a document. Keyed on absence rather than on
+    the form being an amendment, because amendments that do state a conclusion
+    are compared normally and are correct.
+    """
+    return (form.upper().endswith("/A")
+            and state == sections.GC_NONE
+            and not quote)
+
+
 def _gc_headline_new_registrant(company: str, current_state: str) -> str:
     """Headline for a filing whose prior filing describes a different business.
 
@@ -392,6 +405,21 @@ def analyse_periodic(filing) -> List[Event]:
     if not comparable:
         changed = changed and cur_gc["state"] in (
             sections.GC_SUBSTANTIAL_DOUBT, sections.GC_DOUBT_ALLEVIATED)
+
+    # An amendment that does not re-file the note is not a company dropping its
+    # going-concern conclusion. Artelo and Global Arena both amended within
+    # eight days of the original and were published as "no longer discloses
+    # substantial doubt" - a materially misleading claim about a named company,
+    # inferred purely from the note being absent from a partial re-filing.
+    #
+    # Scoped to absence, deliberately. Amendments that state a conclusion are
+    # compared as normal: three material-weakness amendments do exactly that
+    # and are correct, so suppressing amendments wholesale would have destroyed
+    # them.
+    if amendment_without_the_section(filing.form, cur_gc["state"], cur_gc.get("quote")):
+        log.info("%s: %s amends without re-filing the going-concern note; "
+                 "no event", filing.company, filing.form)
+        changed = False
 
     if changed:
         headline = (_gc_headline(filing.company, pri_gc["state"], cur_gc["state"])

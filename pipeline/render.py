@@ -456,7 +456,12 @@ def build(second_pass: bool = False) -> None:
     # --- static pages ---
     _write(config.PUBLIC / "methodology.html",
            env.get_template("methodology.html").render(
-               rel="", page_path="methodology.html", filings_scanned=scanned, candidates_scanned=candidates,
+               rel="", page_path="methodology.html",
+               # Computed once and passed to both pages that state it. The
+               # methodology page said "about eleven months" in prose while the
+               # letters page computed 261 days from the same data.
+               letter_median_lag=(letter_stats or {}).get("median_lag"),
+               filings_scanned=scanned, candidates_scanned=candidates,
                total_events=len(events), flag_rate=flag_rate, **common))
     _write(config.PUBLIC / "status.html",
            env.get_template("status.html").render(
