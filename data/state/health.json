@@ -1,12 +1,12 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-08-26, 1 business days ago",
+      "detail": "last complete filing day 2026-08-27, 1 business days ago",
       "name": "Pipeline is current",
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 55,759 index rows read",
+      "detail": "10 runs recorded, 51,234 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,12 +16,12 @@
       "status": "ok"
     },
     {
-      "detail": "334/334 link to sec.gov",
+      "detail": "344/344 link to sec.gov",
       "name": "Every entry links to its filing",
       "status": "ok"
     },
     {
-      "detail": "334/334 carry a detection method",
+      "detail": "344/344 carry a detection method",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
@@ -31,37 +31,37 @@
       "status": "ok"
     },
     {
-      "detail": "59/59 cite what they were compared against",
+      "detail": "61/61 cite what they were compared against",
       "name": "Comparisons name the prior filing",
       "status": "ok"
     },
     {
-      "detail": "334 unique entries",
+      "detail": "344 unique entries across 344 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 244 quoted passages begin mid-sentence",
+      "detail": "0 of 250 quoted passages begin mid-sentence",
       "name": "Quotes start at a sentence",
       "status": "ok"
     },
     {
-      "detail": "all 334 entries fit on the home page",
+      "detail": "all 344 entries fit on the home page",
       "name": "Home page window",
       "status": "ok"
     },
     {
-      "detail": "5,156 companies, refreshed 5 day(s) ago",
+      "detail": "5,156 companies, refreshed 6 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
     {
-      "detail": "284 companies, 4,447 historical events",
+      "detail": "291 companies, 4,508 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-08-27T04:37:56+00:00",
+  "generated_at": "2026-08-28T06:49:23+00:00",
   "summary": {
     "fail": 0,
     "ok": 12,
