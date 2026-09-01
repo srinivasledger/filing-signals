@@ -250,21 +250,37 @@ def _letter_stats(events):
 
 
 def _auditor_stats(events):
-    """Which audit firms appear across the flagged population, and how."""
+    """Which audit firms appear across the flagged population, and how.
+
+    Grouped on firm_key rather than the displayed name. Filers spell the same
+    firm several ways - "GreenGrowth CPAs", "Green Growth CPAs" and
+    "GreenGrowth CPA" were three separate rows - and a movement table that
+    splits one firm across three lines is worse than no table.
+    """
+    from .auditor import firm_key
+
     leaving, arriving, downgrades = Counter(), Counter(), Counter()
+    display: Dict[str, Counter] = defaultdict(Counter)
     for e in events:
         ev = e.evidence
-        if ev.get("predecessor_auditor"):
-            leaving[ev["predecessor_auditor"]] += 1
-        if ev.get("successor_auditor"):
-            arriving[ev["successor_auditor"]] += 1
+        for field, bucket in (("predecessor_auditor", leaving),
+                              ("successor_auditor", arriving)):
+            name = ev.get(field)
+            if not name:
+                continue
+            key = firm_key(name)
+            bucket[key] += 1
+            display[key][name] += 1
         if ev.get("tier_downgrade") and ev.get("predecessor_auditor"):
-            downgrades[ev["predecessor_auditor"]] += 1
-    firms = sorted(set(leaving) | set(arriving),
-                   key=lambda f: -(leaving[f] + arriving[f]))
-    return [{"firm": f, "left": leaving[f], "joined": arriving[f],
-             "net": arriving[f] - leaving[f], "downgrades_from": downgrades[f]}
-            for f in firms]
+            downgrades[firm_key(ev["predecessor_auditor"])] += 1
+
+    keys = sorted(set(leaving) | set(arriving),
+                  key=lambda k: -(leaving[k] + arriving[k]))
+    # Show the spelling the filers used most often for that firm.
+    return [{"firm": display[k].most_common(1)[0][0],
+             "left": leaving[k], "joined": arriving[k],
+             "net": arriving[k] - leaving[k], "downgrades_from": downgrades[k]}
+            for k in keys]
 
 
 # Evidence values are Python objects. Rendered raw they reached the page as

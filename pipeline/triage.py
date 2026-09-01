@@ -113,7 +113,7 @@ def _subclassify(signal: str, filing) -> dict:
         return {}
     if signal == RESTATEMENT:
         return auditor_mod.classify_402(text)
-    return auditor_mod.classify_401(text)
+    return auditor_mod.classify_401(text, getattr(filing, "company", ""))
 
 
 def _officer_event(filing) -> List[Event]:

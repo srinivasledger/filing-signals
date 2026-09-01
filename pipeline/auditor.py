@@ -50,13 +50,52 @@ def firm_tier(name: str) -> str:
     return TIER_OTHER
 
 
+# Entity suffixes and registrant qualifiers. Stripped for the aggregation key
+# so "Simon & Edward" and "Simon & Edward LLP" count as one firm, and dropped
+# from the display so the page does not carry PCAOB ids.
+_SUFFIX = re.compile(
+    r"\s*(?:,\s*)?\b(?:L\.?L\.?P\.?|L\.?L\.?C\.?|P\.?L\.?L\.?C\.?|P\.?C\.?"
+    r"|CPAs?|CPA'?s|Chartered(?:\s+Accountants)?|US|U\.S\.|LTD|Limited|Inc\.?)\b\.?\s*$",
+    re.I)
+_TRAILING_NOTE = re.compile(r"\s*\((?:PCAOB|Firm)\b[^)]*\)\s*$", re.I)
+
+
+def firm_key(name: str) -> str:
+    """Aggregation key: one key per firm, however the filer spelled it.
+
+    Spacing and entity suffixes vary between filings of the same change -
+    "GreenGrowth CPAs", "Green Growth CPAs" and "GreenGrowth CPA" were three
+    separate rows in the firm-movement table. Counting must not depend on
+    which one a filer typed, so the key drops everything that is not a letter
+    or a digit.
+    """
+    if not name:
+        return ""
+    for label, pat in {**BIG_FOUR, **NATIONAL}.items():
+        if re.search(pat, name, re.I):
+            return label.lower()
+    stripped = name
+    for _ in range(3):                       # "Wei, Wei & Co. LLP" -> two passes
+        cut = _SUFFIX.sub("", _TRAILING_NOTE.sub("", stripped)).strip(" .,&")
+        if cut == stripped:
+            break
+        stripped = cut
+    return re.sub(r"[^a-z0-9]", "", stripped.lower())
+
+
 def canonical_firm(name: str) -> str:
-    """Normalise to a comparable label so concentration counts aggregate."""
+    """The label shown on the page. Comparison uses firm_key, not this.
+
+    A bare `[,(]` truncation used to stand in for both jobs, and it published
+    "Wei, Wei & Co. LLP" as "Wei" - a comma is as likely to be inside a firm's
+    name as to introduce a qualifier after it.
+    """
     for label, pat in {**BIG_FOUR, **NATIONAL}.items():
         if re.search(pat, name, re.I):
             return label
-    cleaned = re.sub(r"\s*[,(].*$", "", name).strip(" .,")
-    return re.sub(r"\s+", " ", cleaned)[:60]
+    cleaned = _TRAILING_NOTE.sub("", name)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" .,;")
+    return cleaned[:60]
 
 
 # --- Item 4.02 ---------------------------------------------------------------
@@ -97,8 +136,17 @@ LIMB_LABELS = {
 
 # --- Item 4.01 ---------------------------------------------------------------
 _RESIGNED = re.compile(r"\bresign(?:ed|ation|s)\b", re.I)
-_DISMISSED = re.compile(r"\bdismiss(?:ed|al|es)\b|\bterminat(?:ed|ion)\b"
-                        r"|will\s+no\s+longer\s+be\s+(?:retain|engag)", re.I)
+# "terminated" alone fires on anything a company ends. Greenland Mines filed
+# an Item 4.01 whose text terminated an At-the-Market Sales Agreement with a
+# placement agent, and it was recorded as an auditor dismissal. The word now
+# has to be near the accountants.
+_AUDITOR_NOUN = (r"(?:independent\s+)?(?:registered\s+public\s+)?"
+                 r"(?:accounting\s+firm|accountants?|auditors?)")
+_DISMISSED = re.compile(
+    r"\bdismiss(?:ed|al|es)\b|\bdisengag(?:ed|e|ement)\b"
+    r"|\bterminat(?:ed|ion)\b[^.]{0,80}?" + _AUDITOR_NOUN +
+    r"|" + _AUDITOR_NOUN + r"[^.]{0,80}?\bterminat(?:ed|ion)\b"
+    r"|will\s+no\s+longer\s+be\s+(?:retain|engag)", re.I)
 _DECLINED = re.compile(r"declined\s+to\s+stand\s+for\s+re-?appointment", re.I)
 
 # The negative form is boilerplate in almost every 4.01; the positive form is
@@ -110,27 +158,78 @@ _HAD_DISAGREEMENTS = re.compile(
     r"there\s+(?:were|was|have\s+been)\s+(?:one\s+or\s+more|certain|the\s+following)"
     r"\s+disagreement|a\s+disagreement\s+(?:arose|occurred|existed)", re.I)
 
+# A firm name starts with a capital. The whole pattern used to be compiled
+# with re.I, which makes [A-Z] match lowercase too, so the token happily began
+# on the connective before the name: "notified that Simon & Edward LLP" was
+# captured as "that Simon & Edward LLP". Only the trigger words are
+# case-insensitive now; the name itself is not.
 _FIRM_TOKEN = (r"[A-Z][A-Za-z&.,'’\- ]{2,60}?"
-               r"(?:LLP|L\.L\.P\.|LLC|L\.L\.C\.|P\.?C\.?|PLLC|CPAs?|"
+               # Longest form first: with "CPAs?" the lazy quantifier stopped
+               # at "CPA" and left the S behind ("M&K CPAS" -> "M&K CPA").
+               r"(?:PLLC|LLP|L\.L\.P\.|LLC|L\.L\.C\.|CPA[sS]|CPA|P\.?C\.?|"
                r"& Co\.|Inc\.|Chartered)")
+_LEAD = r"(?:\s+(?:that|by|of|with|the|its|our|as|a|an|new|former|previous))*\s+"
 _DISMISS_CTX = re.compile(
-    r"(?:Dismissal of|dismissed|notified)\s+(" + _FIRM_TOKEN + r")", re.I)
+    r"(?i:Dismissal of|dismissed|disengage[d]?|notified|terminated)" + _LEAD
+    + r"(" + _FIRM_TOKEN + r")")
+# The outgoing firm is often the one doing the telling: "was advised by Ham,
+# Langston & Brezina, LLP ... that HL&B completed a transaction". Two audit
+# firm mergers were recorded with neither side named because of this.
+_ADVISED_BY_CTX = re.compile(
+    r"(?i:advised|notified|informed)\s+by" + _LEAD + r"(" + _FIRM_TOKEN + r")")
 _ENGAGE_CTX = re.compile(
-    r"(?:Engagement of|engaged|appointed|retained)\s+(?:the\s+firm\s+)?("
-    + _FIRM_TOKEN + r")", re.I)
+    r"(?i:Engagement of|engaged|appointed|retained)" + _LEAD
+    + r"(?:(?i:firm)\s+)?(" + _FIRM_TOKEN + r")")
+
+# Words that mark a name as something other than the audit firm. A law firm,
+# counsel or an underwriter is frequently named in the same Item 4.01 text,
+# and one - Lewis Brisbois - was published as an incoming auditor.
+_NOT_AN_AUDITOR = re.compile(
+    r"\b(?:LLP|LLC|P\.?C\.?)?\s*(?:is|as|,)?\s*(?:our|its|the)?\s*"
+    r"(?:legal\s+counsel|counsel|attorneys?|law\s+firm|underwriters?|"
+    r"placement\s+agent|transfer\s+agent|bank(?:ers?)?|advisors?\s+to)\b", re.I)
+_LAW_FIRM_HINT = re.compile(
+    r"Bisgaard|Brisbois|&\s*Knight|Sullivan\s*&|Skadden|Latham|Cooley|"
+    r"Wilson\s+Sonsini|Loeb\s*&|Duane\s+Morris|Sichenzia|Lucosky", re.I)
 
 
-def _first_firm(pattern: re.Pattern, text: str) -> str:
-    m = pattern.search(text)
-    if not m:
-        return ""
-    name = " ".join(m.group(1).split())
-    # Trim leading connective words the loose token can absorb.
-    return re.sub(r"^(?:the|its|our|as|new|former)\s+", "", name, flags=re.I).strip(" .,")
+def _looks_like_an_auditor(name: str, text: str, company: str = "") -> bool:
+    """Reject candidates that are plainly not the accountants.
+
+    The firm token is deliberately loose - audit firms are named every way
+    imaginable - so the check is on what the candidate IS, not on tightening
+    the pattern until real firms stop matching.
+    """
+    if not name or len(name) < 4:
+        return False
+    if _LAW_FIRM_HINT.search(name):
+        return False
+    # named as counsel/underwriter in the sentence it was taken from
+    at = text.find(name)
+    if at != -1 and _NOT_AN_AUDITOR.search(text[at + len(name): at + len(name) + 80]):
+        return False
+    # the issuer is not its own auditor
+    if company and firm_key(name) and firm_key(name) == firm_key(company):
+        return False
+    return True
 
 
-def classify_401(text: str) -> Dict[str, object]:
-    """Direction of the change, disagreement status, and the two firms."""
+def _first_firm(pattern: re.Pattern, text: str, company: str = "") -> str:
+    """The first candidate in the text that survives the rejections."""
+    for m in pattern.finditer(text):
+        name = " ".join(m.group(1).split()).strip(" .,")
+        if _looks_like_an_auditor(name, text, company):
+            return name
+    return ""
+
+
+def classify_401(text: str, company: str = "") -> Dict[str, object]:
+    """Direction of the change, disagreement status, and the two firms.
+
+    `company` lets the issuer's own name be rejected as a candidate - one
+    filing published "Starfighters Space" as Starfighters Space's predecessor
+    auditor.
+    """
     if _RESIGNED.search(text):
         direction = "resigned"
     elif _DECLINED.search(text):
@@ -147,12 +246,13 @@ def classify_401(text: str) -> Dict[str, object]:
     else:
         disagreements = None
 
-    outgoing = _first_firm(_DISMISS_CTX, text)
-    incoming = _first_firm(_ENGAGE_CTX, text)
+    outgoing = (_first_firm(_DISMISS_CTX, text, company)
+                or _first_firm(_ADVISED_BY_CTX, text, company))
+    incoming = _first_firm(_ENGAGE_CTX, text, company)
     # Identical firms on both sides means the loose firm-name pattern matched
     # the same mention twice, not that a company re-hired its own auditor.
     # Publishing "dismissed PwC and engaged PwC" is worse than saying nothing.
-    if outgoing and incoming and canonical_firm(outgoing) == canonical_firm(incoming):
+    if outgoing and incoming and firm_key(outgoing) == firm_key(incoming):
         outgoing = incoming = ""
     out_tier, in_tier = firm_tier(outgoing), firm_tier(incoming)
 
