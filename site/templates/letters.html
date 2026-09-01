@@ -54,10 +54,11 @@ counts above are drawn from all {{ count }} letters; the complete list is on the
 <a href="{{ rel }}signals/comment_letter.html">comment letter page</a>.</p>
 {% endif %}
 
-{% include "_sizefilter.html" %}
+{% include "_refine.html" %}
 <div class="feed feed-single" id="feed">
   {% for t in shown %}
-  <article class="event" data-signal="comment_letter" data-size="{{ t.size_tier }}">
+  <article class="event" data-signal="comment_letter" data-size="{{ t.size_tier }}"
+    data-period="{{ t.closed[:7] }}">
     <div class="event-head">
       <span class="tag tag-comment_letter">SEC comment letter</span>
       <span class="tag tag-conf">{{ t.letters|length }} letter{{ '' if t.letters|length == 1 else 's' }}</span>
@@ -67,6 +68,13 @@ counts above are drawn from all {{ count }} letters; the complete list is on the
     <p class="event-meta">
       <a href="{{ rel }}company/{{ t.cik }}.html">{{ t.company }}</a>
       {% if t.ticker %}<span class="ticker">{{ t.ticker }}</span>{% endif %}
+      {# The SEC addressed the letter to whatever the registrant was called at
+         the time. Without this, a review of "Bed Bath & Beyond" listed under
+         "Neighborhood Intelligence (NXH)" reads as the wrong filing attached
+         to the wrong company - it is the same CIK, renamed since. #}
+      {% if t.formerly and t.formerly|lower not in t.company|lower %}
+      <span class="sep">&middot;</span><span class="muted">filed as {{ t.formerly }}</span>
+      {% endif %}
       <span class="sep">&middot;</span>{{ t.from_staff }} from the staff,
       {{ t.letters|length - t.from_staff }} in reply
     </p>

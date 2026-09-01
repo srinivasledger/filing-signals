@@ -2,11 +2,19 @@ name: Daily filing scan
 
 on:
   schedule:
-    # 23:30 UTC on weekdays = 19:30 ET (18:30 in winter), comfortably after
-    # EDGAR's 17:30 ET filing cutoff, so the day's index is complete.
-    # GitHub may delay scheduled runs; that is fine, because a missed run is
-    # backfilled by the next one rather than leaving a hole.
-    - cron: "30 23 * * 1-5"
+    # 03:30 UTC Tue-Sat = 23:30 ET Mon-Fri. EDGAR publishes the day's index at
+    # about 22:00 ET, an hour and a half before this, so the run finds it.
+    #
+    # The old 23:30 UTC (19:30 ET) fired two and a half hours BEFORE
+    # publication. Every run asked for an index that did not exist, recorded
+    # nothing for that day, and left it to the next run - so the site trailed
+    # current filings by a day permanently, and the backfill logic was
+    # covering for a scheduling error rather than for outages.
+    #
+    # Runs Tue-Sat because the evening of a weekday falls on the next UTC day.
+    # GitHub may still delay a scheduled run; that remains harmless, because a
+    # missed day is picked up by the next one.
+    - cron: "30 3 * * 2-6"
   workflow_dispatch:
     inputs:
       days:

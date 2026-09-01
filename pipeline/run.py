@@ -39,12 +39,13 @@ def business_days(start: dt.date, end: dt.date) -> List[dt.date]:
     return days
 
 
-# EDGAR stops accepting filings at 17:30 ET and the daily index settles shortly
-# after. Before that cutoff today's index is absent or incomplete, so "the last
-# complete day" is yesterday; after it, today itself is fair game. Without this
-# an evening run would skip the day it was scheduled to cover and the site
-# would permanently trail by 24 hours.
-EDGAR_CLOSE_HOUR_ET = 19
+# EDGAR publishes the day's index at about 22:00 ET, not at the 17:30 filing
+# cutoff. Measured on two Last-Modified headers: form.20260828.idx at 02:02 UTC
+# and form.20260831.idx at 02:03 UTC, both the following day - 22:02 and 22:03
+# ET. Treating 19:00 as the close meant every run asked for an index that did
+# not exist yet, got nothing, and left the day for the next run to backfill, so
+# the site trailed current filings permanently.
+EDGAR_CLOSE_HOUR_ET = 23
 
 
 def last_complete_day(now_et: dt.datetime) -> dt.date:

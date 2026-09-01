@@ -22,7 +22,7 @@
   --series-4:#eda100; --series-5:#e87ba4; --series-6:#008300;
   --series-7:#4a3aa7; --series-8:#e34948; --series-muted:#5f6a75;
 
-  --radius:2px; --wrap:1340px; --reading:76ch;
+  --radius:2px; --wrap:1600px; --reading:76ch;
   --wrap-pad:clamp(14px,2.4vw,28px);   /* used by .wrap and by anything
                                           that needs to bleed past it */
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
@@ -168,6 +168,9 @@ h1{font-family:var(--sans);font-size:clamp(1.55rem,3.1vw,2.35rem);line-height:1.
 /* ── the register ─────────────────────────────────────────── */
 .feed{display:grid;gap:12px}
 @media (min-width:1120px){ .feed{grid-template-columns:1fr 1fr;align-items:start} }
+/* A third column past 1700px. Cards are self-contained, so they tile; the
+   prose above them stays at --reading regardless of how wide the page gets. */
+@media (min-width:1700px){ .feed{grid-template-columns:repeat(3,1fr)} }
 .event{background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);padding:15px 17px 15px 19px;position:relative;
   transition:border-color .12s}
@@ -432,6 +435,11 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 .feed .event { content-visibility: auto; contain-intrinsic-size: auto 280px; }
 .mini li     { content-visibility: auto; contain-intrinsic-size: auto 26px; }
 
+/* Any element given `display` by a rule outranks the [hidden] attribute's
+   own display:none. `.mini li{display:flex}` did exactly that, so filtering
+   a signal page set hidden on every row and changed nothing on screen. */
+[hidden]{display:none!important}
+
 /* ── current page, and a nav you can hit on a phone ───────────
    The tabs scroll horizontally on a narrow screen, so "where am I" is not
    obvious from position alone: the current tab is marked rather than implied.
@@ -462,3 +470,28 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 .exchange-head{display:flex;gap:9px;align-items:baseline;flex-wrap:wrap;margin:0 0 6px;
   font-family:var(--mono);font-size:.72rem;color:var(--muted)}
 .exchange blockquote{margin:0 0 6px}
+
+/* ── refine panel ─────────────────────────────────────────────
+   Secondary filters behind one disclosure. The summary carries the active
+   refinements so nothing is ever filtered invisibly. */
+.refine{border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface);margin:0 0 14px}
+.refine summary{cursor:pointer;padding:11px 15px;display:flex;gap:11px;
+  align-items:baseline;font-family:var(--mono);font-size:.74rem;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+  list-style:none;min-height:44px;box-sizing:border-box}
+.refine summary::-webkit-details-marker{display:none}
+.refine summary::before{content:"+";font-size:.95rem;line-height:1;color:var(--muted)}
+.refine[open] summary::before{content:"\2212"}
+.refine summary:hover{color:var(--ink)}
+.refine-active{font-family:var(--sans);text-transform:none;letter-spacing:0;
+  font-size:.8rem;color:var(--muted)}
+.refine-active.is-set{color:var(--series-2)}
+.refine-body{padding:2px 15px 15px;display:grid;gap:15px;
+  border-top:1px solid var(--line)}
+@media (min-width:900px){ .refine-body{grid-template-columns:auto auto 1fr;gap:26px;align-items:start} }
+.refine-group{display:grid;gap:7px;align-content:start}
+.select{font:inherit;font-size:.85rem;padding:9px 11px;min-height:40px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface-2);color:var(--ink);max-width:16rem}
+.rate-note{font-size:.8rem;color:var(--muted);margin:0 0 14px;max-width:var(--reading)}

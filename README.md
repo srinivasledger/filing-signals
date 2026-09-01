@@ -354,7 +354,9 @@ of which EDGAR does — it shows letters one filing at a time, so a single revie
 appeared as eight near-identical entries. Two caveats are on the page itself
 because both change how it reads: a letter is not a finding (the SEC must review
 every issuer at least every three years, so getting one is routine), and the
-letters are historic, published a median of 331 days after they were written.
+letters are historic — the median lag between a letter being written and
+appearing on EDGAR is computed from the data and shown on both the letters and
+methodology pages, rather than written into prose here where it goes stale.
 The topic counts describe what the staff asked this small set of companies, not
 what the SEC focuses on generally.
 
@@ -416,5 +418,18 @@ automatic and does not need declaring, and an ownership claim sitting under a
 page of filing extracts reads as claiming more than it does. The footer states
 the useful half instead: where the quotes come from, and that the facts in them
 are not owned by anyone.
+
+## Licence
+
+Code: MIT, see [LICENSE](LICENSE). The filings it reads are the registrants'
+own documents and are not covered by it — except staff comment letters
+(UPLOAD), which are US Government works under 17 U.S.C. §105.
+
+## On the word "signal"
+
+It means an observable change in what a company disclosed, not a prediction.
+The site reports that a disclosure changed, quotes the filing, and links the
+source. It does not forecast outcomes, and the association rates on the
+sequences page are descriptive, not causal.
 
 Data from [SEC EDGAR](https://www.sec.gov/edgar).

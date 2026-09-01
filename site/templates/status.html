@@ -44,16 +44,20 @@ because nothing else is watching.</p>
 {% endif %}
 
 <h2>Recent runs</h2>
+<p class="muted">Newest first by when the run executed, not by filing day. Each
+night&rsquo;s scan processes the latest filings and then fills a chunk of older
+history, so the two kinds interleave.</p>
 <div class="table-scroll">
 <table>
   <thead><tr>
-    <th>Filing day</th><th>Index rows</th><th>Candidates</th>
+    <th>Filing day</th><th>Kind</th><th>Index rows</th><th>Candidates</th>
     <th>Operating cos.</th><th>New events</th><th>Mode</th><th>Completed (UTC)</th>
   </tr></thead>
   <tbody>
   {% for r in runs %}
   <tr>
     <td>{{ r.date }}</td>
+    <td><span class="muted">{{ 'history fill' if r.kind == 'fill' else 'daily scan' }}</span></td>
     <td>{{ '{:,}'.format(r.index_rows or 0) }}</td>
     <td>{{ r.candidates or 0 }}</td>
     <td>{{ r.operating or 0 }}</td>

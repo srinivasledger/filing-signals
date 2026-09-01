@@ -228,6 +228,8 @@ def _letter_stats(events):
             "closed": rows[-1].filed,
             "from_staff": sum(1 for e in rows
                               if e.evidence.get("direction") == "staff to company"),
+            "formerly": next((e.evidence.get("formerly") for e in rows
+                              if e.evidence.get("formerly")), ""),
             "topics": sorted({t for e in rows for t in e.evidence.get("topics", [])}),
             "size_tier": next((e.size_tier for e in rows if e.size_tier), ""),
         })
@@ -247,6 +249,38 @@ def _letter_stats(events):
         "min_lag": lags[0] if lags else None,
         "max_lag": lags[-1] if lags else None,
     }
+
+
+def _fill_boundary(runs, row) -> str:
+    """The filing day a run would have processed had it been catching up.
+
+    A run started on day D processes D or the business day before it. Anything
+    materially older than that is the history fill working backwards.
+    """
+    import datetime as _dt
+    finished = (row.get("finished_at") or "")[:10]
+    if not finished:
+        return ""
+    try:
+        return (_dt.date.fromisoformat(finished) - _dt.timedelta(days=5)).isoformat()
+    except ValueError:
+        return ""
+
+
+def _periods(events):
+    """Years and the months present within them, newest first.
+
+    Built from the data rather than a fixed calendar, so a month with nothing
+    in it never appears as an option that filters to an empty page.
+    """
+    import calendar
+
+    months = sorted({e.filed[:7] for e in events if e.filed}, reverse=True)
+    by_year: Dict[str, list] = defaultdict(list)
+    for ym in months:
+        year, mon = ym.split("-")
+        by_year[year].append((ym, f"{calendar.month_name[int(mon)]} {year}"))
+    return [(y, by_year[y]) for y in sorted(by_year, reverse=True)]
 
 
 def _auditor_stats(events):
@@ -380,7 +414,19 @@ def build(second_pass: bool = False) -> None:
         shutil.rmtree(static_out)
     shutil.copytree(config.STATIC, static_out)
 
-    runs = list(reversed(state.get("runs", [])))
+    # Ordered by when each run actually executed, newest first. Reversing the
+    # append order interleaved the nightly scan with the history fill, which
+    # walks backwards - so the table jumped between last night's filings and
+    # filings from months ago with no visible reason. Each row is marked with
+    # which of the two it was.
+    runs = sorted(state.get("runs", []),
+                  key=lambda r: (r.get("finished_at") or "", r.get("date") or ""),
+                  reverse=True)
+    _newest_day = max((r.get("date") or "" for r in runs), default="")
+    for r in runs:
+        # A run whose filing day is well behind the record is the fill.
+        r["kind"] = ("fill" if r.get("date", "") < _fill_boundary(runs, r)
+                     else "scan")
     analysis_on = any(r.get("analysis") == "claude" for r in runs[:5])
 
     activity_svg = charts.activity_chart(events)
@@ -417,6 +463,7 @@ def build(second_pass: bool = False) -> None:
         "repo_url": config.REPO_URL,
         "site_tagline": config.SITE_TAGLINE,
         "built_at": built_at,
+        "periods": _periods(events),
         "signal_labels": [(k, SIGNAL_LABELS[k]) for k in SIGNAL_ORDER],
         "hidden_evidence": _EVIDENCE_HIDDEN,
         "blurbs": SIGNAL_BLURBS,

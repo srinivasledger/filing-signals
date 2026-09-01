@@ -52,7 +52,7 @@
 <section class="controls">
   <label class="search">
     <span class="visually-hidden">Filter events</span>
-    <input type="search" id="q" placeholder="Filter by company, ticker or text…" autocomplete="off">
+    <input type="search" id="q" placeholder="Search company, ticker or filing text…" autocomplete="off">
   </label>
   <div class="chips" id="chips">
     <button class="chip is-on" data-filter="all">All</button>
@@ -61,24 +61,16 @@
     {% endfor %}
   </div>
 </section>
-{% include "_sizefilter.html" %}
-{% if routine_n %}
-<section class="controls controls-size">
-  <span class="filter-label">Routine late filings</span>
-  <div class="chips" id="routinechips">
-    <button class="chip is-on" data-routine="hide">Hidden</button>
-    <button class="chip" data-routine="show">Shown</button>
-  </div>
-  <span class="filter-note">{{ routine_n }} notices filed on or within three days
-  of the statutory due date &mdash; the filing calendar, not distress</span>
-</section>
-{% endif %}
+{% include "_refine.html" %}
 
 <p class="count" id="count" aria-live="polite"></p>
 <div class="feed" id="feed">
   {% for e in events %}{{ card(e, rel) }}{% endfor %}
 </div>
-<p class="empty" id="noresults" hidden>No events match that filter.</p>
+<p class="empty" id="noresults" hidden>No entries match that filter.
+{% if truncated %}This page holds the {{ total_events - truncated }} most recent
+entries, so an older period will be empty here &mdash; the full record is on the
+<a href="{{ rel }}signals.html">signals pages</a>.{% endif %}</p>
 {% else %}
 <section class="empty-state">
   <h2>No events recorded yet</h2>

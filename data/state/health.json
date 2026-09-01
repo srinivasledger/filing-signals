@@ -1,7 +1,7 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-08-28, 2 business days ago",
+      "detail": "last complete filing day 2026-08-28, 3 business days ago",
       "name": "Pipeline is current",
       "status": "ok"
     },
@@ -56,22 +56,22 @@
       "status": "ok"
     },
     {
-      "detail": "5,158 companies, refreshed 3 day(s) ago",
+      "detail": "5,158 companies, refreshed 4 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
     {
-      "detail": "521 companies, 6,191 historical events",
+      "detail": "521 companies, 5,509 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page index.html is 40 KB over the wire (limit 250 KB), 540 pages checked",
+      "detail": "heaviest page index.html is 41 KB over the wire (limit 250 KB), 540 pages checked",
       "name": "Page weight",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-01T15:47:18+00:00",
+  "generated_at": "2026-09-01T18:49:51+00:00",
   "summary": {
     "fail": 0,
     "ok": 14,

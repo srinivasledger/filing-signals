@@ -1,0 +1,55 @@
+{# Secondary filters, behind a disclosure.
+
+   The home page carried 17 always-visible controls before this, and adding a
+   period filter as more chips would have made 32. The signal chips are the
+   primary axis and stay out; size, period and the routine toggle are
+   refinements and live in here. The summary shows what is active, so a filter
+   is never applied invisibly - a page that looks empty for no stated reason is
+   worse than one extra click. <details> works without JavaScript. #}
+<details class="refine" id="refine">
+  <summary>
+    <span class="refine-label">Refine</span>
+    <span class="refine-active" id="refineactive"></span>
+  </summary>
+  <div class="refine-body">
+    {% if periods %}
+    <div class="refine-group">
+      <label class="filter-label" for="period">Period</label>
+      <select id="period" class="select">
+        <option value="all">All time</option>
+        {% for year, months in periods %}
+        <optgroup label="{{ year }}">
+          <option value="{{ year }}">All of {{ year }}</option>
+          {% for value, label in months %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </optgroup>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    <div class="refine-group">
+      <span class="filter-label">Company size</span>
+      <div class="chips" id="sizechips">
+        <button class="chip is-on" data-size="all">Any</button>
+        <button class="chip" data-size="mega">$10B+</button>
+        <button class="chip" data-size="mega,large">$700M+</button>
+        <button class="chip" data-size="mid,small">Under $700M</button>
+      </div>
+      <span class="filter-note">Public float from the 10-K cover &mdash; the SEC&rsquo;s own size test</span>
+    </div>
+
+    {% if routine_n %}
+    <div class="refine-group">
+      <span class="filter-label">Routine late filings</span>
+      <div class="chips" id="routinechips">
+        <button class="chip is-on" data-routine="hide">Hidden</button>
+        <button class="chip" data-routine="show">Shown</button>
+      </div>
+      <span class="filter-note">{{ routine_n }} notices filed on or within three days
+      of the statutory due date &mdash; the filing calendar, not distress</span>
+    </div>
+    {% endif %}
+  </div>
+</details>

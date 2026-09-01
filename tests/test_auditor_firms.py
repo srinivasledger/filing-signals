@@ -126,3 +126,24 @@ def test_terminating_the_auditor_still_counts():
         "The Company terminated the engagement of its independent registered "
         "public accounting firm on 1 June 2026.")
     assert d["direction"] == "dismissed"
+
+
+def test_a_renamed_registrant_keeps_one_identity():
+    """A comment letter addressed to "Bed Bath & Beyond, Inc." appears under
+    "Neighborhood Intelligence, Inc. (NXH)" because the registrant renamed.
+    Same CIK, same filing - so company, ticker and URL must agree, and the
+    former name must be shown rather than left to look like a mismatch."""
+    import glob, json
+    rows = [json.loads(l) for f in sorted(glob.glob('data/events/*.jsonl'))
+            for l in open(f) if l.strip()]
+    letters = [e for e in rows if e['signal_type'] == 'comment_letter' and e['cik'] == 1130713]
+    if not letters:
+        return
+    for e in letters:
+        assert str(e['cik']) in e['filing_url'], "URL must be the company's own filing"
+        assert e['company'] == 'NEIGHBORHOOD INTELLIGENCE, INC.', "one name per CIK"
+        assert e['ticker'] in ('', 'NXH'), "ticker must match the registrant"
+    # Only the letters filed under the old name carry it, which is the point:
+    # the marker explains a mismatch where one would otherwise appear.
+    assert any(e['evidence'].get('formerly') for e in letters), \
+        "the former name must be recorded where the letter used it"

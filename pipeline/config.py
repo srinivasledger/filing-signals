@@ -58,7 +58,7 @@ HISTORY_BUDGET_SECONDS = int(os.getenv("HISTORY_BUDGET_SECONDS", str(3 * 3600)))
 SITE_TITLE = os.getenv("SITE_TITLE", "Filing Signals")
 SITE_TAGLINE = os.getenv(
     "SITE_TAGLINE",
-    "Daily tracking of restatements, SEC comment letters, material weaknesses, "
+    "Weekday tracking of restatements, SEC comment letters, material weaknesses, "
     "auditor and CFO changes, and going-concern language in SEC filings.",
 )
 SITE_URL = os.getenv("SITE_URL", "").rstrip("/")

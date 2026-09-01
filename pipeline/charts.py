@@ -133,7 +133,10 @@ def rates_chart(rows: Sequence[Dict]) -> str:
     rows = [r for r in rows if r.get("eligible")]
     if not rows:
         return ""
-    out = ['<div class="rates">']
+    out = ['<div class="rates">',
+           '<p class="rate-note">Descriptive historical association among the '
+           'companies recorded here, over the filing history covered so far. '
+           'Not a prediction, and not evidence that one event causes another.</p>']
     for r in rows:
         pct = (r["followed"] / r["eligible"] * 100) if r["eligible"] else 0
         out.append(

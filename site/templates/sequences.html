@@ -69,10 +69,10 @@ sequence is on its own page.</p>
 {% endif %}
 
 {% if sequences %}
-{% include "_sizefilter.html" %}
+{% include "_refine.html" %}
 <div class="feed" id="feed">
   {% for s in sequences %}
-  <article class="event" data-size="{{ s.size_tier }}">
+  <article class="event" data-size="{{ s.size_tier }}" data-period="{{ s.steps[-1].event.filed[:7] }}">
     <h3 class="event-title">
       <a href="{{ rel }}company/{{ s.cik }}.html">{{ s.company }}</a>
       {% if s.ticker %}<span class="ticker">{{ s.ticker }}</span>{% endif %}
