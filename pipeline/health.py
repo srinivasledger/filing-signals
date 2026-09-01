@@ -181,7 +181,11 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         r'|^\s*(?:VIA|BY)\s+EDGAR\b',
         re.I)
     quoted = [e for e in events if e.quote]
-    ragged = [e for e in quoted if not re.match(r'^[A-Z“("•]', e.quote.strip())]
+    # A leading ellipsis is the deliberate case: the extractor found no
+    # sentence boundary in reach (a long list-style note, or a table) and
+    # marked the quote as an excerpt instead of silently starting mid-thought.
+    ragged = [e for e in quoted
+              if not re.match(r'^[A-Z“("•\u2026]', e.quote.strip())]
     # For a comment letter the property is positive: the quote has to open at a
     # comment. Listing header patterns to exclude is a blacklist, and the last
     # version of it accepted "January 15, 2026 By EDGAR Division of..." because

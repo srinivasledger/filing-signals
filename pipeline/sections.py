@@ -422,9 +422,16 @@ def _context(text: str, pos: int, before: int = 400, after: int = 900) -> str:
         if sentence:
             window = window[sentence.end() - 1:]
         else:
+            # No sentence boundary in reach - a long list-style sentence, or a
+            # table. Snap to a word and OPEN with an ellipsis, so the reader
+            # sees a marked excerpt rather than what looks like a broken quote.
             space = window.find(" ")
             if 0 <= space < 60:
                 window = window[space + 1:]
+            window = "\u2026 " + window.lstrip()
+    # Notes open with their number - "2. Going Concern and Management's
+    # Plans" - and quoting the number reads as a quote starting mid-list.
+    window = re.sub(r"^\d{1,3}\s*\.?\s+(?=[A-Z\u201c\"(])", "", window.strip())
     if end < len(text):
         cut = window.rfind(" ")
         if cut > len(window) - 60:
@@ -566,11 +573,34 @@ def extract_asus(text: str) -> Dict[str, Dict[str, str]]:
         code = m.group(1)
         if code in out:
             continue
-        lo = text.rfind(".", max(0, m.start() - 400), m.start())
+        # A bare rfind(".") treated the decimal in "$122.9" as a full stop and
+        # gave up entirely inside tables, where there are no periods for
+        # hundreds of characters - which quoted Microsoft's income-tax table
+        # as the evidence for an ASU adoption. A boundary is ". " followed by
+        # a capital; failing that, the clause's subject ("We adopted...",
+        # "The Company adopted...") is the closest thing to a start the text
+        # offers, and it sits directly before the language we matched on.
+        region_start = max(0, m.start() - 400)
+        region = text[region_start:m.start()]
+        boundary = None
+        # A boundary is ". " followed by a capital - or by a numbered note
+        # heading ("16 Credit Losses On May 1..."), which otherwise makes the
+        # scan sail past the heading to an earlier, unrelated sentence.
+        for b in re.finditer(
+                r"(?<=[.;])\s+(?=[A-Z(\u201c\"]|\d{1,3}\s+[A-Z])", region):
+            boundary = b.end()
+        if boundary is None:
+            subj = None
+            for sm in re.finditer(
+                    r"\b(?:We|The\s+Compan(?:y|ies)|The\s+Group|Effective|"
+                    r"Beginning|During|In|On)\b", region):
+                subj = sm.start()
+            boundary = subj if subj is not None else max(0, len(region) - 200)
         hi = text.find(".", m.end())
-        sentence = text[(lo + 1) if lo != -1 else max(0, m.start() - 200):
+        sentence = text[region_start + boundary:
                         hi + 1 if hi != -1 else m.end() + 300]
         sentence = " ".join(sentence.split())
+        sentence = re.sub(r"^\d{1,3}\s*\.?\s+(?=[A-Z\u201c\"(])", "", sentence)
         status = "pending"
         if _PENDING_HINT.search(sentence):
             status = "pending"
