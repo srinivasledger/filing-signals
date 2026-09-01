@@ -19,10 +19,12 @@ The flag rate is deliberately low &mdash; these are meant to be rare events.</p>
 
 <h2>Where the data comes from</h2>
 <p>Every weekday the pipeline reads the SEC's EDGAR daily index &mdash; the
-official list of everything filed that day. It keeps 8-K, 10-K, 10-Q, 20-F and
-40-F filings from operating companies, discarding fund and securitisation
-paperwork, which makes up the majority of daily volume and cannot carry these
-signals.</p>
+official list of everything filed that day. From operating companies it keeps
+the item-coded current reports (8-K), the periodic reports whose narrative it
+compares (10-K, 10-Q, 20-F, 40-F and their amendments), late-filing notices
+(NT&nbsp;10-K, NT&nbsp;10-Q, NT&nbsp;20-F), and SEC review correspondence
+(UPLOAD, CORRESP). Fund and securitisation paperwork &mdash; the majority of
+daily volume &mdash; is discarded, because it cannot carry these signals.</p>
 
 <h2>Restatements and auditor changes</h2>
 <p>These come from the SEC's own structured item codes, read from each filing's
