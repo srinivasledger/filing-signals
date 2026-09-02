@@ -1,7 +1,7 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-09-01, 1 business days ago",
+      "detail": "last complete filing day 2026-09-01, 1 business day ago",
       "name": "Pipeline is current",
       "status": "ok"
     },
@@ -71,7 +71,7 @@
       "status": "ok"
     },
     {
-      "detail": "heaviest page index.html is 39 KB over the wire (limit 250 KB), 708 pages checked",
+      "detail": "heaviest page index.html is 39 KB over the wire (limit 250 KB), 711 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
@@ -81,7 +81,7 @@
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-02T12:14:52+00:00",
+  "generated_at": "2026-09-02T15:17:10+00:00",
   "summary": {
     "fail": 0,
     "ok": 16,

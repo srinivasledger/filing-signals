@@ -89,7 +89,7 @@ daily index ──► filing headers ──► universe filter ──┬─► 8
    site ◄── render ◄── self-checks ◄── follow-on rates ◄── size index ◄── optional AI
 ```
 
-Fourteen **self-checks** run after every pass and publish to the
+Sixteen **self-checks** run after every pass and publish to the
 [status page](https://srinivasledger.github.io/filing-signals/status.html)
 rather than to a log — that every entry cites a filing, that comparisons name
 what they were compared against, that re-running never duplicates, that a
@@ -121,6 +121,14 @@ it rather than racing it.
 Configured: secret `SEC_USER_AGENT`; variables `SITE_URL` and `REPO_URL`; Pages
 source *GitHub Actions*; workflow permissions **write**, so each run commits
 that day's events back to `data/`.
+
+The pipeline **fails closed**: a run that trips an integrity check commits
+nothing — no data, no state, not even a record that it was attempted. That is
+deliberate, because publishing a dataset a check has just rejected is worse
+than publishing yesterday's. The cost is that the last good state stays up and,
+on its own, looks healthy, so the status page reports the data's own currency
+("1 business day behind") beside when a scan last succeeded. If those two drift
+apart, runs are failing and the workflow history says why.
 
 > GitHub disables scheduled workflows in repositories with no commit activity
 > for 60 days. Every run writes its state file, which keeps the schedule alive

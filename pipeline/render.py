@@ -251,6 +251,38 @@ def _letter_stats(events):
     }
 
 
+def _last_success(runs) -> str:
+    """When a run last completed without tripping an integrity check.
+
+    A failed run commits nothing, so the newest finished_at on record is by
+    definition the last successful one. Published beside the data's own
+    currency: if the two drift apart, scans are failing.
+    """
+    stamps = [r.get("finished_at") for r in runs if r.get("finished_at")]
+    return max(stamps).replace("T", " ")[:16] + " UTC" if stamps else ""
+
+
+def _currency(state, built_at) -> Dict[str, object]:
+    """How far behind the published data is, in words."""
+    import datetime as _dt
+
+    from .health import STALE_WARN_AFTER_DAYS, _business_days_between
+
+    last = state.get("last_processed")
+    if not last:
+        return {"currency_label": "no data yet", "stale": True}
+    try:
+        behind = _business_days_between(_dt.date.fromisoformat(last),
+                                        _dt.date.today())
+    except ValueError:
+        return {"currency_label": "unknown", "stale": True}
+    if behind == 0:
+        return {"currency_label": "current", "stale": False}
+    plural = "" if behind == 1 else "s"
+    return {"currency_label": f"{behind} business day{plural} behind",
+            "stale": behind > STALE_WARN_AFTER_DAYS}
+
+
 def _fill_boundary(runs, row) -> str:
     """The filing day a run would have processed had it been catching up.
 
@@ -650,6 +682,7 @@ def build(second_pass: bool = False) -> None:
     _write(config.PUBLIC / "status.html",
            env.get_template("status.html").render(
                rel="", page_path="status.html", runs=runs, last_run=state.get("last_processed"),
+               last_success=_last_success(runs), **_currency(state, built_at),
                analysis_on=analysis_on, health=health, **common))
 
     # --- machine-readable ---

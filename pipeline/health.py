@@ -28,7 +28,13 @@ log = logging.getLogger(__name__)
 OK, WARN, FAIL, UNKNOWN = "ok", "warn", "fail", "unknown"
 
 COMPARISON_SIGNALS = {GOING_CONCERN, POLICY_CHANGE, REVENUE_RECOGNITION}
-STALE_AFTER_DAYS = 5
+# The scan runs every weekday evening, so one business day behind is normal
+# and anything more is not. These were a single threshold of 5, which let the
+# dataset sit three business days out of date while the page said OK - the
+# failure mode being: a scan fails, commits nothing, and the last successful
+# state keeps looking healthy because nothing records the attempt.
+STALE_WARN_AFTER_DAYS = 1     # beyond this, say so on the page
+STALE_AFTER_DAYS = 5          # beyond this, fail the run
 SIZE_STALE_AFTER_DAYS = 14
 MIN_SIZE_COVERAGE = 3000
 
@@ -56,11 +62,16 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
     else:
         try:
             behind = _business_days_between(dt.date.fromisoformat(last), today)
-            status = OK if behind <= STALE_AFTER_DAYS else FAIL
+            status = (OK if behind <= STALE_WARN_AFTER_DAYS
+                      else FAIL if behind > STALE_AFTER_DAYS else WARN)
+            note = ("" if behind <= STALE_WARN_AFTER_DAYS else
+                    " - the dataset is behind; a scan that fails commits "
+                    "nothing, so the last good state stays published")
             checks.append(_check(
                 "Pipeline is current", status,
                 f"last complete filing day {last}"
-                + (f", {behind} business days ago" if behind else ", today")))
+                + (f", {behind} business day{'' if behind == 1 else 's'} ago"
+                   if behind else ", today") + note))
         except ValueError:
             checks.append(_check("Pipeline is current", UNKNOWN,
                                  f"unreadable date {last!r}"))

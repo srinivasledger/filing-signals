@@ -8,12 +8,27 @@ the evidence that the site maintains itself.</p>
 date is safe and writes nothing new, which is what a repeated day with zero new
 events means.</p>
 
+{# Four separate facts, because they can disagree and the disagreement is the
+   signal. A scan that fails commits nothing at all - no data, no state, not
+   even a record that it was attempted - so the last successful run stays
+   published and, on its own, looks perfectly healthy. Showing the data's own
+   currency beside when it was last successfully extended is what makes a
+   stale dataset visible. #}
 <dl class="figures">
-  <div><dt>Last filing day</dt><dd class="dd-date">{{ last_run or '—' }}</dd></div>
-  <div><dt>Runs recorded</dt><dd>{{ runs|length }}</dd></div>
-  <div><dt>Analysis mode</dt><dd class="dd-date">{{ 'Claude' if analysis_on else 'Deterministic' }}</dd></div>
+  <div><dt>Data current through</dt><dd class="dd-date">{{ last_run or '—' }}</dd></div>
+  <div><dt>Currency</dt><dd class="dd-date">{{ currency_label }}</dd></div>
+  <div><dt>Last successful scan</dt><dd class="dd-date">{{ last_success or '—' }}</dd></div>
   <div><dt>Overall</dt><dd class="dd-date">{{ (health.summary.overall if health and health.summary else '—')|upper }}</dd></div>
 </dl>
+
+{% if stale %}
+<p class="notice"><strong>This dataset is not current.</strong> The newest
+filing day it holds is {{ last_run }}, {{ currency_label|lower }}. The pipeline
+fails closed: a run that trips an integrity check commits nothing, so what you
+see is the last state that passed every check rather than a partial or
+doubtful one. The <a href="{{ repo_url }}/actions">workflow history</a> shows
+whether a run has been failing.</p>
+{% endif %}
 
 {% if not analysis_on %}
 <p class="notice">Running in <strong>deterministic mode</strong> &mdash; no AI

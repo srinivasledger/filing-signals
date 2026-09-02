@@ -54,3 +54,24 @@ def test_filter_controls_are_never_rendered_without_their_script():
     others = [p for p in config.TEMPLATES.glob("*.html") if p.name != "base.html"]
     dupes = [p.name for p in others if "static/filter.js" in p.read_text()]
     assert not dupes, f"filter.js also included by {dupes}"
+
+
+def test_a_stale_dataset_is_not_reported_as_fine():
+    """On 2 September the data stopped at 28 August and the page said OK: the
+    currency threshold was five business days, and a scan that fails commits
+    nothing, so the last good state kept looking healthy."""
+    import datetime as dt
+
+    from pipeline import health
+
+    state = {"last_processed": "2026-08-28", "runs": [{"date": "2026-08-28", "index_rows": 1}]}
+    checks = health.run_checks([], state, dt.date(2026, 9, 2))["checks"]
+    current = next(c for c in checks if c["name"] == "Pipeline is current")
+    assert current["status"] == health.WARN, current
+    assert "behind" in current["detail"]
+
+    # one business day is the normal state the evening scan produces
+    fresh = health.run_checks(
+        [], {"last_processed": "2026-09-01", "runs": [{"date": "2026-09-01", "index_rows": 1}]},
+        dt.date(2026, 9, 2))["checks"]
+    assert next(c for c in fresh if c["name"] == "Pipeline is current")["status"] == health.OK
