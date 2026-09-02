@@ -46,6 +46,7 @@
       {% for href, text, match in [
            ("index.html", "Latest", "index.html"),
            ("signals.html", "Signals", "signals"),
+           ("companies.html", "Companies", "companies.html"),
            ("letters.html", "Comment letters", "letters.html"),
            ("sequences.html", "Sequences", "sequences.html"),
            ("auditors.html", "Auditors", "auditors.html"),
@@ -54,7 +55,9 @@
            ("feed.xml", "RSS", "feed.xml")] %}
       {# the home page's canonical path is the bare URL, so page_path is empty #}
       {% set path = page_path or "index.html" %}
-      {% set here = path == match or (match == "signals" and (
+      {% set here = path == match
+           or (match == "companies.html" and path.startswith("company/"))
+           or (match == "signals" and (
            path == "signals.html" or path.startswith("signals/"))) %}
       <a href="{{ rel }}{{ href }}"{% if here %} aria-current="page"{% endif %}>{{ text }}</a>
       {% endfor %}

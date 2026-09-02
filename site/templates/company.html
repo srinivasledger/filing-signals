@@ -28,7 +28,12 @@
 </section>
 {% endif %}
 
-<div class="feed">
+{% if periods|length > 1 or (periods and periods[0][1]|length > 1) %}
+{% with period_only = True %}{% include "_refine.html" %}{% endwith %}
+<p class="count" id="count" aria-live="polite"></p>
+{% endif %}
+<div class="feed" id="feed">
   {% for e in events %}{{ card(e, rel, show_company=False) }}{% endfor %}
 </div>
+<p class="empty" id="noresults" hidden>No entries in that period.</p>
 {% endblock %}

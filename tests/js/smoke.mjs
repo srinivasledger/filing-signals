@@ -110,4 +110,20 @@ for (const name of ["chart", "filter", "theme"]) {
   check("every row starts visible", rows.every((r) => !r.hidden));
 }
 
+// --- a page with no routine toggle must not hide routine entries ---
+{
+  const rows = [
+    el({dataset: {signal: "late_filing", size: "mega", routine: "yes"}}),
+    el({dataset: {signal: "auditor_change", size: "mega", routine: "no"}}),
+  ];
+  const feed3 = el({querySelectorAll: () => rows});
+  feed3.parentNode = el({insertBefore(n) { this.children.push(n); return n; }});
+  for (const id of Object.keys(byId)) delete byId[id];
+  byId.feed = feed3;                       // no routinechips, no q, no chips
+  global.window.matchMedia = () => ({matches: false});
+  (0, eval)(fs.readFileSync("site/static/filter.js", "utf8"));
+  check("a routine entry is shown when there is no toggle to reveal it",
+        rows.every((r) => !r.hidden));
+}
+
 process.exit(failed);

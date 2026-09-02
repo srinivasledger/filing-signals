@@ -495,3 +495,9 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
   border:1px solid var(--line);border-radius:var(--radius);
   background:var(--surface-2);color:var(--ink);max-width:16rem}
 .rate-note{font-size:.8rem;color:var(--muted);margin:0 0 14px;max-width:var(--reading)}
+
+/* ── company directory ────────────────────────────────────── */
+.company-list li{flex-wrap:wrap}
+.company-list .company-signals{display:inline-flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+.company-list .tag{font-size:.6rem;padding:1px 5px}
+@media (max-width:620px){ .company-list .company-signals{margin-left:0;width:100%} }

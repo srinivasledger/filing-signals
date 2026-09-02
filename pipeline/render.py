@@ -315,6 +315,34 @@ def _periods(events):
     return [(y, by_year[y]) for y in sorted(by_year, reverse=True)]
 
 
+def _company_directory(by_company) -> List[Dict]:
+    """Every company, with enough to find and judge it before clicking.
+
+    695 company pages existed with no way to reach one except spotting the
+    name in a feed, which meant only companies inside the home page's window
+    were findable at all.
+    """
+    out = []
+    for cik, evs in by_company.items():
+        dates = sorted(e.filed for e in evs)
+        newest = evs[0]
+        out.append({
+            "cik": cik,
+            "company": newest.company,
+            "ticker": next((e.ticker for e in evs if e.ticker), ""),
+            "size_tier": next((e.size_tier for e in evs if e.size_tier), ""),
+            "count": len(evs),
+            "earliest": dates[0],
+            "latest": dates[-1],
+            # Ordered as the signals page orders them, so the badges read the
+            # same way everywhere.
+            "signals": [k for k in SIGNAL_ORDER
+                        if any(e.signal_type == k for e in evs)],
+        })
+    out.sort(key=lambda c: c["company"].lower())
+    return out
+
+
 def _auditor_stats(events):
     """Which audit firms appear across the flagged population, and how.
 
@@ -641,7 +669,8 @@ def build(second_pass: bool = False) -> None:
                 rel="../", page_path=f"company/{cik}.html", cik=cik, company=newest.company,
                 ticker=next((e.ticker for e in evs if e.ticker), ""),
                 sic_desc=next((e.sic_desc for e in evs if e.sic_desc), ""),
-                events=sorted(evs, key=_rank, reverse=True), sequence=seq, **common,
+                events=sorted(evs, key=_rank, reverse=True), sequence=seq,
+                **{**common, "periods": _periods(evs)},
             ),
         )
     sequences.sort(key=lambda s: (-len(s["steps"]), s["company"]))
@@ -662,6 +691,12 @@ def build(second_pass: bool = False) -> None:
         _write(config.PUBLIC / "letters.html",
                env.get_template("letters.html").render(
                    rel="", page_path="letters.html", **letter_stats, **common))
+
+    _write(config.PUBLIC / "companies.html",
+           env.get_template("companies.html").render(
+               rel="", page_path="companies.html",
+               companies=_company_directory(by_company),
+               signal_label_of=SIGNAL_LABELS, **common))
 
     _write(config.PUBLIC / "auditors.html",
            env.get_template("auditors.html").render(

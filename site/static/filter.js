@@ -23,7 +23,12 @@
   var activeSizes = null;              // null means any size
   // Routine notices are hidden by default. On a deadline week they were 120 of
   // 254 events and buried the restatements and auditor changes.
-  var showRoutine = false;
+  //
+  // Only where the reader can turn them back on. A company page carries the
+  // period control alone, and defaulting to hidden there meant one of that
+  // company's three entries simply was not shown, with nothing on the page to
+  // say so or to reveal it. No control, nothing hidden.
+  var showRoutine = !document.getElementById('routinechips');
 
   var haystacks = cards.map(function (c) { return c.textContent.toLowerCase(); });
   var periods = cards.map(function (c) { return c.dataset.period || ''; });
@@ -48,9 +53,12 @@
       if (show) shown++;
     });
     if (count) {
+      // The companies page counts companies, not events. The noun comes from
+      // the feed so one filter can serve both without knowing the page.
+      var unit = feed.dataset.unit || 'events';
       count.textContent = shown === cards.length
-        ? cards.length + ' events'
-        : shown + ' of ' + cards.length + ' events';
+        ? cards.length + ' ' + unit
+        : shown + ' of ' + cards.length + ' ' + unit;
     }
     if (noresults) noresults.hidden = shown !== 0;
     describeRefinements();

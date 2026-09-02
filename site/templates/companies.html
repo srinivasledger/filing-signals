@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Companies &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<p class="eyebrow"><span>Companies</span><span>{{ companies|length }} recorded</span></p>
+<h1>Every company recorded</h1>
+<p class="lede">One page per company, holding everything this site has found for
+it in date order &mdash; every signal, its evidence, and the progression between
+them. Search by name or ticker.</p>
+
+<section class="controls">
+  <label class="search">
+    <span class="visually-hidden">Search companies</span>
+    <input type="search" id="q" placeholder="Search company name or ticker…" autocomplete="off">
+  </label>
+</section>
+{% include "_refine.html" %}
+<p class="count" id="count" aria-live="polite"></p>
+
+<div id="feed" data-unit="companies">
+<ul class="mini company-list">
+  {% for c in companies %}
+  <li data-size="{{ c.size_tier }}" data-period="{{ c.latest[:7] }}">
+    <a href="{{ rel }}company/{{ c.cik }}.html">{{ c.company }}</a>
+    {% if c.ticker %}<span class="ticker">{{ c.ticker }}</span>{% endif %}
+    <span class="muted">{{ c.count }} entr{{ 'y' if c.count == 1 else 'ies' }}</span>
+    <span class="muted">{{ c.earliest }}{% if c.latest != c.earliest %} &ndash; {{ c.latest }}{% endif %}</span>
+    <span class="company-signals">
+      {% for key in c.signals %}<span class="tag tag-{{ key }}">{{ signal_label_of[key] }}</span>{% endfor %}
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+</div>
+<p class="muted" id="noresults" hidden>No company matches that search.</p>
+{% endblock %}

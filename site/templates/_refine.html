@@ -29,6 +29,9 @@
     </div>
     {% endif %}
 
+    {# Size and the routine toggle make no sense on one company's page, so a
+       caller can ask for the period control alone. #}
+    {% if not period_only %}
     <div class="refine-group">
       <span class="filter-label">Company size</span>
       <div class="chips" id="sizechips">
@@ -39,8 +42,9 @@
       </div>
       <span class="filter-note">Public float from the 10-K cover &mdash; the SEC&rsquo;s own size test</span>
     </div>
+    {% endif %}
 
-    {% if routine_n %}
+    {% if routine_n and not period_only %}
     <div class="refine-group">
       <span class="filter-label">Routine late filings</span>
       <div class="chips" id="routinechips">
