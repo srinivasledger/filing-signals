@@ -1,12 +1,12 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-08-28, 3 business days ago",
+      "detail": "last complete filing day 2026-09-01, 1 business days ago",
       "name": "Pipeline is current",
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 36,094 index rows read",
+      "detail": "10 runs recorded, 56,177 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,47 +16,47 @@
       "status": "ok"
     },
     {
-      "detail": "663/663 link to the accession they report",
+      "detail": "910/910 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "663/663 name a detection method the pipeline implements",
+      "detail": "910/910 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "93 entries from SEC item codes, 0 carrying the wrong code for their signal",
+      "detail": "135 entries from SEC item codes, 0 carrying the wrong code for their signal",
       "name": "Item codes match the signal they produced",
       "status": "ok"
     },
     {
-      "detail": "100/100 compare the same form type against an earlier filing",
+      "detail": "118/118 compare the same form type against an earlier filing",
       "name": "Comparisons are like-for-like",
       "status": "ok"
     },
     {
-      "detail": "663 unique entries across 663 rows",
+      "detail": "910 unique entries across 910 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 380 begin mid-sentence, 0 do not open at the substance",
+      "detail": "0 of 507 begin mid-sentence, 0 do not open at the substance",
       "name": "Quotes open with the substance",
       "status": "ok"
     },
     {
-      "detail": "0 of 82 going-concern and material-weakness entries quote a passage that negates the state they assert",
+      "detail": "0 of 101 going-concern and material-weakness entries quote a passage that negates the state they assert",
       "name": "No entry contradicts its own quote",
       "status": "ok"
     },
     {
-      "detail": "77 firm names across 35 firms; 3 spelled more than one way by filers",
+      "detail": "122 firm names across 50 firms; 4 spelled more than one way by filers",
       "name": "Auditor names are firm-shaped",
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 663, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 910, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -66,22 +66,22 @@
       "status": "ok"
     },
     {
-      "detail": "526 companies, 6,235 historical events",
+      "detail": "692 companies, 7,428 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page index.html is 41 KB over the wire (limit 250 KB), 545 pages checked",
+      "detail": "heaviest page index.html is 39 KB over the wire (limit 250 KB), 708 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
     {
-      "detail": "35 firms on the auditors page, one label each",
+      "detail": "50 firms on the auditors page, one label each",
       "name": "Firm labels are consistent",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-02T10:28:55+00:00",
+  "generated_at": "2026-09-02T12:14:52+00:00",
   "summary": {
     "fail": 0,
     "ok": 16,

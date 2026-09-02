@@ -1,6 +1,6 @@
 {
-  "earliest_processed": "2026-07-06",
-  "last_processed": "2026-08-28",
+  "earliest_processed": "2026-06-18",
+  "last_processed": "2026-09-01",
   "runs": [
     {
       "analysis": "deterministic-only",
@@ -411,6 +411,126 @@
       "finished_at": "2026-09-02T08:37:54+00:00",
       "index_rows": 5041,
       "operating": 195
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 217,
+      "date": "2026-08-31",
+      "events": 21,
+      "events_written": 19,
+      "finished_at": "2026-09-02T10:45:41+00:00",
+      "index_rows": 6019,
+      "operating": 192
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 406,
+      "date": "2026-09-01",
+      "events": 20,
+      "events_written": 20,
+      "finished_at": "2026-09-02T10:47:57+00:00",
+      "index_rows": 5200,
+      "operating": 343
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 350,
+      "date": "2026-06-18",
+      "events": 3,
+      "events_written": 3,
+      "finished_at": "2026-09-02T10:54:45+00:00",
+      "index_rows": 4836,
+      "operating": 323
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 328,
+      "date": "2026-06-22",
+      "events": 13,
+      "events_written": 13,
+      "finished_at": "2026-09-02T11:01:34+00:00",
+      "index_rows": 4693,
+      "operating": 293
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 269,
+      "date": "2026-06-23",
+      "events": 8,
+      "events_written": 8,
+      "finished_at": "2026-09-02T11:06:13+00:00",
+      "index_rows": 4489,
+      "operating": 249
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 225,
+      "date": "2026-06-24",
+      "events": 6,
+      "events_written": 6,
+      "finished_at": "2026-09-02T11:11:24+00:00",
+      "index_rows": 4159,
+      "operating": 198
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 356,
+      "date": "2026-06-25",
+      "events": 13,
+      "events_written": 13,
+      "finished_at": "2026-09-02T11:20:51+00:00",
+      "index_rows": 5044,
+      "operating": 324
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 313,
+      "date": "2026-06-26",
+      "events": 33,
+      "events_written": 13,
+      "finished_at": "2026-09-02T11:29:48+00:00",
+      "index_rows": 5927,
+      "operating": 279
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 300,
+      "date": "2026-06-29",
+      "events": 38,
+      "events_written": 38,
+      "finished_at": "2026-09-02T11:38:46+00:00",
+      "index_rows": 6278,
+      "operating": 272
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 429,
+      "date": "2026-06-30",
+      "events": 57,
+      "events_written": 57,
+      "finished_at": "2026-09-02T11:51:47+00:00",
+      "index_rows": 5295,
+      "operating": 396
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 364,
+      "date": "2026-07-01",
+      "events": 20,
+      "events_written": 20,
+      "finished_at": "2026-09-02T11:59:34+00:00",
+      "index_rows": 6593,
+      "operating": 341
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 387,
+      "date": "2026-07-02",
+      "events": 37,
+      "events_written": 37,
+      "finished_at": "2026-09-02T12:13:17+00:00",
+      "index_rows": 8863,
+      "operating": 354
     }
   ]
 }
