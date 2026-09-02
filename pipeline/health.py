@@ -321,14 +321,32 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
     checks.append(_size_check(today))
 
     # --- follow-on statistics ---
+    # A partial history is worse than none: the sequences page prints the rates
+    # as percentages, so a run that only reached a handful of companies
+    # publishes "0 of 6" beside a population of several hundred and reads as a
+    # real finding. This happened twice, both times because a local run wrote
+    # over the state the scheduled run had produced.
     hist_path = config.STATE_DIR / "history.json"
     if hist_path.exists():
         try:
             hist = json.loads(hist_path.read_text())
             n = hist.get("total_historical_events", 0)
-            checks.append(_check(
-                "Follow-on rates computed", OK if n else WARN,
-                f"{hist.get('companies', 0)} companies, {n:,} historical events"))
+            companies = hist.get("companies", 0)
+            eligible = max((r.get("eligible", 0) for r in hist.get("rows", [])),
+                           default=0)
+            # Every company contributes at least the event that flagged it, so
+            # a total below the company count means the refresh did not finish.
+            if companies > 20 and (n < companies or eligible * 4 < companies):
+                checks.append(_check(
+                    "Follow-on rates computed", FAIL,
+                    f"{companies} companies but only {n:,} historical events, "
+                    f"at most {eligible} eligible - the history refresh did not "
+                    "complete, so the published rates would come from a "
+                    "fraction of the population"))
+            else:
+                checks.append(_check(
+                    "Follow-on rates computed", OK if n else WARN,
+                    f"{companies} companies, {n:,} historical events"))
         except ValueError:
             checks.append(_check("Follow-on rates computed", WARN, "stats file unreadable"))
     else:
