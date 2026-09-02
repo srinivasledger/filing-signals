@@ -51,7 +51,7 @@
       "status": "ok"
     },
     {
-      "detail": "77 firm names across 35 firms; 3 spelled more than one way and aggregated together",
+      "detail": "77 firm names across 35 firms; 3 spelled more than one way by filers",
       "name": "Auditor names are firm-shaped",
       "status": "ok"
     },
@@ -66,7 +66,7 @@
       "status": "ok"
     },
     {
-      "detail": "521 companies, 994 historical events",
+      "detail": "526 companies, 6,235 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
@@ -74,14 +74,19 @@
       "detail": "heaviest page index.html is 41 KB over the wire (limit 250 KB), 545 pages checked",
       "name": "Page weight",
       "status": "ok"
+    },
+    {
+      "detail": "35 firms on the auditors page, one label each",
+      "name": "Firm labels are consistent",
+      "status": "ok"
     }
   ],
-  "generated_at": "2026-09-02T08:38:30+00:00",
+  "generated_at": "2026-09-02T10:28:55+00:00",
   "summary": {
     "fail": 0,
-    "ok": 15,
+    "ok": 16,
     "overall": "ok",
-    "total": 15,
+    "total": 16,
     "unknown": 0,
     "warn": 0
   }

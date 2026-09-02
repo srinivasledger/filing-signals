@@ -273,9 +273,18 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
                 faults.append(f"{e.company}: named as its own auditor")
             elif len(name) < 4 and name not in KNOWN_SHORT:
                 faults.append(f"{e.company}: {field} too short to be a firm ({name!r})")
+    # The movement table groups on firm_key, but the per-change list under it
+    # printed whatever each filing said, so one firm appeared under three
+    # spellings beneath a table counting it as one. Grouping correctly is not
+    # enough if the page still shows the variants: assert that what is
+    # PUBLISHED settles on one label per firm.
+    # Variety in the STORED events is expected - filers spell a firm several
+    # ways and the evidence keeps their wording. What must not vary is what
+    # gets published, and that is asserted against the built page by
+    # firm_labels_check, after rendering has chosen one label per firm.
+    varied = sum(1 for v in spellings.values() if len(v) > 1)
     detail = (f"{checked} firm names across {len(spellings)} firms; "
-              f"{sum(1 for v in spellings.values() if len(v) > 1)} spelled more "
-              "than one way and aggregated together")
+              f"{varied} spelled more than one way by filers")
     checks.append(_check(
         "Auditor names are firm-shaped",
         OK if not faults else FAIL,
@@ -374,6 +383,49 @@ def page_weight_check(public: "pathlib.Path") -> Dict:
     if worst > MAX_PAGE_WIRE_BYTES:
         return _check("Page weight", WARN, detail + " - time to split it by year")
     return _check("Page weight", OK, detail)
+
+
+def firm_labels_check(public: "pathlib.Path") -> Dict:
+    """One firm, one label, on the page that was actually generated.
+
+    The movement table grouped correctly while the per-change list beneath it
+    printed each filing's own wording, so one firm appeared under three names
+    under a table counting it as one. Checking the stored events cannot catch
+    that - they are meant to vary - so this reads the built page.
+    """
+    import re as _re
+    from html import unescape
+
+    from .auditor import firm_key
+
+    page = public / "auditors.html"
+    if not page.exists():
+        return _check("Firm labels are consistent", UNKNOWN, "auditors page not built")
+    html_text = page.read_text()
+    names = set()
+    for cell in _re.findall(r"<td[^>]*>(.*?)</td>", html_text, _re.S):
+        text = unescape(_re.sub(r"<[^>]+>", "", cell)).strip()
+        if text and not text.replace("-", "").replace("+", "").isdigit() and text != "—":
+            names.add(text)
+    for part in _re.findall(r"<span class=\"muted\">(.*?)</span>", html_text, _re.S):
+        for side in unescape(_re.sub(r"<[^>]+>", "", part)).split("→"):
+            side = side.split("·")[0].strip()
+            if side and side not in ("not stated", "firms not identified"):
+                names.add(side)
+
+    by_key: Dict[str, set] = defaultdict(set)
+    for n in names:
+        k = firm_key(n)
+        if k:
+            by_key[k].add(n)
+    split = {k: sorted(v) for k, v in by_key.items() if len(v) > 1}
+    if split:
+        k, v = next(iter(split.items()))
+        return _check("Firm labels are consistent", FAIL,
+                      f"{len(split)} firm(s) shown under more than one name, "
+                      f"e.g. {v}")
+    return _check("Firm labels are consistent", OK,
+                  f"{len(by_key)} firms on the auditors page, one label each")
 
 
 def _summarise(checks: List[Dict]) -> Dict:

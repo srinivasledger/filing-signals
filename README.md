@@ -102,9 +102,12 @@ Served directly from **GitHub Pages** at `srinivasledger.github.io`, built and
 deployed by the workflow itself — there is no external host and no custom
 domain in front of it.
 
-Two workflows deploy. **Daily filing scan** runs weekdays at **23:30 UTC**
-(after EDGAR's 17:30 ET cutoff), or on demand via *Actions → Daily filing scan →
-Run workflow*, which accepts a `days` input to reprocess recent dates.
+Two workflows deploy. **Daily filing scan** runs at **03:30 UTC Tuesday to
+Saturday** — 23:30 ET on weekday evenings — or on demand via *Actions → Daily
+filing scan → Run workflow*, which accepts a `days` input to reprocess recent
+dates. The time is set by when EDGAR publishes the day's index, about 22:00 ET,
+**not** by the 17:30 ET filing cutoff: an earlier schedule asked for an index
+that did not exist yet and left every day to be backfilled by the next run.
 **Publish site** runs on any push touching `site/` or `pipeline/`, rebuilding
 from the data already committed.
 

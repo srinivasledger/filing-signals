@@ -495,6 +495,31 @@ def build(second_pass: bool = False) -> None:
     # and "NEIGHBORHOOD INTELLIGENCE" on the same day, and every per-company
     # count risked splitting in two. The newest filing carries the current
     # name, and the earlier one is kept as context rather than discarded.
+    # One firm, one spelling, on every surface. The movement table already
+    # grouped on firm_key, but the per-change list below it printed whatever
+    # each filing said - so the same firm appeared as "Ham, Langston and
+    # Brezina, LLP", "Ham, Langston & Brezina, LLP" and "Ham, Langston &
+    # Brezina, L.L.P" beneath a table counting them as one. The filer's exact
+    # wording stays in the evidence; the label shown is the commonest spelling.
+    from .auditor import firm_key
+
+    _firm_spellings: Dict[str, Counter] = defaultdict(Counter)
+    for e in events:
+        for field in ("predecessor_auditor", "successor_auditor"):
+            name = e.evidence.get(field)
+            if name:
+                _firm_spellings[firm_key(name)][name] += 1
+    _firm_label = {k: c.most_common(1)[0][0] for k, c in _firm_spellings.items()}
+    for e in events:
+        for field in ("predecessor_auditor", "successor_auditor"):
+            name = e.evidence.get(field)
+            if not name:
+                continue
+            label = _firm_label.get(firm_key(name))
+            if label and label != name:
+                e.evidence.setdefault(field + "_as_filed", name)
+                e.evidence[field] = label
+
     _newest_name: Dict[int, str] = {}
     for e in sorted(events, key=lambda x: x.filed):
         _newest_name[e.cik] = e.company
@@ -651,10 +676,13 @@ def build(second_pass: bool = False) -> None:
     # counting a different number of checks from the list underneath it.
     if not second_pass:
         try:
-            weight = health_mod.page_weight_check(config.PUBLIC)
-            log.info("%s", weight["detail"])
+            built = [health_mod.page_weight_check(config.PUBLIC),
+                     health_mod.firm_labels_check(config.PUBLIC)]
+            for c in built:
+                log.info("%s", c["detail"])
+            names = {c["name"] for c in built}
             checks = [c for c in health.get("checks", [])
-                      if c["name"] != weight["name"]] + [weight]
+                      if c["name"] not in names] + built
             if checks != health.get("checks"):
                 health["checks"] = checks
                 health["summary"] = health_mod._summarise(checks)
