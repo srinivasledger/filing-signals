@@ -1,5 +1,5 @@
 {
-  "earliest_processed": "2026-07-07",
+  "earliest_processed": "2026-07-06",
   "last_processed": "2026-08-28",
   "runs": [
     {
@@ -401,6 +401,16 @@
       "finished_at": "2026-09-01T02:42:13+00:00",
       "index_rows": 3525,
       "operating": 333
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 218,
+      "date": "2026-07-06",
+      "events": 6,
+      "events_written": 6,
+      "finished_at": "2026-09-02T08:37:54+00:00",
+      "index_rows": 5041,
+      "operating": 195
     }
   ]
 }

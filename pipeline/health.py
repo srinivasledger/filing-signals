@@ -141,9 +141,15 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
     for e in comparisons:
         if not e.prior_accession:
             continue
+        # Uses compare._base_form, the same helper that chooses the prior
+        # filing. A local rstrip("/A") would be a second opinion on what a
+        # form's base is, and two opinions is how a check disagrees with the
+        # code it is checking.
+        from .compare import _base_form
+
         prior_form = (e.evidence.get("prior_form") or "").upper()
         cur = e.form.upper()
-        if prior_form.rstrip("/A") != cur.rstrip("/A"):
+        if _base_form(prior_form) != _base_form(cur):
             unsound.append((e, "compared across form types"))
         elif (e.evidence.get("prior_filed") or "") >= e.filed:
             unsound.append((e, "prior filing is not earlier"))

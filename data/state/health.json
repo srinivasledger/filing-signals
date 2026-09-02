@@ -6,7 +6,7 @@
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 34,170 index rows read",
+      "detail": "10 runs recorded, 36,094 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,17 +16,17 @@
       "status": "ok"
     },
     {
-      "detail": "657/657 link to the accession they report",
+      "detail": "663/663 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "657/657 name a detection method the pipeline implements",
+      "detail": "663/663 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "92 entries from SEC item codes, 0 carrying the wrong code for their signal",
+      "detail": "93 entries from SEC item codes, 0 carrying the wrong code for their signal",
       "name": "Item codes match the signal they produced",
       "status": "ok"
     },
@@ -36,7 +36,7 @@
       "status": "ok"
     },
     {
-      "detail": "657 unique entries across 657 rows",
+      "detail": "663 unique entries across 663 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
@@ -51,12 +51,12 @@
       "status": "ok"
     },
     {
-      "detail": "76 firm names across 34 firms; 3 spelled more than one way and aggregated together",
+      "detail": "77 firm names across 35 firms; 3 spelled more than one way and aggregated together",
       "name": "Auditor names are firm-shaped",
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 657, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 663, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -66,17 +66,17 @@
       "status": "ok"
     },
     {
-      "detail": "521 companies, 908 historical events",
+      "detail": "521 companies, 994 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page index.html is 41 KB over the wire (limit 250 KB), 540 pages checked",
+      "detail": "heaviest page index.html is 41 KB over the wire (limit 250 KB), 545 pages checked",
       "name": "Page weight",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-02T08:05:18+00:00",
+  "generated_at": "2026-09-02T08:38:30+00:00",
   "summary": {
     "fail": 0,
     "ok": 15,

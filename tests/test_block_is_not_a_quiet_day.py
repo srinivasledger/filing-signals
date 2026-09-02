@@ -76,3 +76,34 @@ def test_the_guard_does_not_swallow_amendments_that_say_something():
     assert skip("10-Q/A", sections.GC_SUBSTANTIAL_DOUBT, "substantial doubt exists") is False
     assert skip("10-Q/A", sections.GC_NONE, "no going-concern conditions were identified") is False
     assert skip("10-Q", sections.GC_NONE, "") is False        # not an amendment
+
+
+def test_a_prior_filing_must_be_strictly_earlier():
+    """A same-day filing was eligible as the "prior" one, so a 10-Q could be
+    compared against a 10-Q/A filed hours before it and the change reported
+    was between two versions of a single quarter. It failed an integrity check
+    in production and cost that night's 249 events, because the run exits
+    non-zero before the commit step."""
+    from unittest import mock
+    from pipeline import compare
+
+    same_day = {"filings": {"recent": {
+        "form": ["10-Q", "10-Q/A"],
+        "filingDate": ["2026-08-12", "2026-08-12"],
+        "accessionNumber": ["now", "same-day"],
+        "primaryDocument": ["a.htm", "b.htm"],
+        "items": ["", ""], "primaryDocDescription": ["", ""],
+    }}}
+    with mock.patch.object(compare, "submissions", return_value=same_day):
+        assert compare.find_prior_filing(1, "now", "10-Q") is None
+
+    earlier = {"filings": {"recent": {
+        "form": ["10-Q", "10-Q"],
+        "filingDate": ["2026-08-12", "2026-05-10"],
+        "accessionNumber": ["now", "older"],
+        "primaryDocument": ["a.htm", "b.htm"],
+        "items": ["", ""], "primaryDocDescription": ["", ""],
+    }}}
+    with mock.patch.object(compare, "submissions", return_value=earlier), \
+         mock.patch.object(compare, "document_url", return_value="u"):
+        assert compare.find_prior_filing(1, "now", "10-Q")["accessionNumber"] == "older"

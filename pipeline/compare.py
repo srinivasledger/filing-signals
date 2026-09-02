@@ -96,7 +96,10 @@ def find_prior_filing(cik: int, accession: str, form: str) -> Optional[Dict]:
         r for r in rows
         if _base_form(r["form"] or "") == target
         and r["accessionNumber"] != accession
-        and (r["filingDate"] or "") <= (current["filingDate"] or "")
+        # Strictly earlier. "<=" allowed a filing from the same day to be the
+        # prior one, so a 10-Q was compared against a 10-Q/A filed hours
+        # earlier and the "change" was between two versions of one quarter.
+        and (r["filingDate"] or "") < (current["filingDate"] or "")
     ]
     if not candidates:
         return None
