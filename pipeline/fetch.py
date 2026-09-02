@@ -7,6 +7,7 @@ polite rate limit, and an on-disk cache so backfills never refetch.
 from __future__ import annotations
 
 import gzip
+import datetime as _dt
 import hashlib
 import logging
 import random
@@ -56,6 +57,32 @@ def _cache_path(url: str, byte_range: Optional[str]) -> Path:
     return config.CACHE_DIR / key[:2] / f"{key}.gz"
 
 
+# An archived filing never changes: once written to
+# /Archives/edgar/data/... it is immutable, so caching it forever is correct
+# and is what keeps a backfill from refetching the same documents.
+#
+# A company's submissions index is NOT immutable - it gains a row every time
+# the company files. Caching it forever meant a filing newer than the cached
+# copy could not be resolved to its document at all: the copy for CIK 1645155
+# stopped at 14 August while the filing being read was from the 24th, so
+# current_document() returned None and the 8-K was silently never read.
+#
+# Only in CI is this invisible, because a fresh runner has no cache. Locally
+# it silently degrades every re-extraction.
+_MUTABLE_TTL = _dt.timedelta(hours=6)
+
+
+def _is_stale(url: str, cache_file: Path) -> bool:
+    """True when a cached copy of a document that can change is too old."""
+    if "/submissions/" not in url and "/api/xbrl/" not in url:
+        return False                     # immutable archive document
+    try:
+        age = _dt.datetime.now() - _dt.datetime.fromtimestamp(cache_file.stat().st_mtime)
+    except OSError:
+        return True
+    return age > _MUTABLE_TTL
+
+
 def get(
     url: str,
     byte_range: Optional[str] = None,
@@ -70,7 +97,7 @@ def get(
     Returns None only when `accept_404` is set and the resource is missing.
     """
     cache_file = _cache_path(url, byte_range)
-    if use_cache and cache_file.exists():
+    if use_cache and cache_file.exists() and not _is_stale(url, cache_file):
         try:
             with gzip.open(cache_file, "rt", encoding="utf-8") as fh:
                 return fh.read()

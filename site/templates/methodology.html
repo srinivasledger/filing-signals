@@ -146,10 +146,30 @@ and corrected.</p>
 worth knowing alongside the other signals, not because it implies anything is
 wrong.</p>
 
-<h2>Accounting policy and revenue recognition <span class="tag tag-beta">beta</span></h2>
-<p>The pipeline extracts the significant-accounting-policies note and the
-revenue-recognition note, strips out figures, dates and quarter labels, and
-compares the wording against the same company's previous comparable filing.
+<h2>Accounting standard newly cited</h2>
+<p>The pipeline reads every Accounting Standards Update (ASU) each filing
+refers to, and reports one that appears in this filing but not in the same
+company&rsquo;s previous comparable filing, where the sentence describes it as
+adopted rather than merely issued.</p>
+
+<p><strong>This measures what the company discloses, not necessarily what it
+did this period.</strong> A filing can cite a standard for the first time long
+after adopting it &mdash; one filer cited ASU 2016-02 in 2026 in a sentence
+saying it had adopted it in 2019. Where the filing states an adoption date, it
+is published beside the citation, and anything two or more years old is marked
+as a first citation rather than a change of policy. Amendments are excluded,
+because an amendment that re-files a note would appear to cite everything in it
+for the first time.</p>
+
+<p>An earlier version compared the wording of the whole policy note. It was
+abandoned: filings have no consistent note structure, so the extractor swept
+adjacent notes into the comparison and mostly measured moving dollar figures,
+flagging 15 of 18 periodic filings in a single day.</p>
+
+<h2>Revenue recognition <span class="tag tag-beta">beta</span></h2>
+<p>The pipeline extracts the revenue-recognition note, strips out figures,
+dates and quarter labels, and compares the wording against the same company's
+previous comparable filing.
 Comparisons are always like-for-like &mdash; a 10-Q against a 10-Q &mdash;
 because a quarterly note is far shorter than an annual one and comparing across
 them would flag every company every year.</p>

@@ -15,6 +15,7 @@ import datetime as dt
 import json
 import logging
 import re
+from collections import defaultdict
 from typing import Dict, List
 
 from . import config
@@ -233,6 +234,46 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         f"{len(contradictions)} of {sum(1 for e in events if e.signal_type in CONTRADICTS)} "
         "going-concern and material-weakness entries quote a passage that "
         "negates the state they assert"))
+
+    # --- are extracted auditor names actually firms? ---
+    # The other checks are structural: they confirm a field is populated and
+    # internally consistent. None of them could see that the Auditors page was
+    # naming "that Simon & Edward LLP", a law firm, and one issuer as its own
+    # auditor - the fields were present and the links resolved. This asserts
+    # the shape of the value itself.
+    from .auditor import BIG_FOUR, NATIONAL, firm_key
+
+    # "EY", "BDO", "PwC" and "RSM" are the canonical labels this pipeline
+    # assigns, so a bare length rule would condemn them.
+    KNOWN_SHORT = set(BIG_FOUR) | set(NATIONAL)
+
+    CONNECTIVE = re.compile(r"^(?:that|by|of|the|its|our|a|an|as|new|former)\b", re.I)
+    LAW_FIRM = re.compile(r"Brisbois|Bisgaard|Skadden|Latham|Cooley|Sonsini", re.I)
+    faults, checked, spellings = [], 0, defaultdict(set)
+    for e in events:
+        if e.signal_type != AUDITOR_CHANGE:
+            continue
+        for field in ("predecessor_auditor", "successor_auditor"):
+            name = (e.evidence.get(field) or "").strip()
+            if not name:
+                continue
+            checked += 1
+            spellings[firm_key(name)].add(name)
+            if CONNECTIVE.match(name):
+                faults.append(f"{e.company}: {field} begins with a connective ({name!r})")
+            elif LAW_FIRM.search(name):
+                faults.append(f"{e.company}: {field} is a law firm ({name!r})")
+            elif firm_key(name) and firm_key(name) == firm_key(e.company):
+                faults.append(f"{e.company}: named as its own auditor")
+            elif len(name) < 4 and name not in KNOWN_SHORT:
+                faults.append(f"{e.company}: {field} too short to be a firm ({name!r})")
+    detail = (f"{checked} firm names across {len(spellings)} firms; "
+              f"{sum(1 for v in spellings.values() if len(v) > 1)} spelled more "
+              "than one way and aggregated together")
+    checks.append(_check(
+        "Auditor names are firm-shaped",
+        OK if not faults else FAIL,
+        detail if not faults else f"{len(faults)} malformed: {faults[0]}"))
 
     # --- is the home page still showing everything? ---
     # Truncation here is deliberate and stated on the page itself, so it is

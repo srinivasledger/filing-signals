@@ -566,6 +566,32 @@ _PENDING_HINT = re.compile(
 )
 
 
+# The date a filer says it adopted a standard. Present in about a third of
+# adoption sentences, and worth surfacing: a filing may cite a standard for the
+# first time years after adopting it, and the reader cannot tell the two apart
+# from the citation alone.
+_ADOPTION_DATE = re.compile(
+    # ".{0,70}" rather than "[^.]": the sentence contains "ASU No." and
+    # "2016-02", so excluding full stops stopped the scan at an abbreviation.
+    r"\b(?:adopted|effective|beginning|commencing)\b.{0,70}?"
+    r"((?:January|February|March|April|May|June|July|August|September|October|"
+    r"November|December)\s+\d{1,2},?\s+(\d{4})"
+    r"|(?:January|February|March|April|May|June|July|August|September|October|"
+    r"November|December)\s+(\d{4})"
+    r"|fiscal\s+(?:year\s+)?(\d{4}))", re.I)
+
+
+def adoption_year(sentence: str):
+    """The year the sentence says the standard was adopted, or None."""
+    m = _ADOPTION_DATE.search(sentence or "")
+    if not m:
+        return None
+    for g in m.groups()[1:]:
+        if g:
+            return int(g)
+    return None
+
+
 def extract_asus(text: str) -> Dict[str, Dict[str, str]]:
     """Map each referenced ASU to the sentence that mentions it."""
     out: Dict[str, Dict[str, str]] = {}
@@ -606,7 +632,8 @@ def extract_asus(text: str) -> Dict[str, Dict[str, str]]:
             status = "pending"
         elif _ADOPTED_HINT.search(sentence):
             status = "adopted"
-        out[code] = {"context": sentence[:400], "status": status}
+        out[code] = {"context": sentence[:400], "status": status,
+                     "adopted_year": adoption_year(sentence)}
     return out
 
 

@@ -26,7 +26,7 @@ SIGNAL_LABELS = {
     RESTATEMENT: "Restatement",
     AUDITOR_CHANGE: "Auditor change",
     GOING_CONCERN: "Going concern",
-    POLICY_CHANGE: "Accounting policy change",
+    POLICY_CHANGE: "Accounting standard newly cited",
     REVENUE_RECOGNITION: "Revenue recognition change",
     LATE_FILING: "Late filing",
     COMMENT_LETTER: "SEC comment letter",
@@ -45,8 +45,11 @@ SIGNAL_BLURBS = {
         "concern changed compared with its previous report."
     ),
     POLICY_CHANGE: (
-        "The summary of significant accounting policies changed materially "
-        "from the previous comparable filing."
+        "An accounting standard (ASU) appears in this filing that did not "
+        "appear in the previous comparable one, in a sentence describing it "
+        "as adopted. That is a change in what the company discloses, which "
+        "is not always a change of policy in the current period: the filing "
+        "may state an adoption date years earlier."
     ),
     REVENUE_RECOGNITION: (
         "The revenue recognition policy disclosure changed materially from "

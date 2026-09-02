@@ -539,18 +539,37 @@ def analyse_periodic(filing) -> List[Event]:
     # Only an actual adoption is reported. A newly *issued* standard the filer
     # merely lists is boilerplate that appears in nearly every annual report -
     # emitting on it flagged 8 of 18 filings in one day, all of them routine.
-    if adopted:
+    # An amendment that re-files a note will look like it cites the standard
+    # for the first time, because the original is what it is being compared
+    # against. Same reasoning as the going-concern guard.
+    if adopted and not filing.form.upper().endswith("/A"):
         headline_codes = adopted
+        # What the filing says about WHEN it adopted. A standard can be cited
+        # for the first time long after adoption - NOCERA cited ASU 2016-02 in
+        # 2026 and the sentence says it adopted it in 2019 - so the year is
+        # published beside the citation and a long-past one is marked.
+        years = {c: cur_asu[c].get("adopted_year") for c in headline_codes}
+        stated = [y for y in years.values() if y]
+        filed_year = int(filing.filed[:4]) if filing.filed[:4].isdigit() else None
+        long_past = bool(stated and filed_year
+                         and min(stated) <= filed_year - 2)
         events.append(base(
             POLICY_CHANGE,
-            f"{filing.company} referenced accounting standard"
+            f"{filing.company} cited accounting standard"
             f"{'s' if len(headline_codes) > 1 else ''} "
             + ", ".join("ASU " + c for c in headline_codes)
-            + " for the first time",
+            + " for the first time in this filing series",
             {
                 "source": "accounting standards update (ASU) reference comparison",
                 "new_standards": new_codes,
                 "adopted": adopted,
+                "adoption_year_stated": (min(stated) if stated else None),
+                "restates_existing_policy": long_past,
+                "caveat": (
+                    "The filing states this standard was adopted in "
+                    f"{min(stated)}, so this is the first time it has been "
+                    "cited in this series rather than a change of policy in "
+                    "the current period." if long_past else None),
                 "contexts": [cur_asu[c]["context"] for c in headline_codes[:3]],
                 "prior_form": prior["form"],
                 "prior_filed": prior["filingDate"],

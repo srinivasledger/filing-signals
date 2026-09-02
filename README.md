@@ -18,7 +18,7 @@ default configuration produces the full deterministic feed at zero cost.
 | **Auditor changes** | 8-K Item 4.01 | resigned vs dismissed; disagreements disclosed; predecessor → successor firm, and whether that is a tier downgrade |
 | **Late filings** | Form 12b-25 (NT 10-K / NT 10-Q) | graded on the stated reason; routine deadline-week notices separated from substantive ones |
 | **Going concern** | ASC 205-40 note vs the previous filing | ladder: no conclusion → doubt alleviated → substantial doubt |
-| **Accounting policy** | Newly *adopted* accounting standards (ASU) | adoption vs merely-issued |
+| **Accounting standard newly cited** | An ASU present in this filing and not the previous one | adoption wording vs merely-issued; stated adoption year published, and a first citation of a standard adopted years earlier is marked as such |
 | **Revenue recognition** | ASC 606 policy note vs the previous filing | beta |
 
 The item code says an event happened; the sub-classification says which kind,

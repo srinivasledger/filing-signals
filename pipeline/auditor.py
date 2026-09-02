@@ -80,7 +80,11 @@ def firm_key(name: str) -> str:
         if cut == stripped:
             break
         stripped = cut
-    return re.sub(r"[^a-z0-9]", "", stripped.lower())
+    # "Ham, Langston and Brezina, LLP" and "Ham, Langston & Brezina, LLP" are
+    # one firm. Stripping punctuation removed the ampersand but left the word,
+    # so the two spellings keyed differently and split the movement table.
+    key = re.sub(r"\s+and\s+", " & ", stripped.lower())
+    return re.sub(r"[^a-z0-9]", "", key)
 
 
 def canonical_firm(name: str) -> str:
@@ -163,11 +167,15 @@ _HAD_DISAGREEMENTS = re.compile(
 # on the connective before the name: "notified that Simon & Edward LLP" was
 # captured as "that Simon & Edward LLP". Only the trigger words are
 # case-insensitive now; the name itself is not.
-_FIRM_TOKEN = (r"[A-Z][A-Za-z&.,'’\- ]{2,60}?"
-               # Longest form first: with "CPAs?" the lazy quantifier stopped
-               # at "CPA" and left the S behind ("M&K CPAS" -> "M&K CPA").
-               r"(?:PLLC|LLP|L\.L\.P\.|LLC|L\.L\.C\.|CPA[sS]|CPA|P\.?C\.?|"
-               r"& Co\.|Inc\.|Chartered)")
+# Longest form first: with "CPAs?" the lazy quantifier stopped at "CPA" and
+# left the S behind ("M&K CPAS" -> "M&K CPA").
+_SUFFIX_ALT = (r"(?:PLLC|P\.L\.L\.C\.|LLP|L\.L\.P\.?|LLC|L\.L\.C\.|"
+               r"CPA[sS]|CPA|P\.?C\.?|& Co\.|Inc\.|Chartered)")
+# Suffixes chain: "Victor Mokuolu, CPA PLLC" is one firm, and stopping at the
+# first of them published a legitimate sole-practitioner firm as a person's
+# name. The trailing run is greedy so the whole entity is captured.
+_FIRM_TOKEN = (r"[A-Z][A-Za-z&.,'’\- ]{2,60}?" + _SUFFIX_ALT
+               + r"(?:\s*,?\s*" + _SUFFIX_ALT + r")*")
 _LEAD = r"(?:\s+(?:that|by|of|with|the|its|our|as|a|an|new|former|previous))*\s+"
 _DISMISS_CTX = re.compile(
     r"(?i:Dismissal of|dismissed|disengage[d]?|notified|terminated)" + _LEAD

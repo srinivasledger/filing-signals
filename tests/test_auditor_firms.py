@@ -147,3 +147,40 @@ def test_a_renamed_registrant_keeps_one_identity():
     # the marker explains a mismatch where one would otherwise appear.
     assert any(e['evidence'].get('formerly') for e in letters), \
         "the former name must be recorded where the letter used it"
+
+
+# --- entity forms found by re-auditing the live table ----------------------
+def test_and_and_ampersand_are_the_same_firm():
+    """The movement table split "Ham, Langston and Brezina, LLP" from
+    "Ham, Langston & Brezina, LLP". Stripping punctuation removed the
+    ampersand but left the word, so the two spellings keyed differently."""
+    keys = {auditor.firm_key(n) for n in [
+        "Ham, Langston & Brezina, LLP",
+        "Ham, Langston and Brezina, LLP",
+        "Ham, Langston & Brezina, L.L.P",
+    ]}
+    assert len(keys) == 1, keys
+
+
+def test_a_sole_practitioner_firm_keeps_its_entity():
+    """Webstar engaged "Victor Mokuolu, CPA PLLC". Stopping at the first
+    suffix published it as "Victor Mokuolu", which reads as a person rather
+    than the accounting firm the filing names."""
+    _, inc = firms('the Company engaged Victor Mokuolu, CPA PLLC ("VMCPA") '
+                   'as its independent registered public accounting firm.')
+    assert inc == "Victor Mokuolu, CPA PLLC", inc
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("The Company dismissed M&K CPAS PLLC.", "M&K CPAS PLLC"),
+    ("The Company dismissed Kreit & Chiu CPA LLP.", "Kreit & Chiu CPA LLP"),
+    ("The Company dismissed Fruci & Associates II, PLLC.", "Fruci & Associates II, PLLC"),
+])
+def test_chained_entity_suffixes_are_kept_whole(text, expected):
+    out, _ = firms(text)
+    assert out == expected, out
+
+
+def test_the_key_still_ignores_the_entity_form():
+    """Keeping the suffix for display must not split the aggregation."""
+    assert auditor.firm_key("Victor Mokuolu, CPA PLLC") == auditor.firm_key("Victor Mokuolu CPA")
