@@ -728,6 +728,17 @@ def build(second_pass: bool = False) -> None:
                "count": len(events),
                "events": [e.to_dict() for e in events],
            }, indent=2))
+    # A compact company index so the search box can reach the whole record.
+    # The home page holds a window, so searching it found only what happened
+    # to be on the page: Sandisk sat at position 161 and simply returned
+    # nothing. Company-level is enough, because the answer is always "here is
+    # that company's page".
+    _write(config.PUBLIC / "search-index.json",
+           json.dumps([{"c": c["company"], "t": c["ticker"], "k": c["cik"],
+                        "n": c["count"]}
+                       for c in _company_directory(by_company)],
+                      separators=(",", ":")))
+
     _write(config.PUBLIC / "feed.xml", _feed_xml(events, built_at))
     (config.PUBLIC / ".nojekyll").write_text("")
     if config.CUSTOM_DOMAIN:

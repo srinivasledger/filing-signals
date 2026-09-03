@@ -19,7 +19,7 @@ them. Search by name or ticker.</p>
 <div id="feed" data-unit="companies">
 <ul class="mini company-list">
   {% for c in companies %}
-  <li data-size="{{ c.size_tier }}" data-period="{{ c.latest[:7] }}">
+  <li data-size="{{ c.size_tier }}" data-period="{{ c.latest[:7] }}" data-cik="{{ c.cik }}">
     <a href="{{ rel }}company/{{ c.cik }}.html">{{ c.company }}</a>
     {% if c.ticker %}<span class="ticker">{{ c.ticker }}</span>{% endif %}
     <span class="muted">{{ c.count }} entr{{ 'y' if c.count == 1 else 'ies' }}</span>

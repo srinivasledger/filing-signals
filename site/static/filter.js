@@ -125,7 +125,68 @@
     });
   }
 
-  if (q) q.addEventListener('input', apply);
+  // --- reaching beyond the page ------------------------------------------
+  // The feed is a window, so filtering it can only ever find what is already
+  // rendered. A company outside that window returned nothing at all, which
+  // reads as "not tracked" rather than "not on this page". The index is
+  // fetched once, on the first search, and only companies NOT already visible
+  // are offered - otherwise every query would list the same company twice.
+  var elsewhere = null;
+  var indexPromise = null;
+
+  function ensureIndex() {
+    if (!indexPromise) {
+      indexPromise = fetch(rootPath() + 'search-index.json')
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .catch(function () { return []; });
+    }
+    return indexPromise;
+  }
+
+  function rootPath() {
+    // Company and signal pages sit one directory down; everything else is at
+    // the root. Derived from the path rather than templated in, because this
+    // script is shared by every page.
+    return /\/(company|signals)\//.test(location.pathname) ? '../' : '';
+  }
+
+  function showElsewhere(term) {
+    if (!elsewhere) {
+      elsewhere = document.createElement('div');
+      elsewhere.className = 'elsewhere';
+      elsewhere.hidden = true;
+      feed.parentNode.insertBefore(elsewhere, feed);
+    }
+    if (term.length < 2) { elsewhere.hidden = true; return; }
+    ensureIndex().then(function (index) {
+      if ((q.value || '').trim().toLowerCase() !== term) return;   // stale
+      var onPage = {};
+      cards.forEach(function (c, i) {
+        if (!c.hidden) onPage[(c.dataset.cik || '')] = true;
+      });
+      var hits = index.filter(function (r) {
+        return !onPage[String(r.k)]
+          && ((r.c || '').toLowerCase().indexOf(term) !== -1
+              || (r.t || '').toLowerCase().indexOf(term) === 0);
+      }).slice(0, 8);
+      if (!hits.length) { elsewhere.hidden = true; return; }
+      elsewhere.innerHTML =
+        '<p class="elsewhere-head">Not on this page &mdash; found in the full record</p>'
+        + '<ul class="mini">' + hits.map(function (r) {
+            return '<li><a href="' + rootPath() + 'company/' + r.k + '.html">'
+              + r.c.replace(/[<>&]/g, '') + '</a>'
+              + (r.t ? ' <span class="ticker">' + r.t.replace(/[<>&]/g, '') + '</span>' : '')
+              + ' <span class="muted">' + r.n + (r.n === 1 ? ' entry' : ' entries')
+              + '</span></li>';
+          }).join('') + '</ul>';
+      elsewhere.hidden = false;
+    });
+  }
+
+  if (q) q.addEventListener('input', function () {
+    apply();
+    showElsewhere((q.value || '').trim().toLowerCase());
+  });
   if (period) period.addEventListener('change', function () {
     activePeriod = period.value;
     apply();

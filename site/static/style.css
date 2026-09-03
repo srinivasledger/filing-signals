@@ -501,3 +501,10 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 .company-list .company-signals{display:inline-flex;gap:4px;flex-wrap:wrap;margin-left:auto}
 .company-list .tag{font-size:.6rem;padding:1px 5px}
 @media (max-width:620px){ .company-list .company-signals{margin-left:0;width:100%} }
+
+/* ── results from outside the current page ────────────────── */
+.elsewhere{border:1px solid var(--line);border-left:2px solid var(--series-2);
+  border-radius:var(--radius);background:var(--surface);padding:12px 15px;margin:0 0 14px}
+.elsewhere-head{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--muted);margin:0 0 7px}
+.elsewhere .mini li{border-bottom:none;padding:3px 0}
