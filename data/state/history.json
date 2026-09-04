@@ -1,44 +1,44 @@
 {
-  "companies": 798,
+  "companies": 1003,
   "event_counts": {
-    "auditor_change": 1750,
-    "late_filing": 6142,
-    "restatement": 402
+    "auditor_change": 2180,
+    "late_filing": 7633,
+    "restatement": 486
   },
   "rows": [
     {
-      "eligible": 524,
+      "eligible": 663,
       "first": "auditor_change",
-      "followed": 58,
+      "followed": 73,
       "label": "An auditor change was followed by a non-reliance filing",
       "rate": "11%",
       "second": "restatement"
     },
     {
-      "eligible": 533,
+      "eligible": 678,
       "first": "late_filing",
-      "followed": 68,
+      "followed": 76,
       "label": "A late filing was followed by a non-reliance filing",
-      "rate": "13%",
+      "rate": "11%",
       "second": "restatement"
     },
     {
-      "eligible": 533,
+      "eligible": 678,
       "first": "late_filing",
-      "followed": 173,
+      "followed": 222,
       "label": "A late filing was followed by an auditor change",
-      "rate": "32%",
+      "rate": "33%",
       "second": "auditor_change"
     },
     {
-      "eligible": 221,
+      "eligible": 273,
       "first": "restatement",
-      "followed": 102,
+      "followed": 120,
       "label": "A non-reliance filing was followed by an auditor change",
-      "rate": "46%",
+      "rate": "44%",
       "second": "auditor_change"
     }
   ],
-  "total_historical_events": 8294,
+  "total_historical_events": 10299,
   "window_days": 540
 }
