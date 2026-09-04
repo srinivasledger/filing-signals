@@ -138,7 +138,21 @@ def load_all_events(limit: Optional[int] = None) -> List[Event]:
 
 # --- historical sequence rates ------------------------------------------------
 def save_history(stats: Dict) -> None:
+    """Never replace a computed history with an empty one.
+
+    These rates have been wiped twice by a local process reaching this writer
+    with nothing to write - most recently the test suite, which stubbed a
+    function name that does not exist and let the real history pass run. A run
+    that computed nothing has nothing to save, and the file it would overwrite
+    costs one request per company to rebuild.
+    """
     config.STATE_DIR.mkdir(parents=True, exist_ok=True)
+    if not stats.get("total_historical_events"):
+        held = load_history().get("total_historical_events", 0)
+        if held:
+            log.warning("history: refusing to overwrite %d events with an "
+                        "empty result", held)
+            return
     HISTORY_FILE.write_text(json.dumps(stats, indent=2, sort_keys=True) + "\n")
 
 

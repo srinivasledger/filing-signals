@@ -12,7 +12,9 @@ company&rsquo;s page, where the entry appears in full with its quoted filing tex
 <p class="filter-note" id="count"></p>
 <div id="feed">
 {% for year, rows in years %}
-<p class="eyebrow"><span>{{ year }}</span><span>{{ rows|length }} entries</span></p>
+<div class="year-group" data-year="{{ year }}">
+<p class="eyebrow"><span>{{ year }}</span><span class="group-count"
+  data-total="{{ rows|length }}">{{ rows|length }} entr{{ 'y' if rows|length == 1 else 'ies' }}</span></p>
 <ul class="mini">
   {% for e in rows %}
   <li data-size="{{ e.size_tier }}" data-period="{{ e.filed[:7] }}"><time>{{ e.filed }}</time>
@@ -21,7 +23,8 @@ company&rsquo;s page, where the entry appears in full with its quoted filing tex
     {% if e.ticker %}<span class="ticker">{{ e.ticker }}</span>{% endif %}</li>
   {% endfor %}
 </ul>
+</div>
 {% endfor %}
 </div>
-<p class="muted" id="noresults" hidden>No entries of that size.</p>
+<p class="muted" id="noresults" hidden>No entries match that filter.</p>
 {% endblock %}

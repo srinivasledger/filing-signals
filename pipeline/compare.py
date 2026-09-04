@@ -196,7 +196,13 @@ def _diff_sample(current: str, prior: str, limit: int = 3) -> List[str]:
     """A few sentences present now and absent before - the actual change."""
     prior_sh = shingles(normalise_for_diff(prior))
     out: List[str] = []
-    for sentence in re.split(r"(?<=[.;])\s+", current):
+    pieces = re.split(r"(?<=[.;])\s+", current)
+    # The section handed in was cut at a character budget, so its last piece
+    # is a sentence that simply stopped - one reached the page as "...the
+    # carryover of the historical amoun". It is incomplete by construction.
+    if pieces and not re.search(r'[.;!?]\s*$', current):
+        pieces.pop()
+    for sentence in pieces:
         s = sentence.strip()
         if len(s) < 60:
             continue
@@ -207,7 +213,7 @@ def _diff_sample(current: str, prior: str, limit: int = 3) -> List[str]:
             continue
         sh = shingles(normalise_for_diff(s))
         if sh and not (sh & prior_sh):
-            out.append(sections.truncate_words(s, 320))
+            out.append(sections.close_quote(sections.truncate_words(s, 320)))
         if len(out) >= limit:
             break
     return out

@@ -221,6 +221,21 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         f"{len(ragged)} of {len(quoted)} begin mid-sentence, "
         f"{len(headed)} do not open at the substance"))
 
+    # --- and where a quote is allowed to end ---
+    # The opening was checked from the first week; the closing never was, and
+    # ten quotes reached the page cut mid-word with nothing to mark the cut -
+    # "...financial statements have been prepare". A quote either ends where
+    # the filing's sentence ends, or it carries the ellipsis that says it was
+    # trimmed. Anything else reads as a transcription error on a page whose
+    # whole claim is that it quotes filings accurately.
+    ENDS_CLEANLY = re.compile(r'[.!?;:"\u201d\u2019)\]\u2026]\s*$')
+    cut_short = [e for e in quoted if not ENDS_CLEANLY.search(e.quote)]
+    checks.append(_check(
+        "Quotes end where the filing does",
+        OK if not cut_short else WARN,
+        f"{len(cut_short)} of {len(quoted)} end mid-sentence "
+        f"with no ellipsis to mark the cut"))
+
     # --- does any entry contradict its own quoted evidence? ---
     # The defect that most damages the site is an event whose label says the
     # opposite of the passage printed underneath it. Nothing on the status page
@@ -412,6 +427,47 @@ def page_weight_check(public: "pathlib.Path") -> Dict:
     if worst > MAX_PAGE_WIRE_BYTES:
         return _check("Page weight", WARN, detail + " - time to split it by year")
     return _check("Page weight", OK, detail)
+
+
+def period_options_check(public: "pathlib.Path") -> Dict:
+    """No filter offers a period the page cannot show.
+
+    The period list was built from the whole record and handed to every page,
+    while each page renders a different slice. The home page - a 150-entry
+    window - offered "March 2025" and every other month it does not hold, and
+    choosing one blanked the feed. Checked on the built pages rather than in
+    the builder, because the defect was exactly a correct helper called with
+    the wrong argument.
+    """
+    import re as _re
+
+    pages = sorted(public.rglob("*.html"))
+    if not pages:
+        return _check("Filter options match the page", UNKNOWN, "nothing built yet")
+
+    checked, dead = 0, []
+    for page in pages:
+        html_text = page.read_text()
+        select = _re.search(r'<select id="period".*?</select>', html_text, _re.S)
+        if not select:
+            continue
+        checked += 1
+        offered = [v for v in _re.findall(r'<option value="([^"]+)"', select.group(0))
+                   if v != "all"]
+        # Every month any row on this page belongs to. A row can carry several.
+        present = set()
+        for attr in _re.findall(r'data-period="([^"]*)"', html_text):
+            present.update(attr.split())
+        for value in offered:
+            if not any(m.startswith(value) for m in present):
+                dead.append(f"{page.relative_to(public)}:{value}")
+
+    detail = (f"{checked} pages with a period filter, "
+              f"{len(dead)} option(s) that filter to nothing")
+    if dead:
+        return _check("Filter options match the page", FAIL,
+                      detail + " - " + ", ".join(sorted(dead)[:6]))
+    return _check("Filter options match the page", OK, detail)
 
 
 def firm_labels_check(public: "pathlib.Path") -> Dict:

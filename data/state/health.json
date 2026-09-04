@@ -46,6 +46,11 @@
       "status": "ok"
     },
     {
+      "detail": "0 of 886 end mid-sentence with no ellipsis to mark the cut",
+      "name": "Quotes end where the filing does",
+      "status": "ok"
+    },
+    {
       "detail": "0 of 196 going-concern and material-weakness entries quote a passage that negates the state they assert",
       "name": "No entry contradicts its own quote",
       "status": "ok"
@@ -71,7 +76,7 @@
       "status": "ok"
     },
     {
-      "detail": "heaviest page index.html is 37 KB over the wire (limit 250 KB), 1020 pages checked",
+      "detail": "heaviest page index.html is 37 KB over the wire (limit 250 KB), 1023 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
@@ -79,14 +84,19 @@
       "detail": "58 firms on the auditors page, one label each",
       "name": "Firm labels are consistent",
       "status": "ok"
+    },
+    {
+      "detail": "231 pages with a period filter, 0 option(s) that filter to nothing",
+      "name": "Filter options match the page",
+      "status": "ok"
     }
   ],
-  "generated_at": "2026-09-04T08:46:06+00:00",
+  "generated_at": "2026-09-04T13:07:37+00:00",
   "summary": {
     "fail": 0,
-    "ok": 16,
+    "ok": 18,
     "overall": "ok",
-    "total": 16,
+    "total": 18,
     "unknown": 0,
     "warn": 0
   }

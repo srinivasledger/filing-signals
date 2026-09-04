@@ -52,3 +52,67 @@ def test_an_unbounded_sentence_is_marked_as_an_excerpt():
     ctx = sections._context(body, len(body) - 20)
     assert ctx.startswith("…"), ctx[:60]
     assert OPENS_CLEANLY.match(ctx)
+
+
+# --- and where a quote is allowed to end -------------------------------------
+#
+# The opening was pinned from the first week. The closing never was, and ten
+# published quotes ended mid-word with nothing to mark the cut, because the
+# going-concern note was taken as a flat 4,000 characters instead of being
+# bounded at the next note the way every other section here is.
+ENDS_CLEANLY = re.compile(r'[.!?;:"”’)\]…]\s*$')
+
+
+def test_the_going_concern_note_stops_at_the_next_note():
+    """Churchill Capital: the quote ran out of the going-concern note, through
+    the next heading, and stopped inside "prepare"."""
+    text = ("Note 1. Going Concern\n"
+            + "The Company has incurred losses and conditions raise "
+              "substantial doubt about its ability to continue as a going "
+              "concern. " * 6
+            + "\nNote 2. Summary of Significant Accounting Policies\n"
+            + "The accompanying unaudited condensed consolidated financial "
+              "statements have been prepared in accordance with GAAP. " * 20)
+    span = sections.find_going_concern_note(text)
+    assert span is not None
+    body = text[span[0]:span[1]]
+    assert "substantial doubt" in body
+    assert "Summary of Significant Accounting Policies" not in body
+
+
+def test_a_quote_never_ends_inside_a_word():
+    """A note with no next-note heading is cut by the character budget, which
+    lands wherever it lands. It must still end on a whole word."""
+    text = ("Going Concern\n"
+            + "The Company reported recurring losses and negative cash flows "
+              "which raise substantial doubt about its ability to continue as "
+              "a going concern for one year. " * 60)
+    span = sections.find_going_concern_note(text)
+    assert span is not None
+    body = text[span[0]:span[1]]
+    assert body[-1].isalnum() or body[-1] in ".;:"
+    # The cut fell inside the source, so the word it landed in is gone.
+    assert text[span[1]] in " \n" or text[span[1]].isalnum() is False
+
+
+def test_a_trimmed_excerpt_says_so():
+    """_context marks its own truncation. The old guard only did that when a
+    space fell within the last 60 characters, so a window ending inside a long
+    unbroken token was published truncated and unmarked."""
+    body = ("Conditions raise substantial doubt about the Company. "
+            + "x" * 200 + " tail " + "and further text " * 200)
+    ctx = sections._context(body, 0)
+    assert ENDS_CLEANLY.search(ctx), repr(ctx[-40:])
+    assert ctx.endswith("…")
+
+
+def test_the_published_quotes_end_cleanly():
+    """The property the site actually promises, asserted on the extractor's
+    own output rather than on an intermediate."""
+    text = ("2. Going Concern and Management's Plans\n"
+            + "The Company has an accumulated deficit and expects to require "
+              "additional financing, which raises substantial doubt about its "
+              "ability to continue as a going concern. " * 12)
+    state = sections.going_concern_state(text)
+    assert state["quote"]
+    assert ENDS_CLEANLY.search(state["quote"]), repr(state["quote"][-40:])

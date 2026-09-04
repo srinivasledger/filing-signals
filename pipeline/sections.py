@@ -362,6 +362,9 @@ def _looks_like_heading(line: str) -> bool:
     return True
 
 
+GC_NOTE_MAX_CHARS = 4_000
+
+
 def find_going_concern_note(text: str) -> Optional[Tuple[int, int]]:
     """Locate the going-concern note by its heading. Returns (start, end)."""
     best: Optional[Tuple[int, int]] = None
@@ -371,13 +374,25 @@ def find_going_concern_note(text: str) -> Optional[Tuple[int, int]]:
             continue
         if re.match(r"\s*\.{2,}|\s*\d{1,3}\s*$", text[m.end(): m.end() + 40]):
             continue          # table-of-contents row
-        body_end = min(len(text), m.end() + 4000)
-        body = text[m.end(): body_end]
+        # The note ends where the next numbered note begins, the way every
+        # other section here is bounded. A flat 4,000 characters ran past that
+        # heading into the following note, so the quote carried text from a
+        # different note and stopped wherever the budget ran out - one reached
+        # the page as "...financial statements have been prepare".
+        start = m.end()
+        limit = min(len(text), start + GC_NOTE_MAX_CHARS)
+        body = _bound_to_note(text[start:limit])
+        if start + len(body) == limit < len(text):
+            # No next-note heading inside the budget, so the cut fell wherever
+            # the character count ran out, possibly inside a word.
+            cut = body.rfind(" ")
+            if cut > 0:
+                body = body[:cut]
         if len(body) < 200:
             continue
         # Prefer the note that actually reaches an ASC 205-40 conclusion.
         if _GC_CONCLUSION.search(body) and best is None:
-            best = (m.start(), body_end)
+            best = (m.start(), start + len(body))
     return best
 
 
@@ -390,6 +405,30 @@ def _strip_forward_looking(text: str) -> str:
     if nxt:
         end = m.end() + nxt.start()
     return text[:m.start()] + "\n" + text[min(end, len(text)):]
+
+
+# Zero-width and format characters survive html_to_text and reach the page as
+# an invisible tail after the full stop, which is enough to make a quote look
+# unterminated to anything checking it.
+_INVISIBLE = "\u200b\u200c\u200d\ufeff\u00ad"
+
+_ENDS_A_SENTENCE = re.compile(r'[.!?;:"\u201d\u2019)\]\u2026]$')
+
+
+def close_quote(text: str) -> str:
+    """A published quote either ends where the filing's sentence ends, or it
+    carries the ellipsis that says it was cut.
+
+    Three extractors put text on the page - the going-concern note, the Part
+    III narrative on a 12b-25, and the sentence diff - and each draws from a
+    slice with a character budget. Each dropped its partial trailing word
+    where the budget was known; this is the last guarantee, so that nothing
+    reaches a reader looking like a transcription error.
+    """
+    text = "".join(ch for ch in text if ch not in _INVISIBLE).strip()
+    if not text or _ENDS_A_SENTENCE.search(text):
+        return text
+    return text.rstrip(" ,;:-\u2013\u2014") + "\u2026"
 
 
 def truncate_words(text: str, limit: int) -> str:
@@ -433,9 +472,11 @@ def _context(text: str, pos: int, before: int = 400, after: int = 900) -> str:
     # Plans" - and quoting the number reads as a quote starting mid-list.
     window = re.sub(r"^\d{1,3}\s*\.?\s+(?=[A-Z\u201c\"(])", "", window.strip())
     if end < len(text):
+        # Mark it, always. The old guard only trimmed when a space fell within
+        # the last 60 characters, so a window ending inside a long unbroken
+        # token was published truncated with nothing to say so.
         cut = window.rfind(" ")
-        if cut > len(window) - 60:
-            window = window[:cut] + "\u2026"
+        window = (window[:cut] if cut > 0 else window).rstrip(" ,;:-") + "\u2026"
     return window.strip()
 
 
@@ -458,7 +499,7 @@ def going_concern_state(text: str) -> Dict[str, object]:
         state = classify_going_concern(body)
         return {
             "state": state,
-            "quote": truncate_words(ctx, 600),
+            "quote": close_quote(truncate_words(ctx, 600)),
             "source": "going-concern note",
         }
 
@@ -469,7 +510,7 @@ def going_concern_state(text: str) -> Dict[str, object]:
         state = classify_going_concern(ctx)
         return {
             "state": state,
-            "quote": truncate_words(ctx, 600),
+            "quote": close_quote(truncate_words(ctx, 600)),
             "source": "filing body",
         }
 
@@ -477,7 +518,7 @@ def going_concern_state(text: str) -> Dict[str, object]:
         m2 = _GC_CONCLUSION.search(text)
         return {
             "state": GC_RISK_FACTOR_ONLY,
-            "quote": truncate_words(_context(text, m2.start()), 600),
+            "quote": close_quote(truncate_words(_context(text, m2.start()), 600)),
             "source": "risk factors / forward-looking statements only",
         }
 
@@ -703,6 +744,6 @@ def internal_control_state(text: str) -> Dict[str, object]:
     pos = max(not_eff, eff)
     return {
         "state": state,
-        "quote": truncate_words(_context(scope, pos), 520),
+        "quote": close_quote(truncate_words(_context(scope, pos), 520)),
         "remediated": bool(_ICFR_REMEDIATED.search(scope)),
     }

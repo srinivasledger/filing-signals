@@ -58,7 +58,7 @@ counts above are drawn from all {{ count }} letters; the complete list is on the
 <div class="feed feed-single" id="feed">
   {% for t in shown %}
   <article class="event" data-signal="comment_letter" data-size="{{ t.size_tier }}"
-    data-period="{{ t.closed[:7] }}">
+    data-period="{{ t.periods|join(' ') }}">
     <div class="event-head">
       <span class="tag tag-comment_letter">SEC comment letter</span>
       <span class="tag tag-conf">{{ t.letters|length }} letter{{ '' if t.letters|length == 1 else 's' }}</span>
@@ -101,5 +101,5 @@ counts above are drawn from all {{ count }} letters; the complete list is on the
   </article>
   {% endfor %}
 </div>
-<p class="muted" id="noresults" hidden>No letters from companies of that size.</p>
+<p class="muted" id="noresults" hidden>No reviews match that filter.</p>
 {% endblock %}

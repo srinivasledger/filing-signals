@@ -84,7 +84,16 @@ def extract_reason(text: str) -> str:
         return ""
     tail = text[start.end():]
     end = _PART4.search(tail)
-    body = tail[:end.start()] if end else tail[:4000]
+    if end:
+        body = tail[:end.start()]
+    else:
+        # No Part IV to stop at, so the cut is the character budget and lands
+        # wherever it lands. The word it landed in is not a word.
+        body = tail[:4000]
+        if len(tail) > 4000:
+            space = body.rfind(" ")
+            if space > 0:
+                body = body[:space]
 
     # Collapse newlines first. html_to_text preserves single line breaks, so
     # the form's instruction text arrives as "State below\nin reasonable\ndetail"
@@ -117,7 +126,7 @@ def extract_reason(text: str) -> str:
     # A leading fragment has nothing to attach to; drop it rather than quote it.
     while kept and not re.match(r'[A-Z\u201c("]', kept[0]):
         kept.pop(0)
-    return sections.truncate_words(" ".join(kept), 700)
+    return sections.close_quote(sections.truncate_words(" ".join(kept), 700))
 
 
 # EDGAR's <PERIOD> header is not the report period on an NT filing: for some

@@ -31,7 +31,13 @@
   var showRoutine = !document.getElementById('routinechips');
 
   var haystacks = cards.map(function (c) { return c.textContent.toLowerCase(); });
-  var periods = cards.map(function (c) { return c.dataset.period || ''; });
+  // A row can span months: a company with entries in May and August, a
+  // comment-letter thread open across three. Carrying only the newest month
+  // hid the row from every earlier month it genuinely belongs to, while the
+  // row itself displayed that earlier date. Space-separated, matched by token.
+  var periods = cards.map(function (c) {
+    return (c.dataset.period || '').split(' ');
+  });
   var sizes = cards.map(function (c) { return c.dataset.size || ''; });
   var routine = cards.map(function (c) { return c.dataset.routine === 'yes'; });
 
@@ -46,8 +52,9 @@
       var okTerm = !term || haystacks[i].indexOf(term) !== -1;
       var okRoutine = showRoutine || !routine[i];
       // "2026" must match "2026-08"; "2026-08" must match only itself.
-      var okPeriod = activePeriod === 'all'
-        || periods[i].indexOf(activePeriod) === 0;
+      var okPeriod = activePeriod === 'all' || periods[i].some(function (p) {
+        return p.indexOf(activePeriod) === 0;
+      });
       var show = okSignal && okSize && okTerm && okRoutine && okPeriod;
       card.hidden = !show;
       if (show) shown++;
@@ -61,6 +68,7 @@
         : shown + ' of ' + cards.length + ' ' + unit;
     }
     if (noresults) noresults.hidden = shown !== 0;
+    syncGroups();
     describeRefinements();
 
     // Keep the chart showing the same population as the cards. Search text is
@@ -74,6 +82,28 @@
         return okSignal && okSize && okRoutine;
       }, describeScope());
     }
+  }
+
+  // Year groups on a signal page. A filter that emptied one left its heading
+  // and an empty list on the page - "2025 - 1 entry" with nothing beneath it.
+  // The heading also has to stop reporting the unfiltered total.
+  // Only a group that actually holds rows is one. Anything else has nothing
+  // to sync and must never be hidden on their behalf.
+  var groups = Array.prototype.slice.call(
+    feed.querySelectorAll('.year-group')
+  ).filter(function (g) { return g.querySelectorAll('li').length > 0; });
+
+  function syncGroups() {
+    groups.forEach(function (g) {
+      var live = g.querySelectorAll('li:not([hidden])').length;
+      g.hidden = live === 0;
+      var label = g.querySelector('.group-count');
+      if (!label) return;
+      var total = Number(label.dataset.total);
+      label.textContent = live === total
+        ? total + (total === 1 ? ' entry' : ' entries')
+        : live + ' of ' + total + ' entries';
+    });
   }
 
   // A filter tucked inside a closed panel must announce itself, or the page

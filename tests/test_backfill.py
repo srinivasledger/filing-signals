@@ -73,6 +73,12 @@ def test_the_fill_yields_to_the_budget_but_the_day_s_filings_do_not():
                     "operating": 0, "events": 0}
 
     clock = iter([0.0] + [10_000.0] * 20)        # first call inside budget, then over
+    # Every writer run.main reaches has to be stubbed by its real name. This
+    # block used to patch a "history.refresh" that does not exist, with
+    # create=True silencing the AttributeError that would have said so, and
+    # the unmocked history pass then wrote its empty result over the repo's
+    # own data/state/history.json - the exact corruption the "Follow-on rates
+    # computed" check was added to catch, caused by running the tests.
     with mock.patch.object(config, "require_user_agent", lambda: None), \
          mock.patch.object(config, "HISTORY_FROM", "2026-01-01"), \
          mock.patch.object(config, "HISTORY_BUDGET_SECONDS", 3600), \
@@ -85,10 +91,33 @@ def test_the_fill_yields_to_the_budget_but_the_day_s_filings_do_not():
          mock.patch.object(run.publish, "append_events", return_value=0), \
          mock.patch.object(run.publish, "save_state"), \
          mock.patch.object(run.publish, "load_state", return_value={"runs": []}), \
-         mock.patch.object(run.history, "refresh", create=True), \
+         mock.patch.object(run.history, "sequence_rates", return_value={}), \
+         mock.patch.object(run.publish, "save_history"), \
          mock.patch.object(run.health, "run_checks", return_value={"checks": []}), \
          mock.patch.object(run.publish, "save_health"):
         run.main(["--no-render"])
 
     assert forward[0] in processed, "the day's own filings must always run"
     assert fill[0] not in processed, "the fill must yield once the budget is spent"
+
+
+def test_an_empty_history_never_overwrites_a_computed_one(tmp_path, monkeypatch):
+    """The rates cost one request per company to build. A process that
+    computed nothing must not be able to erase them - which is how they were
+    lost twice, the last time by running the tests."""
+    import json
+
+    from pipeline import publish
+
+    monkeypatch.setattr(publish.config, "STATE_DIR", tmp_path)
+    monkeypatch.setattr(publish, "HISTORY_FILE", tmp_path / "history.json")
+
+    publish.save_history({"companies": 900, "total_historical_events": 10_299})
+    publish.save_history({"companies": 900, "total_historical_events": 0})
+    assert json.loads((tmp_path / "history.json").read_text())[
+        "total_historical_events"] == 10_299
+
+    # A real result still replaces it.
+    publish.save_history({"companies": 950, "total_historical_events": 11_000})
+    assert json.loads((tmp_path / "history.json").read_text())[
+        "total_historical_events"] == 11_000

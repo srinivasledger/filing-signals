@@ -11,6 +11,7 @@ import json
 import logging
 import shutil
 from collections import Counter, defaultdict
+from email.utils import format_datetime
 from html import escape
 from typing import Dict, List
 from xml.sax.saxutils import escape as xml_escape
@@ -232,6 +233,9 @@ def _letter_stats(events):
                               if e.evidence.get("formerly")), ""),
             "topics": sorted({t for e in rows for t in e.evidence.get("topics", [])}),
             "size_tier": next((e.size_tier for e in rows if e.size_tier), ""),
+            # A review runs across months. Filtering on the closing month
+            # alone hid a thread from every month it was actually open in.
+            "periods": sorted({e.filed[:7] for e in rows}, reverse=True),
         })
     threaded.sort(key=lambda t: t["closed"], reverse=True)
 
@@ -299,15 +303,18 @@ def _fill_boundary(runs, row) -> str:
         return ""
 
 
-def _periods(events):
+def _periods(months):
     """Years and the months present within them, newest first.
 
-    Built from the data rather than a fixed calendar, so a month with nothing
-    in it never appears as an option that filters to an empty page.
+    Built from the months a page actually renders, not from the whole record.
+    Passing every month meant the home page - a 150-entry window - offered
+    "March 2025" and every other month it does not hold, each of which
+    filtered the page to nothing. An option that can only ever empty the page
+    is worse than no option at all.
     """
     import calendar
 
-    months = sorted({e.filed[:7] for e in events if e.filed}, reverse=True)
+    months = sorted({m for m in months if m}, reverse=True)
     by_year: Dict[str, list] = defaultdict(list)
     for ym in months:
         year, mon = ym.split("-")
@@ -334,6 +341,10 @@ def _company_directory(by_company) -> List[Dict]:
             "count": len(evs),
             "earliest": dates[0],
             "latest": dates[-1],
+            # Every month this company appears in. Carrying only the latest
+            # meant a company with entries in May and August was hidden by the
+            # May filter while its own row displayed a May date.
+            "periods": sorted({d[:7] for d in dates}, reverse=True),
             # Ordered as the signals page orders them, so the badges read the
             # same way everywhere.
             "signals": [k for k in SIGNAL_ORDER
@@ -434,6 +445,22 @@ def _write(path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
+def _rfc822(day: str) -> str:
+    """RSS 2.0 dates are RFC-822, not ISO.
+
+    The feed published "2026-09-03", which a reader is entitled to ignore
+    entirely - and one that does drops the item to the bottom or dates it
+    now. Built with email.utils rather than strftime because %a and %b follow
+    the runner's locale and RFC-822 does not.
+    """
+    try:
+        d = dt.date.fromisoformat(day)
+    except (TypeError, ValueError):
+        return ""
+    return format_datetime(
+        dt.datetime(d.year, d.month, d.day, tzinfo=dt.timezone.utc))
+
+
 def _feed_xml(events: List[Event], built_at: str) -> str:
     base = config.SITE_URL or ""
     items = []
@@ -446,7 +473,7 @@ def _feed_xml(events: List[Event], built_at: str) -> str:
             f"<link>{xml_escape(link)}</link>"
             f"<guid isPermaLink=\"false\">{e.id}</guid>"
             f"<category>{xml_escape(e.label)}</category>"
-            f"<pubDate>{e.filed}</pubDate>"
+            f"<pubDate>{_rfc822(e.filed)}</pubDate>"
             f"<description>{xml_escape(desc)}</description>"
             "</item>"
         )
@@ -456,7 +483,7 @@ def _feed_xml(events: List[Event], built_at: str) -> str:
         f"<title>{xml_escape(config.SITE_TITLE)}</title>"
         f"<link>{xml_escape(base or 'https://example.invalid')}</link>"
         f"<description>{xml_escape(config.SITE_TAGLINE)}</description>"
-        f"<lastBuildDate>{built_at}</lastBuildDate>"
+        f"<lastBuildDate>{format_datetime(dt.datetime.now(dt.timezone.utc))}</lastBuildDate>"
         + "".join(items)
         + "</channel></rss>\n"
     )
@@ -523,7 +550,8 @@ def build(second_pass: bool = False) -> None:
         "repo_url": config.REPO_URL,
         "site_tagline": config.SITE_TAGLINE,
         "built_at": built_at,
-        "periods": _periods(events),
+        # Deliberately not here. Every page renders a different slice, so each
+        # one passes the months it actually holds.
         "signal_labels": [(k, SIGNAL_LABELS[k]) for k in SIGNAL_ORDER],
         "hidden_evidence": _EVIDENCE_HIDDEN,
         "blurbs": SIGNAL_BLURBS,
@@ -595,6 +623,7 @@ def build(second_pass: bool = False) -> None:
         config.PUBLIC / "index.html",
         env.get_template("index.html").render(
             rel="", page_path="", events=home_events,
+            periods=_periods(e.filed[:7] for e in home_events),
             total_events=len(events),
             companies=len({e.cik for e in events}),
             situations=situations, routine_n=routine_n,
@@ -634,6 +663,7 @@ def build(second_pass: bool = False) -> None:
             signal_tpl.render(
                 rel="../", page_path=f"signals/{key}.html", key=key, label=label,
                 blurb=SIGNAL_BLURBS.get(key, ""), total=len(rows),
+                periods=_periods(e.filed[:7] for e in rows),
                 years=sorted(by_year.items(), reverse=True), **common,
             ),
         )
@@ -662,6 +692,10 @@ def build(second_pass: bool = False) -> None:
                               "ticker": next((e.ticker for e in evs if e.ticker), ""),
                               "size_tier": next((e.size_tier for e in evs if e.size_tier), ""),
                               "span_days": seq[0].get("span_days"),
+                              # Same reason as a letter thread: a sequence is
+                              # a span, so it belongs to every month it covers.
+                              "periods": sorted({st["event"].filed[:7]
+                                                 for st in seq}, reverse=True),
                               "steps": seq})
         _write(
             config.PUBLIC / "company" / f"{cik}.html",
@@ -670,7 +704,7 @@ def build(second_pass: bool = False) -> None:
                 ticker=next((e.ticker for e in evs if e.ticker), ""),
                 sic_desc=next((e.sic_desc for e in evs if e.sic_desc), ""),
                 events=sorted(evs, key=_rank, reverse=True), sequence=seq,
-                **{**common, "periods": _periods(evs)},
+                periods=_periods(e.filed[:7] for e in evs), **common,
             ),
         )
     sequences.sort(key=lambda s: (-len(s["steps"]), s["company"]))
@@ -680,6 +714,8 @@ def build(second_pass: bool = False) -> None:
            env.get_template("sequences.html").render(
                rel="", page_path="sequences.html",
                sequences=sequences[:MAX_SEQUENCES],
+               periods=_periods(m for s in sequences[:MAX_SEQUENCES]
+                                for m in s["periods"]),
                sequences_total=len(sequences), history=publish.load_history(),
                rates_chart=charts.rates_chart(
                    publish.load_history().get("rows", [])),
@@ -690,12 +726,17 @@ def build(second_pass: bool = False) -> None:
     if letter_stats:
         _write(config.PUBLIC / "letters.html",
                env.get_template("letters.html").render(
-                   rel="", page_path="letters.html", **letter_stats, **common))
+                   rel="", page_path="letters.html",
+                   periods=_periods(m for t in letter_stats["shown"]
+                                    for m in t["periods"]),
+                   **letter_stats, **common))
 
+    directory = _company_directory(by_company)
     _write(config.PUBLIC / "companies.html",
            env.get_template("companies.html").render(
                rel="", page_path="companies.html",
-               companies=_company_directory(by_company),
+               companies=directory,
+               periods=_periods(m for c in directory for m in c["periods"]),
                signal_label_of=SIGNAL_LABELS, **common))
 
     _write(config.PUBLIC / "auditors.html",
@@ -756,7 +797,8 @@ def build(second_pass: bool = False) -> None:
     if not second_pass:
         try:
             built = [health_mod.page_weight_check(config.PUBLIC),
-                     health_mod.firm_labels_check(config.PUBLIC)]
+                     health_mod.firm_labels_check(config.PUBLIC),
+                     health_mod.period_options_check(config.PUBLIC)]
             for c in built:
                 log.info("%s", c["detail"])
             names = {c["name"] for c in built}
