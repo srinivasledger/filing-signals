@@ -121,3 +121,66 @@ def test_an_empty_history_never_overwrites_a_computed_one(tmp_path, monkeypatch)
     publish.save_history({"companies": 950, "total_historical_events": 11_000})
     assert json.loads((tmp_path / "history.json").read_text())[
         "total_historical_events"] == 11_000
+
+
+# --- a holiday is not the pipeline falling behind ----------------------------
+def test_a_day_the_sec_was_closed_is_not_counted_as_behind():
+    """Labor Day 2026 fell on Monday 7 September. The dataset was correctly
+    current through Friday the 4th, and the check called it two business days
+    behind and warned, because it counted weekdays and nothing else."""
+    from pipeline import health
+
+    friday, tuesday = dt.date(2026, 9, 4), dt.date(2026, 9, 8)
+    assert health._business_days_between(friday, tuesday) == 2
+    assert health._business_days_between(friday, tuesday, ["2026-09-07"]) == 1
+
+
+def test_the_page_says_which_day_the_sec_was_shut():
+    """A quiet day has to explain itself, or the reader is left comparing the
+    date on the page with a calendar."""
+    from pipeline import health
+
+    state = {"last_processed": "2026-09-04", "no_filings": ["2026-09-07"],
+             "runs": []}
+    checks = health.run_checks([], state, dt.date(2026, 9, 8))["checks"]
+    current = next(c for c in checks if c["name"] == "Pipeline is current")
+    assert current["status"] == health.OK, current
+    assert "2026-09-07" in current["detail"]
+    assert "published no index" in current["detail"]
+
+
+def test_a_genuine_gap_still_warns():
+    """The holiday allowance must not become a way to look current while the
+    scans are actually failing."""
+    from pipeline import health
+
+    state = {"last_processed": "2026-09-01", "no_filings": [], "runs": []}
+    current = next(c for c in health.run_checks([], state, dt.date(2026, 9, 8))["checks"]
+                   if c["name"] == "Pipeline is current")
+    assert current["status"] in (health.WARN, health.FAIL), current
+
+
+def test_a_day_scanned_only_in_part_says_so():
+    """The per-day cap drops periodic reports on a day that is then marked
+    processed and never revisited. It was a log line in a run nobody reads."""
+    from pipeline import health, models
+
+    # run_checks returns early with no events, so give it one.
+    event = models.Event(
+        signal_type=models.RESTATEMENT, confidence=models.CONFIRMED,
+        company="X", cik=1, form="8-K", filed="2026-09-04",
+        accession="0001-26-000001",
+        filing_url="https://www.sec.gov/Archives/000126000001-index.htm",
+        headline="h", evidence={"source": "SEC 8-K item code"})
+    state = {"last_processed": "2026-09-04", "no_filings": ["2026-09-07"],
+             "runs": [{"date": "2026-04-28", "index_rows": 1, "candidates": 1,
+                       "operating": 1, "events": 0, "periodic_skipped": 39}]}
+    checks = health.run_checks([event], state, dt.date(2026, 9, 8))["checks"]
+    scanned = next(c for c in checks if c["name"] == "Days scanned in full")
+    assert scanned["status"] == health.WARN
+    assert "39" in scanned["detail"]
+
+    state["runs"][0].pop("periodic_skipped")
+    ok = next(c for c in health.run_checks([event], state, dt.date(2026, 9, 8))["checks"]
+              if c["name"] == "Days scanned in full")
+    assert ok["status"] == health.OK

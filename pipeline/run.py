@@ -27,7 +27,13 @@ from .models import Event
 log = logging.getLogger("pipeline")
 
 # Bound the work a single run can attempt, so an unusual day cannot stall CI.
-MAX_PERIODIC_PER_DAY = int(__import__("os").getenv("MAX_PERIODIC_PER_DAY", "120"))
+#
+# Measured at 0.7s per comparison, so 120 was costing 1.3 minutes of a run that
+# has six hours - and quietly dropping 39 companies on a 159-report day at
+# quarter end, on a day already marked processed and never revisited. 400 is
+# still a bound and still cheap: under five minutes on the heaviest day the
+# record has seen.
+MAX_PERIODIC_PER_DAY = int(__import__("os").getenv("MAX_PERIODIC_PER_DAY", "400"))
 
 
 def business_days(start: dt.date, end: dt.date) -> List[dt.date]:
@@ -128,8 +134,11 @@ def process_day(day: dt.date) -> tuple:
     # Periodic reports: needs the previous filing, so it is the expensive path.
     periodic = [f for f in operating if f.form.upper() in universe.PERIODIC_FORMS]
     if len(periodic) > MAX_PERIODIC_PER_DAY:
+        # Recorded, not just logged. A day scanned in part is a hole in the
+        # record, and a log line in a run nobody reads is the same as silence.
         log.warning("%s: %d periodic reports, capping at %d",
                     day, len(periodic), MAX_PERIODIC_PER_DAY)
+        stats["periodic_skipped"] = len(periodic) - MAX_PERIODIC_PER_DAY
         periodic = periodic[:MAX_PERIODIC_PER_DAY]
     for i, filing in enumerate(periodic, 1):
         log.info("  [%d/%d] comparing %s %s", i, len(periodic), filing.form, filing.company)
@@ -271,6 +280,11 @@ def main(argv: Optional[List[str]] = None) -> int:
             break
 
         if stats is None:
+            # No index for a day that should have one: the SEC was closed.
+            # Recorded rather than silently skipped, so the currency check can
+            # tell a holiday apart from a scan that is falling behind.
+            if day.weekday() < 5:
+                publish.record_non_filing_day(state, day.isoformat())
             continue
 
         events = tag_size(events)

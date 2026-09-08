@@ -126,7 +126,8 @@ def extract_reason(text: str) -> str:
     # A leading fragment has nothing to attach to; drop it rather than quote it.
     while kept and not re.match(r'[A-Z\u201c("]', kept[0]):
         kept.pop(0)
-    return sections.close_quote(sections.truncate_words(" ".join(kept), 700))
+    return sections.open_quote(
+        sections.close_quote(sections.truncate_words(" ".join(kept), 700)))
 
 
 # EDGAR's <PERIOD> header is not the report period on an NT filing: for some

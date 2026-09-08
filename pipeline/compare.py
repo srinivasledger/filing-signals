@@ -213,7 +213,8 @@ def _diff_sample(current: str, prior: str, limit: int = 3) -> List[str]:
             continue
         sh = shingles(normalise_for_diff(s))
         if sh and not (sh & prior_sh):
-            out.append(sections.close_quote(sections.truncate_words(s, 320)))
+            out.append(sections.open_quote(
+                sections.close_quote(sections.truncate_words(s, 320))))
         if len(out) >= limit:
             break
     return out

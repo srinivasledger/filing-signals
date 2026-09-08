@@ -798,7 +798,8 @@ def build(second_pass: bool = False) -> None:
         try:
             built = [health_mod.page_weight_check(config.PUBLIC),
                      health_mod.firm_labels_check(config.PUBLIC),
-                     health_mod.period_options_check(config.PUBLIC)]
+                     health_mod.period_options_check(config.PUBLIC),
+                     health_mod.data_weight_check(config.PUBLIC)]
             for c in built:
                 log.info("%s", c["detail"])
             names = {c["name"] for c in built}

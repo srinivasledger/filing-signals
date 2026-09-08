@@ -1,9 +1,9 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-09-04, 2 business days ago - the dataset is behind; a scan that fails commits nothing, so the last good state stays published",
+      "detail": "last complete filing day 2026-09-04, 1 business day ago (2026-09-07: the SEC published no index)",
       "name": "Pipeline is current",
-      "status": "warn"
+      "status": "ok"
     },
     {
       "detail": "10 runs recorded, 49,522 index rows read",
@@ -41,14 +41,14 @@
       "status": "ok"
     },
     {
-      "detail": "3 of 1252 begin mid-sentence, 0 do not open at the substance",
+      "detail": "0 of 1252 begin mid-sentence, 0 do not open at the substance",
       "name": "Quotes open with the substance",
-      "status": "warn"
+      "status": "ok"
     },
     {
-      "detail": "3 of 1252 end mid-sentence with no ellipsis to mark the cut",
+      "detail": "0 of 1252 end mid-sentence with no ellipsis to mark the cut",
       "name": "Quotes end where the filing does",
-      "status": "warn"
+      "status": "ok"
     },
     {
       "detail": "0 of 340 going-concern and material-weakness entries quote a passage that negates the state they assert",
@@ -66,6 +66,11 @@
       "status": "ok"
     },
     {
+      "detail": "60 recent day(s) compared every periodic report filed",
+      "name": "Days scanned in full",
+      "status": "ok"
+    },
+    {
       "detail": "5,158 companies, refreshed 3 day(s) ago",
       "name": "Company size index",
       "status": "ok"
@@ -76,7 +81,7 @@
       "status": "ok"
     },
     {
-      "detail": "heaviest page companies.html is 47 KB over the wire (limit 250 KB), 1383 pages checked",
+      "detail": "heaviest page companies.html is 47 KB over the wire (limit 250 KB), 1386 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
@@ -89,15 +94,20 @@
       "detail": "326 pages with a period filter, 0 option(s) that filter to nothing",
       "name": "Filter options match the page",
       "status": "ok"
+    },
+    {
+      "detail": "heaviest file events.json is 410 KB over the wire (limit 1024 KB), 3 file(s) checked",
+      "name": "Data file weight",
+      "status": "ok"
     }
   ],
-  "generated_at": "2026-09-08T08:48:15+00:00",
+  "generated_at": "2026-09-08T12:44:49+00:00",
   "summary": {
     "fail": 0,
-    "ok": 15,
-    "overall": "warn",
-    "total": 18,
+    "ok": 20,
+    "overall": "ok",
+    "total": 20,
     "unknown": 0,
-    "warn": 3
+    "warn": 0
   }
 }

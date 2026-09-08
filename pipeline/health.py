@@ -43,11 +43,18 @@ def _check(name: str, status: str, detail: str) -> Dict:
     return {"name": name, "status": status, "detail": detail}
 
 
-def _business_days_between(start: dt.date, end: dt.date) -> int:
+def _business_days_between(start: dt.date, end: dt.date, skip=()) -> int:
+    """Weekdays after `start` up to `end`, minus days nobody filed on.
+
+    `skip` holds the weekdays the pipeline actually found no index for. A
+    calendar of holidays would need maintaining forever; what the scan
+    observed does not.
+    """
+    closed = set(skip or ())
     days, cur = 0, start
     while cur < end:
         cur += dt.timedelta(days=1)
-        if cur.weekday() < 5:
+        if cur.weekday() < 5 and cur.isoformat() not in closed:
             days += 1
     return days
 
@@ -61,7 +68,10 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         checks.append(_check("Pipeline has run", FAIL, "no filing day recorded yet"))
     else:
         try:
-            behind = _business_days_between(dt.date.fromisoformat(last), today)
+            closed = state.get("no_filings") or []
+            behind = _business_days_between(
+                dt.date.fromisoformat(last), today, closed)
+            shut = sorted(d for d in closed if last < d < today.isoformat())
             status = (OK if behind <= STALE_WARN_AFTER_DAYS
                       else FAIL if behind > STALE_AFTER_DAYS else WARN)
             note = ("" if behind <= STALE_WARN_AFTER_DAYS else
@@ -71,7 +81,9 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
                 "Pipeline is current", status,
                 f"last complete filing day {last}"
                 + (f", {behind} business day{'' if behind == 1 else 's'} ago"
-                   if behind else ", today") + note))
+                   if behind else ", today")
+                + (f" ({', '.join(shut)}: the SEC published no index)"
+                   if shut else "") + note))
         except ValueError:
             checks.append(_check("Pipeline is current", UNKNOWN,
                                  f"unreadable date {last!r}"))
@@ -332,6 +344,24 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         checks.append(_check("Home page window", OK,
                              f"all {total} entries fit on the home page"))
 
+    # --- was any day scanned only in part? ---
+    # The per-day cap exists so one unusual day cannot stall CI, but a day it
+    # trims is a day whose periodic reports were never compared, and the day is
+    # marked processed and never revisited. Truncating is defensible; doing it
+    # silently is not - the same rule the home page window follows.
+    capped = [r for r in runs if r.get("periodic_skipped")]
+    if capped:
+        worst = max(r["periodic_skipped"] for r in capped)
+        checks.append(_check(
+            "Days scanned in full", WARN,
+            f"{len(capped)} of the last {len(runs)} days hit the per-day cap; "
+            f"up to {worst} periodic report(s) not compared - raise "
+            "MAX_PERIODIC_PER_DAY"))
+    else:
+        checks.append(_check(
+            "Days scanned in full", OK,
+            f"{len(runs)} recent day(s) compared every periodic report filed"))
+
     # --- size index ---
     checks.append(_size_check(today))
 
@@ -396,6 +426,10 @@ def _size_check(today: dt.date) -> Dict:
 # gzipped, so this is measured over the wire, not on disk. 250 KB is generous:
 # the home page is ~39 KB today and the whole record page ~8 KB.
 MAX_PAGE_WIRE_BYTES = 250 * 1024
+# events.json is the whole record in one response and is meant to be fetched
+# by other people's scripts. 1 MB gzipped is roughly five times today's size:
+# far enough away not to nag, close enough to arrive before anyone is annoyed.
+MAX_DATA_WIRE_BYTES = 1024 * 1024
 
 
 def page_weight_check(public: "pathlib.Path") -> Dict:
@@ -427,6 +461,40 @@ def page_weight_check(public: "pathlib.Path") -> Dict:
     if worst > MAX_PAGE_WIRE_BYTES:
         return _check("Page weight", WARN, detail + " - time to split it by year")
     return _check("Page weight", OK, detail)
+
+
+def data_weight_check(public: "pathlib.Path") -> Dict:
+    """The published data files grow without bound, and nothing watched them.
+
+    page_weight_check globs *.html, so the one artifact that grows fastest -
+    events.json, the whole record in one response - was the only thing on the
+    site with no ceiling and no warning. It is a free JSON API people are
+    invited to use; it should not quietly become a multi-megabyte download.
+    """
+    import gzip
+
+    files = [p for p in sorted(public.rglob("*"))
+             if p.suffix in (".json", ".xml") and p.is_file()]
+    if not files:
+        return _check("Data file weight", UNKNOWN, "nothing built yet")
+
+    weighed = []
+    for path in files:
+        try:
+            weighed.append((len(gzip.compress(path.read_bytes())), path))
+        except OSError:
+            continue
+    if not weighed:
+        return _check("Data file weight", UNKNOWN, "data files unreadable")
+
+    worst, path = max(weighed)
+    detail = (f"heaviest file {path.name} is {worst / 1024:.0f} KB over the wire "
+              f"(limit {MAX_DATA_WIRE_BYTES // 1024} KB), "
+              f"{len(weighed)} file(s) checked")
+    if worst > MAX_DATA_WIRE_BYTES:
+        return _check("Data file weight", WARN,
+                      detail + " - time to page it or split it by year")
+    return _check("Data file weight", OK, detail)
 
 
 def period_options_check(public: "pathlib.Path") -> Dict:

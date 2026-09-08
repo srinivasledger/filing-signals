@@ -414,6 +414,30 @@ _INVISIBLE = "\u200b\u200c\u200d\ufeff\u00ad"
 
 _ENDS_A_SENTENCE = re.compile(r'[.!?;:"\u201d\u2019)\]\u2026]$')
 
+_OPENS_CLEANLY = re.compile(r'^[A-Z\u201c("\u2022\u2026]')
+
+# Notes are numbered several ways - "2. Going Concern", "2 - Going concern",
+# "3 \u2013 Liquidity and Going Concern", "16 Credit Losses". Quoting the number
+# reads as a quote starting mid-list, and the version that only knew about the
+# full stop let the two dashed forms through onto the page.
+_NOTE_NUMBER = re.compile(
+    r'^\d{1,3}\s*[.:\u2013\u2014-]?\s+(?=[A-Z\u201c"(])')
+
+
+def open_quote(text: str) -> str:
+    """A published quote either starts where the filing's sentence starts, or
+    it carries the ellipsis that says it does not.
+
+    _context marked the opening only when it had skipped over text to reach
+    it. A caller handing in a section rather than the whole document made
+    position zero look like a sentence start when it was really the middle of
+    one, and the quote reached the page opening "controls and procedures and".
+    """
+    text = _NOTE_NUMBER.sub("", text.strip())
+    if not text or _OPENS_CLEANLY.match(text):
+        return text
+    return "\u2026 " + text
+
 
 def close_quote(text: str) -> str:
     """A published quote either ends where the filing's sentence ends, or it
@@ -468,16 +492,14 @@ def _context(text: str, pos: int, before: int = 400, after: int = 900) -> str:
             if 0 <= space < 60:
                 window = window[space + 1:]
             window = "\u2026 " + window.lstrip()
-    # Notes open with their number - "2. Going Concern and Management's
-    # Plans" - and quoting the number reads as a quote starting mid-list.
-    window = re.sub(r"^\d{1,3}\s*\.?\s+(?=[A-Z\u201c\"(])", "", window.strip())
+    window = _NOTE_NUMBER.sub("", window.strip())
     if end < len(text):
         # Mark it, always. The old guard only trimmed when a space fell within
         # the last 60 characters, so a window ending inside a long unbroken
         # token was published truncated with nothing to say so.
         cut = window.rfind(" ")
         window = (window[:cut] if cut > 0 else window).rstrip(" ,;:-") + "\u2026"
-    return window.strip()
+    return open_quote(window)
 
 
 def going_concern_state(text: str) -> Dict[str, object]:
@@ -633,6 +655,9 @@ def adoption_year(sentence: str):
     return None
 
 
+ASU_CONTEXT_CHARS = 400
+
+
 def extract_asus(text: str) -> Dict[str, Dict[str, str]]:
     """Map each referenced ASU to the sentence that mentions it."""
     out: Dict[str, Dict[str, str]] = {}
@@ -667,13 +692,20 @@ def extract_asus(text: str) -> Dict[str, Dict[str, str]]:
         sentence = text[region_start + boundary:
                         hi + 1 if hi != -1 else m.end() + 300]
         sentence = " ".join(sentence.split())
-        sentence = re.sub(r"^\d{1,3}\s*\.?\s+(?=[A-Z\u201c\"(])", "", sentence)
         status = "pending"
         if _PENDING_HINT.search(sentence):
             status = "pending"
         elif _ADOPTED_HINT.search(sentence):
             status = "adopted"
-        out[code] = {"context": sentence[:400], "status": status,
+        # A raw 400-character slice - the same defect the going-concern note
+        # had, in the path that feeds the policy-change quote. It reached the
+        # page as "...and associated disclosure requi".
+        context = sentence[:ASU_CONTEXT_CHARS]
+        if len(sentence) > ASU_CONTEXT_CHARS:
+            space = context.rfind(" ")
+            if space > 0:
+                context = context[:space]
+        out[code] = {"context": open_quote(close_quote(context)), "status": status,
                      "adopted_year": adoption_year(sentence)}
     return out
 

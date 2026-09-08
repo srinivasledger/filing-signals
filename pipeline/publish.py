@@ -136,6 +136,19 @@ def load_all_events(limit: Optional[int] = None) -> List[Event]:
     return events[:limit] if limit else events
 
 
+def record_non_filing_day(state: Dict, day: str) -> None:
+    """A weekday the SEC published no daily index for.
+
+    days_to_process only offers days whose index has had time to publish, so a
+    missing one is a day nobody filed on - a market holiday. Worth recording:
+    the currency check counts weekdays, and without this it reports a healthy
+    pipeline as two business days behind every Labor Day and Thanksgiving.
+    """
+    days = set(state.get("no_filings") or [])
+    days.add(day)
+    state["no_filings"] = sorted(days)
+
+
 # --- historical sequence rates ------------------------------------------------
 def save_history(stats: Dict) -> None:
     """Never replace a computed history with an empty one.
