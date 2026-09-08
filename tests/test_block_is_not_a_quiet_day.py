@@ -107,3 +107,65 @@ def test_a_prior_filing_must_be_strictly_earlier():
     with mock.patch.object(compare, "submissions", return_value=earlier), \
          mock.patch.object(compare, "document_url", return_value="u"):
         assert compare.find_prior_filing(1, "now", "10-Q")["accessionNumber"] == "older"
+
+
+def test_a_blocked_day_is_never_filed_as_a_day_nobody_filed_on():
+    """The currency check now trusts `no_filings` to mean "the SEC published
+    no index". If a refusal could reach that record, a blocked pipeline would
+    look permanently current instead of permanently behind - the worst
+    possible failure for a page whose whole job is to say whether it ran."""
+    import datetime as dt
+    from unittest import mock
+
+    from pipeline import config, publish, run
+
+    recorded = []
+    with mock.patch.object(config, "require_user_agent", lambda: None), \
+         mock.patch.object(config, "HISTORY_FROM", None), \
+         mock.patch.object(run, "days_to_process",
+                           return_value=[dt.date(2026, 9, 7)]), \
+         mock.patch.object(run, "days_to_backfill", return_value=[]), \
+         mock.patch.object(run, "process_day", side_effect=fetch.SECBlocked("403")), \
+         mock.patch.object(run.analyze, "get_analyzer"), \
+         mock.patch.object(run.size, "load_or_refresh", return_value={}), \
+         mock.patch.object(run.history, "sequence_rates", return_value={}), \
+         mock.patch.object(run.publish, "save_history"), \
+         mock.patch.object(run.publish, "load_state", return_value={"runs": []}), \
+         mock.patch.object(run.health, "run_checks", return_value={"checks": []}), \
+         mock.patch.object(run.publish, "save_health"), \
+         mock.patch.object(run.publish, "record_non_filing_day",
+                           side_effect=lambda s, d: recorded.append(d)), \
+         mock.patch.object(run.publish, "save_state"):
+        run.main(["--no-render"])
+
+    assert recorded == [], f"a refusal was recorded as a non-filing day: {recorded}"
+
+
+def test_a_day_with_no_index_is_recorded_so_the_holiday_is_known():
+    """The other half: when the SEC is up and simply published nothing, the
+    day has to be written down, or every holiday reads as falling behind."""
+    import datetime as dt
+    from unittest import mock
+
+    from pipeline import config, run
+
+    recorded = []
+    with mock.patch.object(config, "require_user_agent", lambda: None), \
+         mock.patch.object(config, "HISTORY_FROM", None), \
+         mock.patch.object(run, "days_to_process",
+                           return_value=[dt.date(2026, 9, 7)]), \
+         mock.patch.object(run, "days_to_backfill", return_value=[]), \
+         mock.patch.object(run, "process_day", return_value=([], None)), \
+         mock.patch.object(run.analyze, "get_analyzer"), \
+         mock.patch.object(run.size, "load_or_refresh", return_value={}), \
+         mock.patch.object(run.history, "sequence_rates", return_value={}), \
+         mock.patch.object(run.publish, "save_history"), \
+         mock.patch.object(run.publish, "load_state", return_value={"runs": []}), \
+         mock.patch.object(run.health, "run_checks", return_value={"checks": []}), \
+         mock.patch.object(run.publish, "save_health"), \
+         mock.patch.object(run.publish, "record_non_filing_day",
+                           side_effect=lambda s, d: recorded.append(d)), \
+         mock.patch.object(run.publish, "save_state"):
+        run.main(["--no-render"])
+
+    assert recorded == ["2026-09-07"], recorded
