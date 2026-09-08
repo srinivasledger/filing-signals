@@ -1,12 +1,12 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-09-04, today",
+      "detail": "last complete filing day 2026-09-04, 2 business days ago - the dataset is behind; a scan that fails commits nothing, so the last good state stays published",
       "name": "Pipeline is current",
-      "status": "ok"
+      "status": "warn"
     },
     {
-      "detail": "10 runs recorded, 65,967 index rows read",
+      "detail": "10 runs recorded, 49,522 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,88 +16,88 @@
       "status": "ok"
     },
     {
-      "detail": "1864/1864 link to the accession they report",
+      "detail": "2090/2090 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "1864/1864 name a detection method the pipeline implements",
+      "detail": "2090/2090 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "236 entries from SEC item codes, 0 carrying the wrong code for their signal",
+      "detail": "276 entries from SEC item codes, 0 carrying the wrong code for their signal",
       "name": "Item codes match the signal they produced",
       "status": "ok"
     },
     {
-      "detail": "321/321 compare the same form type against an earlier filing",
+      "detail": "399/399 compare the same form type against an earlier filing",
       "name": "Comparisons are like-for-like",
       "status": "ok"
     },
     {
-      "detail": "1864 unique entries across 1864 rows",
+      "detail": "2090 unique entries across 2090 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "2 of 1124 begin mid-sentence, 0 do not open at the substance",
+      "detail": "3 of 1252 begin mid-sentence, 0 do not open at the substance",
       "name": "Quotes open with the substance",
       "status": "warn"
     },
     {
-      "detail": "2 of 1124 end mid-sentence with no ellipsis to mark the cut",
+      "detail": "3 of 1252 end mid-sentence with no ellipsis to mark the cut",
       "name": "Quotes end where the filing does",
       "status": "warn"
     },
     {
-      "detail": "0 of 266 going-concern and material-weakness entries quote a passage that negates the state they assert",
+      "detail": "0 of 340 going-concern and material-weakness entries quote a passage that negates the state they assert",
       "name": "No entry contradicts its own quote",
       "status": "ok"
     },
     {
-      "detail": "205 firm names across 62 firms; 6 spelled more than one way by filers",
+      "detail": "247 firm names across 66 firms; 8 spelled more than one way by filers",
       "name": "Auditor names are firm-shaped",
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 1864, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 2090, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
     {
-      "detail": "5,158 companies, refreshed 0 day(s) ago",
+      "detail": "5,158 companies, refreshed 3 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
     {
-      "detail": "1245 companies, 11,741 historical events",
+      "detail": "1366 companies, 12,497 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page companies.html is 43 KB over the wire (limit 250 KB), 1262 pages checked",
+      "detail": "heaviest page companies.html is 47 KB over the wire (limit 250 KB), 1383 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
     {
-      "detail": "62 firms on the auditors page, one label each",
+      "detail": "66 firms on the auditors page, one label each",
       "name": "Firm labels are consistent",
       "status": "ok"
     },
     {
-      "detail": "280 pages with a period filter, 0 option(s) that filter to nothing",
+      "detail": "326 pages with a period filter, 0 option(s) that filter to nothing",
       "name": "Filter options match the page",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-05T08:51:20+00:00",
+  "generated_at": "2026-09-08T08:48:15+00:00",
   "summary": {
     "fail": 0,
-    "ok": 16,
+    "ok": 15,
     "overall": "warn",
     "total": 18,
     "unknown": 0,
-    "warn": 2
+    "warn": 3
   }
 }
