@@ -6,7 +6,7 @@
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 53,644 index rows read",
+      "detail": "10 runs recorded, 62,520 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,52 +16,52 @@
       "status": "ok"
     },
     {
-      "detail": "2829/2829 link to the accession they report",
+      "detail": "3177/3177 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "2829/2829 name a detection method the pipeline implements",
+      "detail": "3177/3177 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "313 entries from SEC item codes, 0 carrying the wrong code for their signal",
+      "detail": "353 entries from SEC item codes, 0 carrying the wrong code for their signal",
       "name": "Item codes match the signal they produced",
       "status": "ok"
     },
     {
-      "detail": "606/606 compare the same form type against an earlier filing",
+      "detail": "752/752 compare the same form type against an earlier filing",
       "name": "Comparisons are like-for-like",
       "status": "ok"
     },
     {
-      "detail": "2829 unique entries across 2829 rows",
+      "detail": "3177 unique entries across 3177 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 1842 begin mid-sentence, 0 do not open at the substance",
+      "detail": "0 of 2074 begin mid-sentence, 0 do not open at the substance",
       "name": "Quotes open with the substance",
       "status": "ok"
     },
     {
-      "detail": "0 of 1842 end mid-sentence with no ellipsis to mark the cut",
+      "detail": "0 of 2074 end mid-sentence with no ellipsis to mark the cut",
       "name": "Quotes end where the filing does",
       "status": "ok"
     },
     {
-      "detail": "0 of 534 going-concern and material-weakness entries quote a passage that negates the state they assert",
+      "detail": "0 of 689 going-concern and material-weakness entries quote a passage that negates the state they assert",
       "name": "No entry contradicts its own quote",
       "status": "ok"
     },
     {
-      "detail": "284 firm names across 71 firms; 10 spelled more than one way by filers",
+      "detail": "328 firm names across 72 firms; 12 spelled more than one way by filers",
       "name": "Auditor names are firm-shaped",
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 2829, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 3177, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -76,32 +76,32 @@
       "status": "ok"
     },
     {
-      "detail": "1683 companies, 15,289 historical events",
+      "detail": "1900 companies, 16,213 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page companies.html is 58 KB over the wire (limit 250 KB), 1703 pages checked",
+      "detail": "heaviest page companies.html is 65 KB over the wire (limit 250 KB), 1917 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
     {
-      "detail": "71 firms on the auditors page, one label each",
+      "detail": "72 firms on the auditors page, one label each",
       "name": "Firm labels are consistent",
       "status": "ok"
     },
     {
-      "detail": "493 pages with a period filter, 0 option(s) that filter to nothing",
+      "detail": "556 pages with a period filter, 0 option(s) that filter to nothing",
       "name": "Filter options match the page",
       "status": "ok"
     },
     {
-      "detail": "heaviest file events.json is 571 KB over the wire (limit 1024 KB), 3 file(s) checked",
+      "detail": "heaviest file events.json is 648 KB over the wire (limit 1024 KB), 3 file(s) checked",
       "name": "Data file weight",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-09T09:47:58+00:00",
+  "generated_at": "2026-09-09T15:08:32+00:00",
   "summary": {
     "fail": 0,
     "ok": 20,
