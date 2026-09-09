@@ -184,3 +184,51 @@ def test_a_day_scanned_only_in_part_says_so():
     ok = next(c for c in health.run_checks([event], state, dt.date(2026, 9, 8))["checks"]
               if c["name"] == "Days scanned in full")
     assert ok["status"] == health.OK
+
+
+# --- the button makes redundant runs a thing people can do -------------------
+def test_the_rates_are_not_recomputed_when_nothing_moved(tmp_path, monkeypatch):
+    """One SEC request per company, and the company count only grows. A scan
+    started by hand on a quiet day was spending over a thousand requests to
+    arrive at the answer already on disk."""
+    import json
+
+    from pipeline import publish, run
+
+    monkeypatch.setattr(publish.config, "STATE_DIR", tmp_path)
+    monkeypatch.setattr(publish, "HISTORY_FILE", tmp_path / "history.json")
+    today = dt.date.today().isoformat()
+    (tmp_path / "history.json").write_text(json.dumps(
+        {"companies": 1366, "total_historical_events": 12497, "built_on": today}))
+
+    assert run.history_needs_refresh(0, 1366) is False, "recomputed for nothing"
+    assert run.history_needs_refresh(7, 1366) is True, "new events must refresh"
+    assert run.history_needs_refresh(0, 1400) is True, "new companies must refresh"
+
+
+def test_the_rates_are_refreshed_when_they_go_stale(tmp_path, monkeypatch):
+    """Skipping is an optimisation, not a way to stop maintaining them: a long
+    quiet stretch must not leave the published rates drifting."""
+    import json
+
+    from pipeline import publish, run
+
+    monkeypatch.setattr(publish.config, "STATE_DIR", tmp_path)
+    monkeypatch.setattr(publish, "HISTORY_FILE", tmp_path / "history.json")
+    old = (dt.date.today() - dt.timedelta(days=run.HISTORY_MAX_AGE_DAYS)).isoformat()
+    (tmp_path / "history.json").write_text(json.dumps(
+        {"companies": 1366, "total_historical_events": 12497, "built_on": old}))
+    assert run.history_needs_refresh(0, 1366) is True
+
+
+def test_a_history_written_before_this_existed_is_refreshed_once(tmp_path, monkeypatch):
+    """No built_on means it predates the stamp; recompute so it gets one."""
+    import json
+
+    from pipeline import publish, run
+
+    monkeypatch.setattr(publish.config, "STATE_DIR", tmp_path)
+    monkeypatch.setattr(publish, "HISTORY_FILE", tmp_path / "history.json")
+    (tmp_path / "history.json").write_text(json.dumps(
+        {"companies": 1366, "total_historical_events": 12497}))
+    assert run.history_needs_refresh(0, 1366) is True

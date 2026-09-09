@@ -32,6 +32,19 @@
   --series-4-ink:#916200; --series-5-ink:#ca2362; --series-6-ink:#007d00;
   --series-7-ink:#4a3aa7; --series-8-ink:#d12120; --series-muted-ink:#5f6a75;
 
+  /* The masthead has its own palette, and the same one in both themes.
+     Light mode was a white bar on a near-white page on white cards - correct
+     colours, no anchor, and it read as a page that had not been designed for
+     light. A dark bar is the ordinary way a register or a terminal is topped,
+     it gives the eye somewhere to start, and holding it steady across themes
+     means the site is recognisably itself either way. Not a new hue: the
+     header is the ink colour with a little more blue in it. */
+  --head-bg:#16212b; --head-ink:#eef2f6; --head-ink-2:#c3ceda;
+  --head-muted:#9dabb8; --head-line:#31404d; --head-hover:#22303c;
+  /* The self-check dot sits up here, so its three states need to be legible
+     against the bar rather than against the page. */
+  --head-ok:#4ec97f; --head-warn:#e0a52b; --head-fail:#ff7a6d;
+
   --radius:2px; --wrap:1600px; --reading:76ch;
   --wrap-pad:clamp(14px,2.4vw,28px);   /* used by .wrap and by anything
                                           that needs to bleed past it */
@@ -91,19 +104,21 @@ main.wrap{padding-bottom:96px}
 main p{max-width:var(--reading)}
 
 /* ── masthead: a status bar, not a brand banner ───────────── */
-.site-head{background:var(--surface);border-bottom:2px solid var(--rule);
-  position:sticky;top:0;z-index:5}
+.site-head{background:var(--head-bg);color:var(--head-ink-2);
+  border-bottom:1px solid var(--head-line);position:sticky;top:0;z-index:5}
 .site-head .wrap{display:flex;align-items:center;justify-content:space-between;
   gap:18px;flex-wrap:wrap;padding-top:11px;padding-bottom:11px}
-.brand{font-family:var(--mono);font-weight:700;font-size:.95rem;color:var(--ink);
+.brand{font-family:var(--mono);font-weight:700;font-size:.95rem;color:var(--head-ink);
   text-decoration:none;display:inline-flex;align-items:center;gap:9px;
   letter-spacing:.06em;text-transform:uppercase}
-.dot{width:7px;height:7px;background:var(--ink);flex:none;border-radius:50%}
+/* The one piece of decoration on the page, and it uses the accent the nav
+   already uses for the current tab rather than introducing a tenth colour. */
+.dot{width:7px;height:7px;background:var(--series-2);flex:none;border-radius:50%}
 .site-head nav{display:flex;gap:0;flex-wrap:wrap;font-size:.8rem;font-family:var(--mono)}
-.site-head nav a{color:var(--muted);text-decoration:none;padding:5px 11px;
-  letter-spacing:.05em;text-transform:uppercase;border-left:1px solid var(--line)}
+.site-head nav a{color:var(--head-muted);text-decoration:none;padding:5px 11px;
+  letter-spacing:.05em;text-transform:uppercase;border-left:1px solid var(--head-line)}
 .site-head nav a:first-child{border-left:none}
-.site-head nav a:hover{color:var(--ink);background:var(--surface-2)}
+.site-head nav a:hover{color:var(--head-ink);background:var(--head-hover)}
 
 /* ── section labels ───────────────────────────────────────── */
 .eyebrow{font-family:var(--mono);font-size:.68rem;text-transform:uppercase;
@@ -357,21 +372,22 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* masthead status line: the site states its own provenance */
-.statusline{width:100%;margin:9px 0 0;padding-top:8px;border-top:1px solid var(--line);
+.statusline{width:100%;margin:9px 0 0;padding-top:8px;
+  border-top:1px solid var(--head-line);
   display:flex;gap:20px;flex-wrap:wrap;font-family:var(--mono);font-size:.64rem;
-  color:var(--muted);text-transform:uppercase;letter-spacing:.11em}
+  color:var(--head-muted);text-transform:uppercase;letter-spacing:.11em}
 /* The dot reports the self-checks rather than being decorative, so a failing
    check is visible on every page instead of only on /status. */
 .statusline .live{margin-left:auto;display:inline-flex;align-items:center;gap:6px;
-  color:var(--muted);text-decoration:none}
-.statusline .live:hover{color:var(--ink)}
+  color:var(--head-muted);text-decoration:none}
+.statusline .live:hover{color:var(--head-ink)}
 .statusline .live::before{content:"";width:5px;height:5px;border-radius:50%;
-  background:var(--muted)}
-.statusline .live-ok::before{background:var(--series-6)}
-.statusline .live-warn::before{background:var(--series-4)}
-.statusline .live-fail::before{background:var(--alert)}
-.statusline .live-fail{color:var(--alert);font-weight:700}
-.statusline .live-warn{color:var(--series-4-ink)}
+  background:var(--head-muted)}
+.statusline .live-ok::before{background:var(--head-ok)}
+.statusline .live-warn::before{background:var(--head-warn)}
+.statusline .live-fail::before{background:var(--head-fail)}
+.statusline .live-fail{color:var(--head-fail);font-weight:700}
+.statusline .live-warn{color:var(--head-warn)}
 @media (max-width:620px){
   /* Must live after the base .statusline rule, or source order wins. */
   .statusline{display:none}
@@ -380,12 +396,13 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 
 /* ── theme toggle ─────────────────────────────────────────── */
 .theme-toggle{display:inline-flex;gap:5px;margin-left:16px}
-.theme-toggle button{appearance:none;border:1px solid var(--line-strong);
-  border-radius:var(--radius);background:var(--surface);color:var(--muted);
+.theme-toggle button{appearance:none;border:1px solid var(--head-line);
+  border-radius:var(--radius);background:transparent;color:var(--head-muted);
   font-family:var(--mono);font-size:.62rem;text-transform:uppercase;
   letter-spacing:.09em;padding:6px 10px;cursor:pointer;line-height:1}
-.theme-toggle button:hover{color:var(--ink)}
-.theme-toggle button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.theme-toggle button:hover{color:var(--head-ink);background:var(--head-hover)}
+.theme-toggle button[aria-pressed="true"]{background:var(--head-ink);
+  color:var(--head-bg);border-color:var(--head-ink)}
 /* On a phone the three-button group costs more width than the nav can spare,
    and burying it in the footer put it several hundred entries away. One
    compact button in the header cycles instead: same three states, ~34px. */
@@ -394,8 +411,8 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
   .site-head .theme-toggle{display:none}
   .theme-cycle{display:inline-flex;align-items:center;justify-content:center;
     flex:none;width:34px;min-height:44px;border:none;background:transparent;
-    color:var(--muted);font-size:1rem;cursor:pointer;padding:0;line-height:1}
-  .theme-cycle:hover,.theme-cycle:focus-visible{color:var(--ink)}
+    color:var(--head-muted);font-size:1rem;cursor:pointer;padding:0;line-height:1}
+  .theme-cycle:hover,.theme-cycle:focus-visible{color:var(--head-ink)}
 }
 
 /* ── size filter ──────────────────────────────────────────── */
@@ -465,7 +482,7 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
    obvious from position alone: the current tab is marked rather than implied.
    Targets are sized for a thumb -- 44px is the usual minimum -- which the
    previous 13px/8px padding did not reach. */
-.site-head nav a[aria-current="page"]{color:var(--ink);background:var(--surface-2);
+.site-head nav a[aria-current="page"]{color:var(--head-ink);background:var(--head-hover);
   box-shadow:inset 0 -2px 0 var(--series-2)}
 .site-head nav a:focus-visible{outline:2px solid var(--series-2);outline-offset:-2px}
 

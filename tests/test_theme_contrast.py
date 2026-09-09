@@ -93,3 +93,34 @@ def test_a_tag_keeps_its_hue(theme):
             hues.append(colorsys.rgb_to_hls(r, g, b)[0])
         drift = min(abs(hues[0] - hues[1]), 1 - abs(hues[0] - hues[1]))
         assert drift < 0.03, f"{theme} {slot}: {fill} -> {ink} changed hue"
+
+
+# --- the masthead is its own surface -----------------------------------------
+def test_the_masthead_palette_is_readable():
+    """Light mode was a white bar on a near-white page: correct colours, no
+    anchor. The bar is dark in both themes now, which means everything sitting
+    on it - nav, brand, the self-check dot - is measured against the bar and
+    not against the page."""
+    tokens = _tokens(_block("light"))          # header tokens live in :root
+    head = tokens["head-bg"]
+    text = {"head-ink": AA_NORMAL_TEXT, "head-ink-2": AA_NORMAL_TEXT,
+            "head-muted": AA_NORMAL_TEXT,
+            # the status dot is a 5px graphic, not text
+            "head-ok": 3.0, "head-warn": 3.0, "head-fail": 3.0,
+            "series-2": 3.0}                   # brand dot and active-tab rule
+    for token, need in text.items():
+        got = contrast(tokens[token], head)
+        assert got >= need, (
+            f"--{token} {tokens[token]} is {got:.2f}:1 on the masthead {head}, "
+            f"below {need}")
+
+
+def test_the_masthead_separates_from_the_page_in_both_themes():
+    """A bar the same value as the page behind it is not a bar."""
+    head = _tokens(_block("light"))["head-bg"]
+    light_page = _tokens(_block("light"))["bg"]
+    dark_page = _tokens(_block("dark"))["bg"]
+    assert contrast(head, light_page) >= 3, "invisible against the light page"
+    # Against the dark page the values are close by design, so the hairline
+    # carries the separation; assert the hairline can be seen instead.
+    assert contrast(_tokens(_block("light"))["head-line"], dark_page) >= 1.3

@@ -67,6 +67,35 @@ def days_to_process(state: dict, today_et: dt.date,
     return days
 
 
+HISTORY_MAX_AGE_DAYS = 3
+
+
+def history_needs_refresh(new_events: int, companies: int) -> bool:
+    """Whether the follow-on rates are worth recomputing.
+
+    They are, when the population they describe has changed - new events, or
+    companies the stored answer never saw - and otherwise every few days so a
+    long quiet stretch cannot leave them drifting. On any other run the stored
+    answer is already the right one, and recomputing it costs one SEC request
+    per company for nothing.
+    """
+    if new_events:
+        return True
+    stored = publish.load_history()
+    if not stored or not stored.get("total_historical_events"):
+        return True
+    if stored.get("companies", 0) != companies:
+        return True
+    built_on = stored.get("built_on")
+    if not built_on:
+        return True                    # written before this was recorded
+    try:
+        age = (dt.date.today() - dt.date.fromisoformat(built_on)).days
+    except ValueError:
+        return True
+    return age >= HISTORY_MAX_AGE_DAYS
+
+
 def process_day(day: dt.date) -> tuple:
     """Return (events, stats) for one business day."""
     stats = {"date": day.isoformat(), "index_rows": 0, "candidates": 0,
@@ -297,16 +326,26 @@ def main(argv: Optional[List[str]] = None) -> int:
     log.info("run complete: %d new event(s) recorded", total_new)
 
     # Follow-on rates across every company recorded so far. One submissions
-    # request per company buys its full item-coded history, so this is cheap
-    # even though it reaches back years.
+    # request per company buys its full item-coded history.
+    #
+    # Skipped when the population has not moved. This is by far the most
+    # expensive thing a run does - one SEC request per company, and the count
+    # only grows - so a run started by hand on a quiet day was spending well
+    # over a thousand requests to recompute an answer it already had. The
+    # button on the status page makes that a thing someone can do repeatedly,
+    # and the SEC's fair-access limits are shared with everyone else.
     if not blocked:
         try:
             ciks = sorted({e.cik for e in publish.load_all_events()})
-            if ciks:
+            if ciks and history_needs_refresh(total_new, len(ciks)):
                 stats = history.sequence_rates(ciks)
+                stats["built_on"] = dt.date.today().isoformat()
                 publish.save_history(stats)
                 log.info("history: %d companies, %d historical events",
                          stats["companies"], stats["total_historical_events"])
+            elif ciks:
+                log.info("history: unchanged population, keeping the stored "
+                         "rates (%d companies)", len(ciks))
         except fetch.SECBlocked:
             log.warning("history pass skipped: SEC access blocked")
         except Exception as exc:                 # noqa: BLE001
