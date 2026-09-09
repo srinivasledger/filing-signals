@@ -83,6 +83,34 @@ def load_events_for_day(day: str) -> List[Event]:
     return out
 
 
+def recorded_elsewhere(day: str) -> set:
+    """Every event id already on disk under some OTHER day.
+
+    Event.id is (accession, signal_type) - global, with no day in it - but the
+    append de-duplicated only against the day being written. EDGAR re-lists a
+    filing in a later daily index: four did between 31 March and 3 April 2026,
+    among them Cyclerion's 10-K. Each arrived twice, was written under both
+    days, and the integrity check stopped the run - correctly, and with no way
+    for the next run to get past it, because the second copy was written again
+    every time.
+    """
+    ids: set = set()
+    if not config.EVENTS_DIR.exists():
+        return ids
+    mine = _event_file(day).name
+    for path in sorted(config.EVENTS_DIR.glob("*.jsonl")):
+        if path.name == mine:
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                ids.add(json.loads(line)["id"])
+            except (ValueError, KeyError, TypeError):
+                continue          # the repair pass owns malformed rows
+    return ids
+
+
 def append_events(day: str, events: Iterable[Event]) -> int:
     """Write events for a day, skipping any already recorded.
 
@@ -98,9 +126,12 @@ def append_events(day: str, events: Iterable[Event]) -> int:
     # was written, counted in the returned total, and only removed later by the
     # repair pass. That made the reported count wrong and left correctness
     # depending on a downstream sweep.
+    # ...and against every other day already recorded, because the key has no
+    # day in it and EDGAR does re-list a filing on a later index.
+    elsewhere = recorded_elsewhere(day)
     fresh, seen = [], set(existing)
     for e in events:
-        if e.id in seen:
+        if e.id in seen or e.id in elsewhere:
             continue
         seen.add(e.id)
         fresh.append(e)
