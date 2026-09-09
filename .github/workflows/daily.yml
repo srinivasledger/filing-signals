@@ -86,23 +86,49 @@ jobs:
           fi
 
       - name: Commit new events
+        id: commit
         run: |
           git config user.name  "filing-signals-bot"
           git config user.email "filing-signals-bot@users.noreply.github.com"
+          # Nothing is written here on the happy path: the deploy steps gate on
+          # `!= 'false'`, so an unset output publishes. Only the one case that
+          # must not publish says so, which avoids leaning on which of two
+          # values for the same key GitHub keeps.
           git add data/
           if git diff --staged --quiet; then
             echo "No new events today."
             exit 0
           fi
           git commit -m "data: filings through $(date -u +%Y-%m-%d)"
+
           # Another commit landing between checkout and push is a race, not a
-          # defect. Rebase onto it and retry before treating it as a failure.
+          # defect: two scans can each compute a day, and data/state/*.json is
+          # written fresh by both. The old retry was `git pull --rebase ||
+          # true`, which assumed the rebase always succeeds. It does not - on
+          # 9 September it conflicted in pipeline.json and health.json, left a
+          # detached HEAD with unmerged files, and the loop then spun twice
+          # more inside that broken tree before failing.
+          #
+          # A conflict here is not something to resolve in a shell script.
+          # This run's commit is dropped instead, because nothing is lost by
+          # dropping it: last_processed and earliest_processed only move when
+          # a commit lands, so whatever this run did, the next one does again.
+          # Publishing is skipped in that case rather than deploying pages
+          # built from data that is not in the repository - the same
+          # fail-closed rule the integrity checks follow.
           for attempt in 1 2 3; do
             if git push; then
               exit 0
             fi
             echo "push rejected (attempt $attempt); rebasing onto origin/main"
-            git pull --rebase --autostash origin main || true
+            git fetch --quiet origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              git reset --hard origin/main
+              echo "published=false" >> "$GITHUB_OUTPUT"
+              echo "::warning::another run committed first and this one could not be rebased onto it; its work is discarded and the next run will redo it. Nothing is lost and nothing is published."
+              exit 0
+            fi
             sleep 5
           done
           echo "::error::could not push the day's events after three attempts"
@@ -127,9 +153,14 @@ jobs:
                     f"{r.get('candidates')} | {r.get('events_written', 0)} |")
           PY
 
+      # Only ever publish what is in the repository. A run whose commit was
+      # dropped holds pages built from data nobody else can see.
       - uses: actions/configure-pages@v6
+        if: steps.commit.outputs.published != 'false'
       - uses: actions/upload-pages-artifact@v5
+        if: steps.commit.outputs.published != 'false'
         with:
           path: public
       - id: deployment
+        if: steps.commit.outputs.published != 'false'
         uses: actions/deploy-pages@v5
