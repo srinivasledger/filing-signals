@@ -14,14 +14,10 @@ import time
 import sys
 from typing import List, Optional
 
-try:
-    from zoneinfo import ZoneInfo
-    EASTERN = ZoneInfo("America/New_York")
-except Exception:                                # pragma: no cover
-    EASTERN = dt.timezone(dt.timedelta(hours=-5))
-
 from . import (analyze, compare, config, enrich, fetch, health, history, ingest,
                late, letters, publish, size, triage, universe)
+
+EASTERN = config.EASTERN
 from .models import Event
 
 log = logging.getLogger("pipeline")
@@ -45,19 +41,10 @@ def business_days(start: dt.date, end: dt.date) -> List[dt.date]:
     return days
 
 
-# EDGAR publishes the day's index at about 22:00 ET, not at the 17:30 filing
-# cutoff. Measured on two Last-Modified headers: form.20260828.idx at 02:02 UTC
-# and form.20260831.idx at 02:03 UTC, both the following day - 22:02 and 22:03
-# ET. Treating 19:00 as the close meant every run asked for an index that did
-# not exist yet, got nothing, and left the day for the next run to backfill, so
-# the site trailed current filings permanently.
-EDGAR_CLOSE_HOUR_ET = 23
-
-
-def last_complete_day(now_et: dt.datetime) -> dt.date:
-    if now_et.hour >= EDGAR_CLOSE_HOUR_ET:
-        return now_et.date()
-    return now_et.date() - dt.timedelta(days=1)
+# The EDGAR publication clock lives in config, because the status page and the
+# browser script have to agree with the scan about it.
+EDGAR_CLOSE_HOUR_ET = config.EDGAR_CLOSE_HOUR_ET
+last_complete_day = config.last_complete_day
 
 
 def days_to_process(state: dict, today_et: dt.date,
@@ -336,7 +323,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     # Self-checks last, so they see the finished state.
     report = {}
     try:
-        report = health.run_checks(publish.load_all_events(), state, today_et)
+        report = health.run_checks(publish.load_all_events(), state, today_et,
+                                   published_through=end)
         publish.save_health(report)
         s = report["summary"]
         log.info("health: %s (%d ok, %d warn, %d fail)",

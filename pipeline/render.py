@@ -267,24 +267,40 @@ def _last_success(runs) -> str:
 
 
 def _currency(state, built_at) -> Dict[str, object]:
-    """How far behind the published data is, in words."""
+    """How far behind the published data is, in words.
+
+    Two bugs lived here. It counted plain weekdays, so it read "2 business days
+    behind" over Labor Day while the check three inches below it read "1" - the
+    same helper, called without the holidays the scan had recorded. And it
+    measured against today's date, but today's index is not published until
+    about 22:00 ET tonight, so the page could never say it was current.
+
+    This is the answer at build time. The page recomputes it in the reader's
+    browser, because a static page built on Saturday otherwise goes on claiming
+    Saturday's freshness on Tuesday.
+    """
     import datetime as _dt
 
     from .health import STALE_WARN_AFTER_DAYS, _business_days_between
 
     last = state.get("last_processed")
+    closed = state.get("no_filings") or []
     if not last:
-        return {"currency_label": "no data yet", "stale": True}
+        return {"currency_label": "no data yet", "stale": True,
+                "data_through": "", "closed_days": ""}
+    horizon = config.last_complete_day(_dt.datetime.now(config.EASTERN))
     try:
         behind = _business_days_between(_dt.date.fromisoformat(last),
-                                        _dt.date.today())
+                                        horizon, closed)
     except ValueError:
-        return {"currency_label": "unknown", "stale": True}
-    if behind == 0:
-        return {"currency_label": "current", "stale": False}
+        return {"currency_label": "unknown", "stale": True,
+                "data_through": "", "closed_days": ""}
+    common = {"data_through": last, "closed_days": " ".join(closed)}
+    if behind <= 0:
+        return {"currency_label": "current", "stale": False, **common}
     plural = "" if behind == 1 else "s"
     return {"currency_label": f"{behind} business day{plural} behind",
-            "stale": behind > STALE_WARN_AFTER_DAYS}
+            "stale": behind > STALE_WARN_AFTER_DAYS, **common}
 
 
 def _fill_boundary(runs, row) -> str:
@@ -407,6 +423,41 @@ def _evidence_value(value):
     return value
 
 
+def figure(value) -> str:
+    """A headline number, sized so it cannot outgrow the box it sits in.
+
+    Separators up to six figures, then abbreviated to three significant ones:
+    350,554 stays readable, 12,300,000 becomes 12.3M rather than a string wide
+    enough to wrap inside its own cell. Filings scanned climbs by roughly
+    5,000 a day, so this is a matter of when, not whether. The exact number is
+    kept on the element's title, so nothing is actually lost.
+    """
+    if value is None:
+        return "\u2014"
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+    sign = "-" if n < 0 else ""
+    n = abs(n)
+    for cutoff, suffix in ((1_000_000_000_000, "T"), (1_000_000_000, "B"),
+                           (1_000_000, "M")):
+        if n >= cutoff:
+            scaled = n / cutoff
+            # Three significant figures: 1.23M, 12.3M, 123M.
+            places = 2 if scaled < 10 else (1 if scaled < 100 else 0)
+            return f"{sign}{scaled:.{places}f}{suffix}"
+    return f"{sign}{n:,}"
+
+
+def exact(value) -> str:
+    """The unabbreviated number, for the title attribute beside `figure`."""
+    try:
+        return f"{int(value):,}"
+    except (TypeError, ValueError):
+        return str(value)
+
+
 def _env() -> Environment:
     env = Environment(
         loader=FileSystemLoader(str(config.TEMPLATES)),
@@ -419,6 +470,8 @@ def _env() -> Environment:
     # letter headlines. Lowercasing wholesale ate the acronym in both places.
     env.filters["mid_sentence"] = mid_sentence
     env.filters["evidence"] = _evidence_value
+    env.filters["figure"] = figure
+    env.filters["exact"] = exact
     return env
 
 

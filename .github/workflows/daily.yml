@@ -2,8 +2,8 @@ name: Daily filing scan
 
 on:
   schedule:
-    # 03:30 UTC Tue-Sat = 23:30 ET Mon-Fri. EDGAR publishes the day's index at
-    # about 22:00 ET, an hour and a half before this, so the run finds it.
+    # 03:07 UTC Tue-Sat = 23:07 ET Mon-Fri. EDGAR publishes the day's index at
+    # about 22:00 ET, an hour before this, so the run finds it.
     #
     # The old 23:30 UTC (19:30 ET) fired two and a half hours BEFORE
     # publication. Every run asked for an index that did not exist, recorded
@@ -12,9 +12,21 @@ on:
     # covering for a scheduling error rather than for outages.
     #
     # Runs Tue-Sat because the evening of a weekday falls on the next UTC day.
-    # GitHub may still delay a scheduled run; that remains harmless, because a
-    # missed day is picked up by the next one.
-    - cron: "30 3 * * 2-6"
+    # The minute is deliberately not :00 or :30: those are the busiest slots on
+    # GitHub's scheduler and the ones most likely to be delayed or dropped.
+    - cron: "7 3 * * 2-6"
+    # A second attempt, because the first one is not reliable and cannot be
+    # made so. Measured over ten scheduled runs, GitHub started this job a
+    # median of 4.6 hours after the cron time and once 20.2 hours after it -
+    # long enough to lose the day entirely. Re-running is safe by design: a day
+    # already processed writes nothing, so on a normal morning this second run
+    # finds nothing to do and costs a few minutes of free runner time. It is
+    # the difference between a delayed scan and a missing one.
+    #
+    # Both slots are past 23:00 ET, which is what last_complete_day requires
+    # before it will offer a day at all - so neither can ask for an index that
+    # has not been published yet, and neither can mistake one for a holiday.
+    - cron: "23 9 * * 2-6"
   workflow_dispatch:
     inputs:
       days:

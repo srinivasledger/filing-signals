@@ -20,7 +20,7 @@ filing is one occasion.</p>
 <h2>How often one signal follows another</h2>
 <p>Across the <b>{{ history.companies }}</b> companies recorded here, using
 their full filing history from SEC EDGAR &mdash;
-<b>{{ '{:,}'.format(history.total_historical_events) }}</b> historical events
+<b title="{{ history.total_historical_events|exact }}">{{ history.total_historical_events|figure }}</b> historical events
 in total.</p>
 
 <p class="notice"><strong>The rule, exactly.</strong> A company counts once, not

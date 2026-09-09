@@ -75,7 +75,7 @@ function check(label, cond) {
   if (!cond) failed = 1;
 }
 
-for (const name of ["chart", "filter", "theme"]) {
+for (const name of ["chart", "filter", "theme", "currency"]) {
   try {
     // eslint-disable-next-line no-eval
     (0, eval)(fs.readFileSync(`site/static/${name}.js`, "utf8"));
@@ -124,6 +124,73 @@ for (const name of ["chart", "filter", "theme"]) {
   (0, eval)(fs.readFileSync("site/static/filter.js", "utf8"));
   check("a routine entry is shown when there is no toggle to reveal it",
         rows.every((r) => !r.hidden));
+}
+
+// --- currency.js: the figure has to be right on the reader's clock ---------
+//
+// "2 business days behind" over Labor Day, and never once "current", are the
+// two answers this has to stop giving. Both come from arithmetic, so both are
+// checked here rather than by looking at the page.
+{
+  const RealDate = Date;
+  function withClock(etString, dataset) {
+    const node = el({dataset});
+    const notice = el();
+    for (const id of Object.keys(byId)) delete byId[id];
+    byId.currency = node;
+    byId["stale-notice"] = notice;
+    // Freeze "now". toLocaleString is what currency.js uses to reach New York.
+    global.Date = class extends RealDate {
+      constructor(...args) {
+        if (args.length === 0) super(etString);
+        else super(...args);
+      }
+      toLocaleString() { return etString; }
+    };
+    try {
+      // eslint-disable-next-line no-eval
+      (0, eval)(fs.readFileSync("site/static/currency.js", "utf8"));
+    } finally {
+      global.Date = RealDate;
+    }
+    return {text: node.textContent, noticeHidden: notice.hidden};
+  }
+
+  // Wed 9 Sep, 10:00 in New York. EDGAR has published through Tue 8 Sep.
+  // Data through Fri 4 Sep, and Mon 7 Sep was Labor Day: one day behind.
+  let r = withClock("9/9/2026, 10:00:00 AM",
+                    {through: "2026-09-04", closed: "2026-09-07"});
+  check(`Labor Day is not counted as a day behind (got "${r.text}")`,
+        r.text === "1 business day behind");
+  check("one day behind is normal, not a stale-data notice", r.noticeHidden);
+
+  // Same clock, but the scan has landed: the site must be able to say so.
+  r = withClock("9/9/2026, 10:00:00 AM",
+                {through: "2026-09-08", closed: "2026-09-07"});
+  check(`the page can say it is current (got "${r.text}")`, r.text === "current");
+
+  // Genuinely behind: Thu 3, Fri 4, Mon 7, Tue 8 - four days, nothing closed.
+  r = withClock("9/9/2026, 10:00:00 AM", {through: "2026-09-02", closed: ""});
+  check(`a real gap still counts (got "${r.text}")`,
+        r.text === "4 business days behind");
+  check("a real gap shows the notice", r.noticeHidden === false);
+
+  // Past 23:00 ET the day's own index is out, so it counts from then.
+  r = withClock("9/9/2026, 11:30:00 PM",
+                {through: "2026-09-08", closed: "2026-09-07"});
+  check(`after 23:00 ET today counts (got "${r.text}")`,
+        r.text === "1 business day behind");
+
+  // No data attribute: leave whatever the build rendered alone.
+  {
+    const node = el({dataset: {}, textContent: "built-in answer"});
+    for (const id of Object.keys(byId)) delete byId[id];
+    byId.currency = node;
+    // eslint-disable-next-line no-eval
+    (0, eval)(fs.readFileSync("site/static/currency.js", "utf8"));
+    check("without a date it does not overwrite the page",
+          node.textContent === "built-in answer");
+  }
 }
 
 process.exit(failed);

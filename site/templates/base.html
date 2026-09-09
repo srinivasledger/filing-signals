@@ -96,6 +96,9 @@
   </div>
 </footer>
 <script src="{{ rel }}static/theme.js?v={{ asset_v["theme.js"] }}" defer></script>
+{# Loaded everywhere and guarded inside, the same way filter.js is: a page that
+   later grows a freshness figure must not have to remember to add a script. #}
+<script src="{{ rel }}static/currency.js?v={{ asset_v["currency.js"] }}" defer></script>
 {# Loaded everywhere: it does nothing without a #feed, and this way a page that
    gains a filter cannot end up rendering the controls with no script behind
    them - which is exactly what happened when it lived in the home template. #}

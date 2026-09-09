@@ -24,10 +24,10 @@ the letter being written and appearing on EDGAR (range
 {% endif %}
 
 <dl class="figures">
-  <div><dt>Reviews</dt><dd>{{ reviews }}</dd></div>
-  <div><dt>Letters</dt><dd>{{ count }}</dd></div>
-  <div><dt>Companies</dt><dd>{{ companies }}</dd></div>
-  <div><dt>From the staff</dt><dd>{{ from_staff }}</dd></div>
+  <div><dt>Reviews</dt><dd title="{{ reviews|exact }}">{{ reviews|figure }}</dd></div>
+  <div><dt>Letters</dt><dd title="{{ count|exact }}">{{ count|figure }}</dd></div>
+  <div><dt>Companies</dt><dd title="{{ companies|exact }}">{{ companies|figure }}</dd></div>
+  <div><dt>From the staff</dt><dd title="{{ from_staff|exact }}">{{ from_staff|figure }}</dd></div>
   <div><dt>Median lag</dt><dd>{{ median_lag or '—' }}d</dd></div>
 </dl>
 

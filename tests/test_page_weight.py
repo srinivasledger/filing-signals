@@ -75,3 +75,51 @@ def test_a_stale_dataset_is_not_reported_as_fine():
         [], {"last_processed": "2026-09-01", "runs": [{"date": "2026-09-01", "index_rows": 1}]},
         dt.date(2026, 9, 2))["checks"]
     assert next(c for c in fresh if c["name"] == "Pipeline is current")["status"] == health.OK
+
+
+# --- headline figures cannot outgrow their box -------------------------------
+def test_a_figure_stays_short_however_large_it_gets():
+    """Filings scanned climbs by roughly 5,000 a day. Left as a raw integer
+    with separators it reaches 11 characters inside a fixed cell; abbreviated
+    it never passes six."""
+    from pipeline.render import figure
+
+    assert figure(103) == "103"
+    assert figure(2090) == "2,090"
+    assert figure(350_554) == "350,554"
+    assert figure(999_999) == "999,999"
+    assert figure(1_234_567) == "1.23M"
+    assert figure(12_345_678) == "12.3M"
+    assert figure(123_456_789) == "123M"
+    assert figure(1_000_000_000) == "1.00B"
+    assert figure(12_300_000_000) == "12.3B"
+    for n in (0, 1, 999, 10 ** 4, 10 ** 7, 10 ** 10, 10 ** 13):
+        assert len(figure(n)) <= 7, (n, figure(n))
+
+
+def test_a_figure_never_loses_the_real_number():
+    """Abbreviation is a display choice, so the exact value travels with it on
+    the element's title."""
+    from pipeline.render import exact, figure
+
+    assert exact(12_345_678) == "12,345,678"
+    assert figure(None) == "—"
+    assert exact("—") == "—"
+
+
+def test_every_headline_figure_carries_its_exact_value():
+    """Pinned on the built page: a new figure added without the title is a
+    number the reader can no longer check."""
+    import re
+    from pathlib import Path
+
+    index = Path(__file__).resolve().parent.parent / "public" / "index.html"
+    if not index.exists():
+        import pytest
+        pytest.skip("site not built")
+    block = re.search(r'<dl class="figures">(.*?)</dl>', index.read_text(), re.S)
+    assert block
+    for label, dd in re.findall(r"<dt>([^<]+)</dt>(<dd[^>]*>[^<]*</dd>)", block.group(1)):
+        value = re.search(r">([^<]*)</dd>", dd).group(1)
+        if re.fullmatch(r"[\d,.]+[KMBT]?", value):
+            assert "title=" in dd, f"{label} shows {value} with no exact value"

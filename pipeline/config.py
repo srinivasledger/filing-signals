@@ -90,3 +90,37 @@ def require_user_agent() -> str:
             'Set it to a real contact, e.g. SEC_USER_AGENT="Jane Doe jane@example.com"'
         )
     return SEC_USER_AGENT
+
+
+try:
+    from zoneinfo import ZoneInfo
+    EASTERN = ZoneInfo("America/New_York")
+except Exception:                                # pragma: no cover
+    import datetime as _dt_fallback
+    EASTERN = _dt_fallback.timezone(_dt_fallback.timedelta(hours=-5))
+
+
+# --- when EDGAR has published what -------------------------------------------
+# EDGAR publishes the day's index at about 22:00 ET, not at the 17:30 filing
+# cutoff. Measured on two Last-Modified headers: form.20260828.idx at 02:02 UTC
+# and form.20260831.idx at 02:03 UTC, both the following day - 22:02 and 22:03
+# ET. Treating 19:00 as the close meant every run asked for an index that did
+# not exist yet, got nothing, and left the day for the next run to backfill, so
+# the site trailed current filings permanently.
+#
+# It lives here rather than in run.py because three things have to agree about
+# it: the scan choosing which days to fetch, the status page saying how far
+# behind the data is, and the script that recomputes that in the reader's
+# browser. When only the scan knew, the page counted today as a day it had
+# missed - so "1 business day behind" was the best it could ever print, and it
+# never once said it was current.
+EDGAR_CLOSE_HOUR_ET = 23
+
+
+def last_complete_day(now_et):
+    """The newest day EDGAR has published a daily index for."""
+    import datetime as _dt
+
+    if now_et.hour >= EDGAR_CLOSE_HOUR_ET:
+        return now_et.date()
+    return now_et.date() - _dt.timedelta(days=1)

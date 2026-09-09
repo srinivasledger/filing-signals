@@ -59,10 +59,18 @@ def _business_days_between(start: dt.date, end: dt.date, skip=()) -> int:
     return days
 
 
-def run_checks(events, state: Dict, today: dt.date) -> Dict:
+def run_checks(events, state: Dict, today: dt.date,
+               published_through: "dt.date | None" = None) -> Dict:
     checks: List[Dict] = []
 
     # --- is it actually running? ---
+    #
+    # Measured against the last day EDGAR has actually published an index for,
+    # not against the wall calendar. Today's index does not exist until about
+    # 22:00 ET tonight, so counting today made "1 business day behind" the best
+    # score the site could ever print, and the page never once said it was
+    # current when it was.
+    horizon = published_through or today
     last = state.get("last_processed")
     if not last:
         checks.append(_check("Pipeline has run", FAIL, "no filing day recorded yet"))
@@ -70,8 +78,8 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
         try:
             closed = state.get("no_filings") or []
             behind = _business_days_between(
-                dt.date.fromisoformat(last), today, closed)
-            shut = sorted(d for d in closed if last < d < today.isoformat())
+                dt.date.fromisoformat(last), horizon, closed)
+            shut = sorted(d for d in closed if last < d <= horizon.isoformat())
             status = (OK if behind <= STALE_WARN_AFTER_DAYS
                       else FAIL if behind > STALE_AFTER_DAYS else WARN)
             note = ("" if behind <= STALE_WARN_AFTER_DAYS else
@@ -80,8 +88,9 @@ def run_checks(events, state: Dict, today: dt.date) -> Dict:
             checks.append(_check(
                 "Pipeline is current", status,
                 f"last complete filing day {last}"
-                + (f", {behind} business day{'' if behind == 1 else 's'} ago"
-                   if behind else ", today")
+                + (f", {behind} business day{'' if behind == 1 else 's'} behind "
+                   f"EDGAR's own {horizon}"
+                   if behind else ", which is everything EDGAR has published")
                 + (f" ({', '.join(shut)}: the SEC published no index)"
                    if shut else "") + note))
         except ValueError:

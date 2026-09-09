@@ -1,7 +1,7 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-09-04, 1 business day ago (2026-09-07: the SEC published no index)",
+      "detail": "last complete filing day 2026-09-04, 1 business day behind EDGAR's own 2026-09-08 (2026-09-07: the SEC published no index)",
       "name": "Pipeline is current",
       "status": "ok"
     },
@@ -71,7 +71,7 @@
       "status": "ok"
     },
     {
-      "detail": "5,158 companies, refreshed 3 day(s) ago",
+      "detail": "5,158 companies, refreshed 4 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
@@ -101,7 +101,7 @@
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-08T12:44:49+00:00",
+  "generated_at": "2026-09-09T08:30:01+00:00",
   "summary": {
     "fail": 0,
     "ok": 20,

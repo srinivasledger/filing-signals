@@ -15,9 +15,9 @@ far, which is still being extended backwards.</p>
 <p>A count of events means little without the population it came from. Across
 the filing days processed so far:</p>
 <dl class="figures">
-  <div><dt>Filings in the daily index</dt><dd>{{ '{:,}'.format(filings_scanned) }}</dd></div>
-  <div><dt>Read in full</dt><dd>{{ '{:,}'.format(candidates_scanned) }}</dd></div>
-  <div><dt>Events published</dt><dd>{{ total_events }}</dd></div>
+  <div><dt>Filings in the daily index</dt><dd title="{{ filings_scanned|exact }}">{{ filings_scanned|figure }}</dd></div>
+  <div><dt>Read in full</dt><dd title="{{ candidates_scanned|exact }}">{{ candidates_scanned|figure }}</dd></div>
+  <div><dt>Events published</dt><dd title="{{ total_events|exact }}">{{ total_events|figure }}</dd></div>
   <div><dt>Flagged</dt><dd>{{ flag_rate }}</dd></div>
 </dl>
 <p class="muted">Most filings are never candidates: fund and securitisation

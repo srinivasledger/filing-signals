@@ -16,18 +16,55 @@ events means.</p>
    stale dataset visible. #}
 <dl class="figures">
   <div><dt>Data current through</dt><dd class="dd-date">{{ last_run or '—' }}</dd></div>
-  <div><dt>Currency</dt><dd class="dd-date">{{ currency_label }}</dd></div>
+  {# Recomputed in the browser: this page is static, so a figure baked at
+     build time goes on describing the build rather than the moment it is
+     read. The days the scan found no index for travel with it, so the client
+     arithmetic can subtract the same holidays the pipeline did. #}
+  <div><dt>Currency</dt><dd class="dd-date" id="currency"
+    data-through="{{ data_through }}" data-closed="{{ closed_days }}"
+    >{{ currency_label }}</dd></div>
   <div><dt>Last successful scan</dt><dd class="dd-date">{{ last_success or '—' }}</dd></div>
   <div><dt>Overall</dt><dd class="dd-date">{{ (health.summary.overall if health and health.summary else '—')|upper }}</dd></div>
 </dl>
 
-{% if stale %}
-<p class="notice"><strong>This dataset is not current.</strong> The newest
+{# Always rendered, hidden unless the data really is behind, so the script can
+   reveal or hide it on the reader's own clock. Without JavaScript it says what
+   the build found, which is the honest fallback. #}
+<p class="notice" id="stale-notice"{% if not stale %} hidden{% endif %}>
+<strong>This dataset is not current.</strong> The newest
 filing day it holds is {{ last_run }}, {{ currency_label|lower }}. The pipeline
 fails closed: a run that trips an integrity check commits nothing, so what you
 see is the last state that passed every check rather than a partial or
 doubtful one. The <a href="{{ repo_url }}/actions">workflow history</a> shows
 whether a run has been failing.</p>
+
+{# Run it yourself.
+
+   Deliberately links to GitHub rather than posting from this page. Starting a
+   workflow needs a token with write access to the repository, and this is a
+   public static site: any token it carried would be readable by anyone, and
+   would hand them the repository. The link opens the workflow's own page,
+   where GitHub already knows who you are and the "Run workflow" button is
+   yours. That keeps the site free and unattended without putting a key in it. #}
+{% if repo_url %}
+<p class="eyebrow"><span>Run it now</span><span>needs your GitHub sign-in</span></p>
+<div class="actions">
+  <a class="action" href="{{ repo_url }}/actions/workflows/daily.yml">
+    <strong>Scan for new filings</strong>
+    <span>Reads every EDGAR filing since the last complete day, backfills any
+    day that was missed, re-runs all {{ health.summary.total if health and health.summary else '' }}
+    checks and republishes. This is also the repair: it fails closed, so if a
+    check does not pass it commits nothing and the last good state stays up.</span>
+  </a>
+  <a class="action" href="{{ repo_url }}/actions/workflows/publish.yml">
+    <strong>Rebuild the pages</strong>
+    <span>Re-renders every page from the data already recorded and deploys it.
+    Never contacts the SEC, so it is instant and cannot be blocked &mdash; use it
+    when the data is fine but a page is not.</span>
+  </a>
+</div>
+<p class="muted">Open the link, then use <strong>Run workflow</strong> on the
+right. A scan takes a few minutes; the page updates itself when it finishes.</p>
 {% endif %}
 
 {% if not analysis_on %}
@@ -73,7 +110,7 @@ history, so the two kinds interleave.</p>
   <tr>
     <td>{{ r.date }}</td>
     <td><span class="muted">{{ 'history fill' if r.kind == 'fill' else 'daily scan' }}</span></td>
-    <td>{{ '{:,}'.format(r.index_rows or 0) }}</td>
+    <td title="{{ (r.index_rows or 0)|exact }}">{{ (r.index_rows or 0)|figure }}</td>
     <td>{{ r.candidates or 0 }}</td>
     <td>{{ r.operating or 0 }}</td>
     <td>{{ r.events_written if r.events_written is defined else (r.events or 0) }}</td>
