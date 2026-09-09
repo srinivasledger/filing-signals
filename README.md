@@ -4,6 +4,9 @@
 [RSS](https://srinivasledger.github.io/filing-signals/feed.xml) ·
 [JSON](https://srinivasledger.github.io/filing-signals/events.json)
 
+> **If it has stopped, or a run has gone red:** see [RUNBOOK.md](RUNBOOK.md) — what each kind of failure
+> means, and what to do about it. No code required for most of them.
+
 A self-updating public tracker that reads new SEC filings every weekday and
 publishes nine things that are otherwise hard to see. It runs on GitHub Actions
 and GitHub Pages: no server, no database, and **no API key required** — the
