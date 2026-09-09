@@ -181,6 +181,44 @@ for (const name of ["chart", "filter", "theme", "currency"]) {
   check(`after 23:00 ET today counts (got "${r.text}")`,
         r.text === "1 business day behind");
 
+  // --- a pipeline that has stopped has to say so on every page ------------
+  //
+  // The site keeps serving the last pages it built. Every one of them goes on
+  // reporting that its checks passed, because they did, on the day it stopped.
+  // Nothing else on the page can notice that the day it holds is now weeks
+  // old, so this is the only thing standing between a dead scanner and a site
+  // that looks fine indefinitely.
+  {
+    const RealDate = Date;
+    function header(etString, through) {
+      const mark = el({dataset: {through, closed: ""}, hidden: true});
+      for (const id of Object.keys(byId)) delete byId[id];
+      byId.freshness = mark;                    // no #currency: not /status
+      global.Date = class extends RealDate {
+        constructor(...a) { if (a.length === 0) super(etString); else super(...a); }
+        toLocaleString() { return etString; }
+      };
+      try {
+        // eslint-disable-next-line no-eval
+        (0, eval)(fs.readFileSync("site/static/currency.js", "utf8"));
+      } finally { global.Date = RealDate; }
+      return mark;
+    }
+
+    // Three weeks of silence, seen from any page.
+    let m = header("9/30/2026, 10:00:00 AM", "2026-09-08");
+    check(`a stopped pipeline is announced in the masthead (got "${m.textContent}")`,
+          m.hidden === false && /Data 1[0-9] business days behind/.test(m.textContent));
+
+    // A normal morning between scans says nothing at all.
+    m = header("9/9/2026, 10:00:00 AM", "2026-09-08");
+    check("a normal day leaves the masthead quiet", m.hidden === true);
+
+    // Caught up: still quiet.
+    m = header("9/9/2026, 10:00:00 AM", "2026-09-09");
+    check("a current dataset leaves the masthead quiet", m.hidden === true);
+  }
+
   // No data attribute: leave whatever the build rendered alone.
   {
     const node = el({dataset: {}, textContent: "built-in answer"});

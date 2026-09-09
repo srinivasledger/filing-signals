@@ -564,3 +564,10 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
   .actions .action{border-left:none;border-top:1px solid var(--line)}
   .actions .action:first-child{border-top:none}
 }
+
+/* Only ever visible when the data has stopped moving. */
+.statusline .behind{color:var(--head-warn);font-weight:700;text-decoration:none;
+  display:inline-flex;align-items:center;gap:6px}
+.statusline .behind::before{content:"";width:5px;height:5px;border-radius:50%;
+  background:var(--head-warn)}
+.statusline .behind:hover{color:var(--head-ink)}

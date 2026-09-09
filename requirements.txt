@@ -1,3 +1,8 @@
-jinja2>=3.1
-pypdf>=4.0
-pillow>=10.0
+# Upper bounds are deliberate. Unpinned, the next major release of any of
+# these lands in an unattended build with nobody watching, and the first sign
+# is a red run. A ceiling means a breaking release is something someone
+# chooses to adopt rather than something that arrives on a Tuesday; patches
+# and minors still come in on their own.
+jinja2>=3.1,<4
+pypdf>=4.0,<7
+pillow>=10.0,<12

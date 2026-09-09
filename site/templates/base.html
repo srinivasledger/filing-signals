@@ -72,6 +72,14 @@
     <p class="statusline">
       <span>Source: SEC EDGAR</span>
       <span>Compiled {{ built_at }}</span>
+      {# Filled in by the browser, not by the build. A site whose scans have
+         stopped keeps serving the last pages it made, and every one of them
+         goes on looking healthy: the checks passed, the day it holds is
+         printed, and nothing says that day is now three weeks old. This is
+         the one thing on the page that can notice. It stays hidden while the
+         data is current, so it only ever appears when it means something. #}
+      <a class="behind" id="freshness" href="{{ rel }}status.html" hidden
+         data-through="{{ data_through }}" data-closed="{{ closed_days }}"></a>
       <a class="live live-{{ status_state }}" href="{{ rel }}status.html"
          title="Self-checks run after every update">{{ status_label }}</a>
     </p>

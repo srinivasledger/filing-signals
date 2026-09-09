@@ -286,21 +286,18 @@ def _currency(state, built_at) -> Dict[str, object]:
     last = state.get("last_processed")
     closed = state.get("no_filings") or []
     if not last:
-        return {"currency_label": "no data yet", "stale": True,
-                "data_through": "", "closed_days": ""}
+        return {"currency_label": "no data yet", "stale": True}
     horizon = config.last_complete_day(_dt.datetime.now(config.EASTERN))
     try:
         behind = _business_days_between(_dt.date.fromisoformat(last),
                                         horizon, closed)
     except ValueError:
-        return {"currency_label": "unknown", "stale": True,
-                "data_through": "", "closed_days": ""}
-    common = {"data_through": last, "closed_days": " ".join(closed)}
+        return {"currency_label": "unknown", "stale": True}
     if behind <= 0:
-        return {"currency_label": "current", "stale": False, **common}
+        return {"currency_label": "current", "stale": False}
     plural = "" if behind == 1 else "s"
     return {"currency_label": f"{behind} business day{plural} behind",
-            "stale": behind > STALE_WARN_AFTER_DAYS, **common}
+            "stale": behind > STALE_WARN_AFTER_DAYS}
 
 
 def _fill_boundary(runs, row) -> str:
@@ -603,6 +600,11 @@ def build(second_pass: bool = False) -> None:
         "repo_url": config.REPO_URL,
         "site_tagline": config.SITE_TAGLINE,
         "built_at": built_at,
+        # On every page, so a site whose pipeline has stopped says so wherever
+        # the reader happens to be rather than only on /status - which is the
+        # one page nobody visits when they have no reason to suspect anything.
+        "data_through": state.get("last_processed") or "",
+        "closed_days": " ".join(state.get("no_filings") or []),
         # Deliberately not here. Every page renders a different slice, so each
         # one passes the months it actually holds.
         "signal_labels": [(k, SIGNAL_LABELS[k]) for k in SIGNAL_ORDER],

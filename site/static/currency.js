@@ -10,11 +10,15 @@
 // is yesterday in New York, or today once it is past 23:00 there. Weekends and
 // the days the scan actually found no index for do not count against it.
 (function () {
+  // The masthead marker carries the dates on every page; /status also has a
+  // figure to correct. Either may be absent, and neither is required.
+  var mark = document.getElementById('freshness');
   var el = document.getElementById('currency');
-  if (!el || !el.dataset.through) return;
+  var src = (mark && mark.dataset.through) ? mark : el;
+  if (!src || !src.dataset.through) return;
 
-  var through = el.dataset.through;
-  var closed = (el.dataset.closed || '').split(' ').filter(Boolean);
+  var through = src.dataset.through;
+  var closed = (src.dataset.closed || '').split(' ').filter(Boolean);
 
   function iso(d) {
     return d.getFullYear() + '-'
@@ -41,11 +45,21 @@
     if (day !== 0 && day !== 6 && closed.indexOf(iso(cur)) === -1) behind++;
   }
 
-  el.textContent = behind <= 0
+  var words = behind <= 0
     ? 'current'
     : behind + ' business day' + (behind === 1 ? '' : 's') + ' behind';
+  if (el) el.textContent = words;
 
   // One business day behind is the normal state between scans, not a fault.
+  // Beyond that something has stopped, and it should be said on whatever page
+  // the reader is on rather than only on the one they would have to think to
+  // visit.
   var notice = document.getElementById('stale-notice');
   if (notice) notice.hidden = behind <= 1;
+  if (mark) {
+    mark.hidden = behind <= 1;
+    mark.textContent = 'Data ' + words;
+    mark.title = 'The newest filing day held is ' + through
+      + '. Scans have not extended it since.';
+  }
 })();
