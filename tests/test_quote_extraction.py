@@ -116,3 +116,65 @@ def test_the_published_quotes_end_cleanly():
     state = sections.going_concern_state(text)
     assert state["quote"]
     assert ENDS_CLEANLY.search(state["quote"]), repr(state["quote"][-40:])
+
+
+# --- and the fourth path: a staff comment letter -----------------------------
+def test_a_letter_quote_stops_before_the_sign_off():
+    """Every staff letter ends with who to call and a signature block. One
+    published quote reached the page as "...related matters. September 16, 2025
+    Page 2 Sincerely, Division of Corporation Finance Office of Life Sciences"
+    - the SEC's switchboard, quoted as evidence about a company."""
+    from pipeline import letters
+
+    text = ("UPLOAD 1 filename1.htm We have reviewed your filings. "
+            "We note the disclosure of your revenue recognition policy and "
+            "would like to understand how it applies to your bundled "
+            "arrangements in each period presented. "
+            "Please revise your future filings accordingly. "
+            "Please contact Jenn Do at 202-551-3743 or Kevin Vaughn at "
+            "202-551-3494. Sincerely, Division of Corporation Finance")
+    quote = letters._first_comment(text)
+    assert quote
+    for furniture in ("Please contact", "Sincerely", "Corporation Finance",
+                      "202-551"):
+        assert furniture not in quote, f"{furniture!r} was published as evidence"
+
+
+def test_a_page_break_does_not_land_inside_the_quote():
+    """A letter is paginated and the break falls mid-sentence, so the footer
+    was published inside it: "...from the measure and why 2. January 21, 2026
+    Page 2 management believes...". Removing it rejoins the sentence."""
+    from pipeline import letters
+
+    text = ("UPLOAD 1 filename1.htm We note that your adjusted measure removes "
+            "the tax valuation allowance and we would like to understand why. "
+            "January 21, 2026 Page 2 Management believes the adjustment is "
+            "consistent with the prior periods presented in the filing.")
+    quote = letters._first_comment(text)
+    assert "Page 2" not in quote
+    assert "January 21, 2026" not in quote
+    assert "understand why. Management believes" in quote
+
+
+def test_a_letter_quote_ends_the_way_every_other_quote_does():
+    from pipeline import letters
+
+    text = ("UPLOAD 1 filename1.htm We note " + "your disclosure of the "
+            "arrangement and the basis for it " * 30)
+    quote = letters._first_comment(text)
+    assert ENDS_CLEANLY.search(quote), repr(quote[-40:])
+
+
+def test_a_letter_with_nothing_but_a_sign_off_publishes_no_quote():
+    """ADMA Biologics: the only phrase the anchor found was the last comment's
+    closing line, and everything after it was the SEC's switchboard. Cutting
+    left 46 characters, so the old guard kept all 275 instead. The module's own
+    rule applies - furniture that looks like evidence is worse than none."""
+    from pipeline import letters
+
+    text = ("UPLOAD 1 filename1.htm We have reviewed your filings. "
+            "Please revise your future filings accordingly. "
+            "Please contact Jenn Do at 202-551-3743 or Kevin Vaughn at "
+            "202-551-3494 if you have questions. Sincerely, "
+            "Division of Corporation Finance Office of Life Sciences")
+    assert letters._first_comment(text) == ""

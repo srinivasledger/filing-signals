@@ -269,6 +269,28 @@ _BOILERPLATE_SENTENCES = [
 ]
 _REVIEW_PREAMBLE = re.compile("|".join(_BOILERPLATE_SENTENCES), re.I)
 
+# A staff letter is paginated, and the page break lands wherever it lands -
+# usually mid-sentence. Published, it reads as nonsense inside the quote:
+# "...from the measure and why 2. January 21, 2026 Page 2 management believes
+# the adjustment...". The footer is furniture; removing it rejoins the
+# sentence it interrupted.
+_PAGE_FOOTER = re.compile(
+    r"\s*\b(?:January|February|March|April|May|June|July|August|September"
+    r"|October|November|December)\s+\d{1,2},\s+\d{4}\s+Page\s+\d+\b\s*")
+
+# And every letter ends the same way: who to call about it, then the signature
+# block. Nothing after that is a comment about the company's accounting, and a
+# quote that runs into it is quoting the SEC's switchboard.
+_LETTER_CLOSING = re.compile(
+    r"Please\s+contact\s+[A-Z][\w.\-']{1,20}(?:\s+[A-Z][\w.\-']{1,20}){0,2}"
+    r"\s+at\s+\(?\d{3}"
+    r"|\bSincerely,"
+    r"|\bDivision\s+of\s+Corporation\s+Finance\b", re.I)
+
+# What has to survive the sign-off cut for the result to be a comment rather
+# than a fragment of one.
+_MIN_COMMENT_CHARS = 60
+
 # A CORRESP begins with EDGAR's own document header, then the letterhead: form
 # type, filename, company address, routing line, date, salutation. None of it
 # is the company's answer.
@@ -288,7 +310,7 @@ def _first_comment(text: str) -> str:
     """
     from . import sections
 
-    body = _DOC_HEADER.sub("", text)
+    body = _PAGE_FOOTER.sub(" ", _DOC_HEADER.sub("", text))
     # Repeatedly, because the sentences appear in different orders.
     for _ in range(len(_BOILERPLATE_SENTENCES)):
         stripped = _REVIEW_PREAMBLE.sub(" ", body).strip()
@@ -305,4 +327,21 @@ def _first_comment(text: str) -> str:
         # to the filing. Trying to salvage something with more patterns is how
         # the header ended up quoted in the first place.
         return ""
-    return sections.truncate_words(body[anchor.start(): anchor.start() + 700], 420)
+    window = body[anchor.start(): anchor.start() + 700]
+    # The fourth place in this code base where a fixed-length slice ran past
+    # the end of what was worth quoting. Stop at the sign-off, and mark the
+    # cut wherever it falls.
+    closing = _LETTER_CLOSING.search(window)
+    if closing:
+        window = window[:closing.start()]
+        if len(window.strip()) < _MIN_COMMENT_CHARS:
+            # The sign-off began almost immediately: this letter's substantive
+            # comments are worded in some way the anchor did not find, and
+            # what is left is not one. The same rule as the letterhead above -
+            # publishing furniture that looks like evidence is worse than
+            # publishing none, and the card still links to the letter. Keeping
+            # it was how "Sincerely, Division of Corporation Finance Office of
+            # Life Sciences" came to be quoted as ADMA Biologics' evidence.
+            return ""
+    return sections.open_quote(
+        sections.close_quote(sections.truncate_words(window, 420)))

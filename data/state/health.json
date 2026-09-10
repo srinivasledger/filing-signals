@@ -41,14 +41,14 @@
       "status": "ok"
     },
     {
-      "detail": "0 of 2334 begin mid-sentence, 0 do not open at the substance",
+      "detail": "0 of 2333 begin mid-sentence, 0 do not open at the substance",
       "name": "Quotes open with the substance",
       "status": "ok"
     },
     {
-      "detail": "1 of 2334 end mid-sentence with no ellipsis to mark the cut",
+      "detail": "0 of 2333 end mid-sentence with no ellipsis to mark the cut",
       "name": "Quotes end where the filing does",
-      "status": "warn"
+      "status": "ok"
     },
     {
       "detail": "0 of 845 going-concern and material-weakness entries quote a passage that negates the state they assert",
@@ -81,7 +81,7 @@
       "status": "ok"
     },
     {
-      "detail": "heaviest page companies.html is 73 KB over the wire (limit 250 KB), 2159 pages checked",
+      "detail": "heaviest page companies.html is 73 KB over the wire (limit 250 KB), 2161 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
@@ -96,18 +96,18 @@
       "status": "ok"
     },
     {
-      "detail": "heaviest file events.json is 734 KB over the wire (limit 1024 KB), 3 file(s) checked",
+      "detail": "heaviest file events.json is 733 KB over the wire (limit 1024 KB), 3 file(s) checked",
       "name": "Data file weight",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-10T05:25:20+00:00",
+  "generated_at": "2026-09-10T07:44:52+00:00",
   "summary": {
     "fail": 0,
-    "ok": 19,
-    "overall": "warn",
+    "ok": 20,
+    "overall": "ok",
     "total": 20,
     "unknown": 0,
-    "warn": 1
+    "warn": 0
   }
 }
