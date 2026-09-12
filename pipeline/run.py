@@ -195,7 +195,13 @@ def days_to_backfill(state: dict, already: List[dt.date]) -> List[dt.date]:
     start = min(known) - dt.timedelta(days=1)
     if start < floor:
         return []
-    days = business_days(floor, start)
+    # A day the SEC published no index for cannot be processed, so it cannot
+    # advance earliest_processed - and the fill reached 2 January 2026 with
+    # New Year's Day as the only day left, to be requested and refused on
+    # every run indefinitely. Days already found empty are not asked for
+    # again; when nothing else remains, the fill is finished.
+    closed = set(state.get("no_filings") or [])
+    days = [d for d in business_days(floor, start) if d.isoformat() not in closed]
     return days[-config.HISTORY_CHUNK:]
 
 

@@ -232,3 +232,18 @@ def test_a_history_written_before_this_existed_is_refreshed_once(tmp_path, monke
     (tmp_path / "history.json").write_text(json.dumps(
         {"companies": 1366, "total_historical_events": 12497}))
     assert run.history_needs_refresh(0, 1366) is True
+
+
+def test_the_fill_finishes_when_only_a_holiday_is_left():
+    """It reached 2 January 2026 with New Year's Day as the only day between it
+    and the floor. A holiday returns no index and so never moves
+    earliest_processed, so the fill asked for 1 January on every run
+    indefinitely and was never done."""
+    with mock.patch.object(config, "HISTORY_FROM", "2026-01-01"):
+        state = {"earliest_processed": "2026-01-02", "runs": [],
+                 "no_filings": ["2026-01-01"]}
+        assert run.days_to_backfill(state, []) == []
+
+        # Without the record it would still, correctly, try the day once.
+        state["no_filings"] = []
+        assert run.days_to_backfill(state, []) == [dt.date(2026, 1, 1)]
