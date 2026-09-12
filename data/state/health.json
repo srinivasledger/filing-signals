@@ -1,12 +1,12 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-09-10, which is everything EDGAR has published",
+      "detail": "last complete filing day 2026-09-11, which is everything EDGAR has published",
       "name": "Pipeline is current",
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 45,248 index rows read",
+      "detail": "10 runs recorded, 40,554 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,12 +16,12 @@
       "status": "ok"
     },
     {
-      "detail": "4079/4079 link to the accession they report",
+      "detail": "4085/4085 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "4079/4079 name a detection method the pipeline implements",
+      "detail": "4085/4085 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
@@ -36,7 +36,7 @@
       "status": "ok"
     },
     {
-      "detail": "4079 unique entries across 4079 rows",
+      "detail": "4085 unique entries across 4085 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
@@ -61,7 +61,7 @@
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 4079, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 4085, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -71,17 +71,17 @@
       "status": "ok"
     },
     {
-      "detail": "5,158 companies, refreshed 6 day(s) ago",
+      "detail": "5,158 companies, refreshed 0 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
     {
-      "detail": "2360 companies, 17,970 historical events",
+      "detail": "2361 companies, 17,970 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page companies.html is 82 KB over the wire (limit 250 KB), 2377 pages checked",
+      "detail": "heaviest page companies.html is 82 KB over the wire (limit 250 KB), 2378 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
@@ -91,17 +91,17 @@
       "status": "ok"
     },
     {
-      "detail": "737 pages with a period filter, 0 option(s) that filter to nothing",
+      "detail": "740 pages with a period filter, 0 option(s) that filter to nothing",
       "name": "Filter options match the page",
       "status": "ok"
     },
     {
-      "detail": "heaviest file events.json is 828 KB over the wire (limit 1024 KB), 3 file(s) checked",
+      "detail": "heaviest file events.json is 829 KB over the wire (limit 1024 KB), 3 file(s) checked",
       "name": "Data file weight",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-11T13:39:58+00:00",
+  "generated_at": "2026-09-12T08:01:06+00:00",
   "summary": {
     "fail": 0,
     "ok": 20,
