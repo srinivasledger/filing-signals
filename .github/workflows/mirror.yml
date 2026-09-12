@@ -1,0 +1,56 @@
+name: Mirror
+
+# An off-site copy of the whole repository - code, data, history - on a second
+# git host. Everything else here lives on GitHub alone, and GitHub is the one
+# thing this project cannot check on itself. The data is regenerable from
+# EDGAR; the code and the resumable state are not.
+#
+# Inert until a MIRROR_URL secret exists. Create an empty repository on the
+# other host, make a token with write access to it, and store
+#   https://<user>:<token>@<host>/<user>/filing-signals.git
+# as the secret. Nothing else needs changing.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Weekly as well, so a mirror configured after the fact catches up, and a
+    # push whose mirror step failed is retried without anyone noticing.
+    - cron: "41 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for a destination
+        id: dest
+        env:
+          MIRROR_URL: ${{ secrets.MIRROR_URL }}
+        run: |
+          if [ -z "$MIRROR_URL" ]; then
+            echo "No MIRROR_URL secret; nothing to mirror to. See the comment at the top of this workflow."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.dest.outputs.configured == 'true'
+        with:
+          fetch-depth: 0          # the whole history, or it is not a backup
+
+      - name: Push everything to the mirror
+        if: steps.dest.outputs.configured == 'true'
+        env:
+          MIRROR_URL: ${{ secrets.MIRROR_URL }}
+        run: |
+          # The secret holds credentials; GitHub masks it in logs, and it is
+          # only ever used as a remote, never echoed.
+          git remote add mirror "$MIRROR_URL"
+          git push --force --all mirror
+          git push --force --tags mirror
+          echo "Mirrored $(git rev-parse --short HEAD) with $(git rev-list --count HEAD) commits."

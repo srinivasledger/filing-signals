@@ -203,6 +203,35 @@ Do not archive the repository. An archived repository runs nothing.
 
 ---
 
+## Backups
+
+**The data can always be rebuilt.** Every event was derived from EDGAR, which
+is the permanent public record. If the repository were lost entirely,
+re-running the fill with `HISTORY_FROM` set would rebuild it from source in a
+few days. What is not regenerable is the code and the resumable state, and
+those are small.
+
+**Three layers, in order of how likely you are to need them:**
+
+1. **`main` cannot be force-pushed or deleted.** A repository ruleset. It
+   stops the most likely accident and does not interfere with the nightly
+   commit, which is an ordinary push.
+2. **A mirror on a second git host.** The `Mirror` workflow copies every push,
+   with full history, to wherever the `MIRROR_URL` secret points. It does
+   nothing until that secret exists. To set it up: create an empty repository
+   on Codeberg or GitLab, make an access token with write access to it, and
+   store `https://<user>:<token>@<host>/<user>/filing-signals.git` as a
+   repository secret named `MIRROR_URL`. The next push mirrors; so does every
+   Monday, in case one was missed.
+3. **Your own clone** on your computer, kept current with `git pull`. Time
+   Machine, if it is on, then holds every version of it.
+
+**Zero-effort extra:** Software Heritage archives public repositories
+permanently and needs no account. Submit the GitHub URL once at
+archive.softwareheritage.org/save and it is re-crawled on its own.
+
+---
+
 ## Running it yourself, any time
 
 The status page carries two links, and both need you to be signed in to GitHub
