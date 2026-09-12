@@ -526,20 +526,33 @@ def period_options_check(public: "pathlib.Path") -> Dict:
     for page in pages:
         html_text = page.read_text()
         select = _re.search(r'<select id="period".*?</select>', html_text, _re.S)
-        if not select:
+        chips = _re.search(r'<div class="chips" id="formchips">.*?</div>', html_text, _re.S)
+        if not select and not chips:
             continue
         checked += 1
-        offered = [v for v in _re.findall(r'<option value="([^"]+)"', select.group(0))
-                   if v != "all"]
-        # Every month any row on this page belongs to. A row can carry several.
-        present = set()
-        for attr in _re.findall(r'data-period="([^"]*)"', html_text):
-            present.update(attr.split())
-        for value in offered:
-            if not any(m.startswith(value) for m in present):
-                dead.append(f"{page.relative_to(public)}:{value}")
+        if select:
+            offered = [v for v in _re.findall(r'<option value="([^"]+)"', select.group(0))
+                       if v != "all"]
+            # Every month any row on this page belongs to. A row can carry several.
+            present = set()
+            for attr in _re.findall(r'data-period="([^"]*)"', html_text):
+                present.update(attr.split())
+            for value in offered:
+                if not any(m.startswith(value) for m in present):
+                    dead.append(f"{page.relative_to(public)}:{value}")
+        # The form chips are built the same way and can fail the same way, so
+        # they are held to the same rule rather than trusted.
+        if chips:
+            offered = [v for v in _re.findall(r'data-form="([^"]+)"', chips.group(0))
+                       if v != "all"]
+            present = set()
+            for attr in _re.findall(r'data-form="([^"]*)"', html_text):
+                present.update(attr.split())
+            for value in offered:
+                if value not in present:
+                    dead.append(f"{page.relative_to(public)}:form={value}")
 
-    detail = (f"{checked} pages with a period filter, "
+    detail = (f"{checked} pages with a period or form filter, "
               f"{len(dead)} option(s) that filter to nothing")
     if dead:
         return _check("Filter options match the page", FAIL,

@@ -109,7 +109,10 @@ cleanly, commits nothing, and the next run picks up where it left off. **These
 usually clear on their own within a day.**
 
 **(b) EDGAR changed.** A URL, a file format, or the rules about identifying
-yourself. This needs code changes.
+yourself. This needs code changes. (One kind of change is already covered: the
+daily index is read from two separate EDGAR files in two formats, so a single
+missing or corrupt file costs nothing. It is a change to *both*, or to the
+filings themselves, that needs a person.)
 
 ### What to do
 **Wait one day.** If the next scheduled run succeeds, it was (a) and it has

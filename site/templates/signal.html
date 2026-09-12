@@ -17,7 +17,7 @@ company&rsquo;s page, where the entry appears in full with its quoted filing tex
   data-total="{{ rows|length }}">{{ rows|length }} entr{{ 'y' if rows|length == 1 else 'ies' }}</span></p>
 <ul class="mini">
   {% for e in rows %}
-  <li data-size="{{ e.size_tier }}" data-period="{{ e.filed[:7] }}"><time>{{ e.filed }}</time>
+  <li data-size="{{ e.size_tier }}" data-period="{{ e.filed[:7] }}" data-form="{{ e.form|family }}"><time>{{ e.filed }}</time>
     <a href="{{ rel }}company/{{ e.cik }}.html">{{ e.company }}</a>
     <span class="muted">{{ e.form }}</span>
     {% if e.ticker %}<span class="ticker">{{ e.ticker }}</span>{% endif %}</li>

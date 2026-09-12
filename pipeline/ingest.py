@@ -110,6 +110,49 @@ def parse_index(text: str) -> List[Filing]:
     return rows
 
 
+# The daily master index carries the same rows as form.idx in a different
+# format: pipe-delimited, one line per filing, no fixed-width traps at all.
+# It is generated separately, which is the point of falling back to it.
+_MASTER_ROW = re.compile(
+    r"^(?P<cik>\d{1,10})\|(?P<company>[^|]*)\|(?P<form>[^|]*)\|"
+    r"(?P<date>\d{8})\|(?P<path>edgar/\S+)\s*$"
+)
+
+
+def parse_master_index(text: str) -> List[Filing]:
+    """Parse a daily master.idx into the same Filing rows form.idx gives."""
+    rows: List[Filing] = []
+    for line in text.splitlines():
+        m = _MASTER_ROW.match(line.strip())
+        if not m:
+            continue
+        d = m.group("date")
+        rows.append(Filing(
+            form=m.group("form").strip(),
+            company=m.group("company").strip(),
+            cik=int(m.group("cik")),
+            filed=f"{d[:4]}-{d[4:6]}-{d[6:]}",
+            path=m.group("path"),
+        ))
+    return rows
+
+
+class IndexUnusable(Exception):
+    """A daily index exists but yields no filings.
+
+    Distinct from "not published" on purpose. A file that is there and empty
+    is EDGAR mid-write or a cut-off response, and the right answer is to leave
+    the day alone and try again next run. Treating it as a day with no
+    filings would mark it processed and lose everything filed that day, and
+    treating it as a holiday would record it as one. Neither is recoverable.
+    """
+
+
+# A business day on which the SEC received fewer than this many filings has
+# not happened. Below it, the file is treated as suspect and cross-checked.
+MIN_PLAUSIBLE_ROWS = 200
+
+
 def quarter(day: dt.date) -> int:
     return (day.month - 1) // 3 + 1
 
@@ -142,20 +185,51 @@ def fetch_day(day: dt.date) -> Optional[List[Filing]]:
     """
     if day.weekday() >= 5:
         return None
-    url = (
-        f"{config.DAILY_INDEX}/{day.year}/QTR{quarter(day)}/"
-        f"form.{day.strftime('%Y%m%d')}.idx"
-    )
-    try:
-        body = fetch.get(url, accept_404=True)
-    except fetch.SECBlocked:
-        if sec_reachable():
-            log.info("no index published for %s (holiday or not yet released)", day)
-            return None
-        raise
-    if body is None:
+
+    # Two files, two formats, generated separately. form.idx is read first;
+    # master.idx is read when form.idx is missing, or when what it yields is
+    # too small to be a real business day - EDGAR serving a file it is still
+    # writing, or a response cut off part-way. Before this, a truncated
+    # form.idx was parsed as far as it went and the day was marked processed
+    # with whatever filings happened to precede the cut, permanently.
+    stem = f"{config.DAILY_INDEX}/{day.year}/QTR{quarter(day)}/"
+    tag = day.strftime("%Y%m%d")
+    sources = (("form", f"{stem}form.{tag}.idx", parse_index),
+               ("master", f"{stem}master.{tag}.idx", parse_master_index))
+
+    best: Optional[List[Filing]] = None
+    existed = False
+    for name, url, parse in sources:
+        body = _read_index(url, day)
+        if body is None:
+            continue
+        existed = True
+        rows = parse(body)
+        log.info("%s: %d filings in %s index", day, len(rows), name)
+        if best is None or len(rows) > len(best):
+            best = rows
+        if len(best) >= MIN_PLAUSIBLE_ROWS:
+            break                                 # no need to read the other
+
+    if not existed:
         log.info("no index for %s (holiday or not yet published)", day)
         return None
-    rows = parse_index(body)
-    log.info("%s: %d filings in index", day, len(rows))
-    return rows
+    if not best:
+        raise IndexUnusable(f"{day}: an index exists but yields no filings")
+    if len(best) < MIN_PLAUSIBLE_ROWS:
+        # Both files agree it is tiny. A genuinely quiet day, then - but say
+        # so, because the alternative explanation is a bad day for EDGAR.
+        log.warning("%s: only %d filings across both indexes", day, len(best))
+    return best
+
+
+def _read_index(url: str, day: dt.date) -> Optional[str]:
+    """One index file, or None when it is not there. A refusal that is really
+    a block is re-raised; a refusal for a file that simply does not exist is
+    the ordinary answer for a holiday."""
+    try:
+        return fetch.get(url, accept_404=True)
+    except fetch.SECBlocked:
+        if sec_reachable():
+            return None
+        raise

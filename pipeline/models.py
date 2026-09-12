@@ -34,6 +34,35 @@ SIGNAL_LABELS = {
     MATERIAL_WEAKNESS: "Material weakness",
 }
 
+# Filing forms grouped for a filter. Seventeen distinct form types exist in
+# the record and nobody wants seventeen chips; an amendment belongs with the
+# report it amends, the five kinds of 12b-25 notice are one thing, and a staff
+# letter and the company's reply are one conversation. Order is display order.
+FORM_FAMILIES = [
+    ("8-K", "8-K"),
+    ("10-K", "10-K"),
+    ("10-Q", "10-Q"),
+    ("20-F", "20-F / 40-F"),
+    ("NT", "Late notice (NT)"),
+    ("LETTER", "Comment letter"),
+]
+FORM_FAMILY_LABELS = dict(FORM_FAMILIES)
+FORM_FAMILY_ORDER = [k for k, _ in FORM_FAMILIES]
+
+
+def form_family(form: str) -> str:
+    """The family a form type belongs to; an unknown form is its own."""
+    f = (form or "").upper().strip()
+    if f.startswith("NT "):
+        return "NT"
+    if f in ("UPLOAD", "CORRESP"):
+        return "LETTER"
+    base = f.split("/")[0].strip()          # 10-K/A -> 10-K
+    if base in ("20-F", "40-F"):
+        return "20-F"
+    return base or "OTHER"
+
+
 SIGNAL_BLURBS = {
     RESTATEMENT: (
         "The company told investors that previously issued financial "

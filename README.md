@@ -224,6 +224,14 @@ reasoning about the code. Each one changed the implementation.
 - **The daily index is not whitespace-separated.** Form types contain spaces
   (`DEF 14A`, `NT 10-K/A`), and the column header spans two lines and does not
   align with the data. Parse right-anchored.
+- **A daily index can exist and be wrong.** EDGAR serves the file while it is
+  still writing it, and a response can be cut off. A truncated `form.idx`
+  parsed as far as it went and marked the day processed with whatever
+  preceded the cut — nothing failed, and the day was never looked at again.
+  The same rows exist in `master.idx`, a pipe-delimited file generated
+  separately; it is read whenever `form.idx` is missing or implausibly small,
+  and the larger result wins. A business day that yields nothing from either
+  is left untouched for the next run rather than recorded as anything.
 
 ### Reading the disclosures
 

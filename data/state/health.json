@@ -81,7 +81,7 @@
       "status": "ok"
     },
     {
-      "detail": "heaviest page companies.html is 82 KB over the wire (limit 250 KB), 2378 pages checked",
+      "detail": "heaviest page companies.html is 85 KB over the wire (limit 250 KB), 2380 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
@@ -91,7 +91,7 @@
       "status": "ok"
     },
     {
-      "detail": "740 pages with a period filter, 0 option(s) that filter to nothing",
+      "detail": "740 pages with a period or form filter, 0 option(s) that filter to nothing",
       "name": "Filter options match the page",
       "status": "ok"
     },

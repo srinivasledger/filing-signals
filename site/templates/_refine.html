@@ -29,6 +29,24 @@
     </div>
     {% endif %}
 
+    {# Only offered when the page holds more than one kind of form; a single
+       chip is a label, not a filter. A company page keeps it, because one
+       company's 10-K and its 8-Ks are exactly the distinction someone there
+       might want. #}
+    {% if forms and forms|length > 1 %}
+    <div class="refine-group">
+      <span class="filter-label">Form</span>
+      <div class="chips" id="formchips">
+        <button class="chip is-on" data-form="all">Any</button>
+        {% for key, label in forms %}
+        <button class="chip" data-form="{{ key }}">{{ label }}</button>
+        {% endfor %}
+      </div>
+      <span class="filter-note">An amendment is grouped with the report it
+      amends; every 12b-25 notice is one group</span>
+    </div>
+    {% endif %}
+
     {# Size and the routine toggle make no sense on one company's page, so a
        caller can ask for the period control alone. #}
     {% if not period_only %}

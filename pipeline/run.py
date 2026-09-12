@@ -288,6 +288,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                 break
         try:
             events, stats = process_day(day)
+        except ingest.IndexUnusable as exc:
+            # Leave the day exactly as it was: not processed, not a holiday.
+            # The next run asks again, and EDGAR will have finished writing.
+            log.warning("%s; leaving the day for the next run", exc)
+            continue
         except fetch.SECBlocked as exc:
             # Expected failure mode, not a crash. Stop cleanly; the next run
             # picks up from the same place.

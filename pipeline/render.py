@@ -19,10 +19,11 @@ from xml.sax.saxutils import escape as xml_escape
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import charts, config, health as health_mod, preview, publish, size as size_mod
-from .models import (AUDITOR_CHANGE, COMMENT_LETTER, GOING_CONCERN, LATE_FILING,
+from .models import (AUDITOR_CHANGE, COMMENT_LETTER, FORM_FAMILY_LABELS,
+                     FORM_FAMILY_ORDER, GOING_CONCERN, LATE_FILING,
                      MATERIAL_WEAKNESS, OFFICER_DEPARTURE, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_BLURBS,
-                     SIGNAL_LABELS, Event, mid_sentence)
+                     SIGNAL_LABELS, Event, form_family, mid_sentence)
 
 log = logging.getLogger(__name__)
 
@@ -236,6 +237,7 @@ def _letter_stats(events):
             # A review runs across months. Filtering on the closing month
             # alone hid a thread from every month it was actually open in.
             "periods": sorted({e.filed[:7] for e in rows}, reverse=True),
+            "families": sorted({form_family(e.form) for e in rows}),
         })
     threaded.sort(key=lambda t: t["closed"], reverse=True)
 
@@ -335,6 +337,16 @@ def _periods(months):
     return [(y, by_year[y]) for y in sorted(by_year, reverse=True)]
 
 
+def _forms(families) -> List[tuple]:
+    """The form families a page actually holds, as (key, label), in display
+    order. Same rule as _periods: an option that filters the page to nothing
+    is worse than no option."""
+    present = {f for f in families if f}
+    out = [(k, FORM_FAMILY_LABELS[k]) for k in FORM_FAMILY_ORDER if k in present]
+    out += [(k, k) for k in sorted(present) if k not in FORM_FAMILY_LABELS]
+    return out
+
+
 def _company_directory(by_company) -> List[Dict]:
     """Every company, with enough to find and judge it before clicking.
 
@@ -358,6 +370,10 @@ def _company_directory(by_company) -> List[Dict]:
             # meant a company with entries in May and August was hidden by the
             # May filter while its own row displayed a May date.
             "periods": sorted({d[:7] for d in dates}, reverse=True),
+            "families": [k for k in FORM_FAMILY_ORDER
+                         if any(form_family(e.form) == k for e in evs)]
+                        + sorted({form_family(e.form) for e in evs}
+                                 - set(FORM_FAMILY_ORDER)),
             # Ordered as the signals page orders them, so the badges read the
             # same way everywhere.
             "signals": [k for k in SIGNAL_ORDER
@@ -467,6 +483,7 @@ def _env() -> Environment:
     # letter headlines. Lowercasing wholesale ate the acronym in both places.
     env.filters["mid_sentence"] = mid_sentence
     env.filters["evidence"] = _evidence_value
+    env.filters["family"] = form_family
     env.filters["figure"] = figure
     env.filters["exact"] = exact
     return env
@@ -679,6 +696,7 @@ def build(second_pass: bool = False) -> None:
         env.get_template("index.html").render(
             rel="", page_path="", events=home_events,
             periods=_periods(e.filed[:7] for e in home_events),
+            forms=_forms(form_family(e.form) for e in home_events),
             total_events=len(events),
             companies=len({e.cik for e in events}),
             situations=situations, routine_n=routine_n,
@@ -719,6 +737,7 @@ def build(second_pass: bool = False) -> None:
                 rel="../", page_path=f"signals/{key}.html", key=key, label=label,
                 blurb=SIGNAL_BLURBS.get(key, ""), total=len(rows),
                 periods=_periods(e.filed[:7] for e in rows),
+                forms=_forms(form_family(e.form) for e in rows),
                 years=sorted(by_year.items(), reverse=True), **common,
             ),
         )
@@ -751,6 +770,8 @@ def build(second_pass: bool = False) -> None:
                               # a span, so it belongs to every month it covers.
                               "periods": sorted({st["event"].filed[:7]
                                                  for st in seq}, reverse=True),
+                              "families": sorted({form_family(st["event"].form)
+                                                  for st in seq}),
                               "steps": seq})
         _write(
             config.PUBLIC / "company" / f"{cik}.html",
@@ -759,7 +780,8 @@ def build(second_pass: bool = False) -> None:
                 ticker=next((e.ticker for e in evs if e.ticker), ""),
                 sic_desc=next((e.sic_desc for e in evs if e.sic_desc), ""),
                 events=sorted(evs, key=_rank, reverse=True), sequence=seq,
-                periods=_periods(e.filed[:7] for e in evs), **common,
+                periods=_periods(e.filed[:7] for e in evs),
+                forms=_forms(form_family(e.form) for e in evs), **common,
             ),
         )
     sequences.sort(key=lambda s: (-len(s["steps"]), s["company"]))
@@ -771,6 +793,8 @@ def build(second_pass: bool = False) -> None:
                sequences=sequences[:MAX_SEQUENCES],
                periods=_periods(m for s in sequences[:MAX_SEQUENCES]
                                 for m in s["periods"]),
+               forms=_forms(f for s in sequences[:MAX_SEQUENCES]
+                            for f in s["families"]),
                sequences_total=len(sequences), history=publish.load_history(),
                rates_chart=charts.rates_chart(
                    publish.load_history().get("rows", [])),
@@ -784,6 +808,8 @@ def build(second_pass: bool = False) -> None:
                    rel="", page_path="letters.html",
                    periods=_periods(m for t in letter_stats["shown"]
                                     for m in t["periods"]),
+                   forms=_forms(f for t in letter_stats["shown"]
+                                for f in t["families"]),
                    **letter_stats, **common))
 
     directory = _company_directory(by_company)
@@ -792,6 +818,7 @@ def build(second_pass: bool = False) -> None:
                rel="", page_path="companies.html",
                companies=directory,
                periods=_periods(m for c in directory for m in c["periods"]),
+               forms=_forms(f for c in directory for f in c["families"]),
                signal_label_of=SIGNAL_LABELS, **common))
 
     _write(config.PUBLIC / "auditors.html",

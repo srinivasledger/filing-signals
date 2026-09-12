@@ -12,6 +12,7 @@
   var q = document.getElementById('q');
   var chips = document.getElementById('chips');
   var sizeChips = document.getElementById('sizechips');
+  var formChips = document.getElementById('formchips');
   var count = document.getElementById('count');
   var noresults = document.getElementById('noresults');
 
@@ -20,6 +21,7 @@
 
   var activeSignal = 'all';
   var activePeriod = 'all';
+  var activeForm = 'all';
   var activeSizes = null;              // null means any size
   // Routine notices are hidden by default. On a deadline week they were 120 of
   // 254 events and buried the restatements and auditor changes.
@@ -39,6 +41,10 @@
     return (c.dataset.period || '').split(' ');
   });
   var sizes = cards.map(function (c) { return c.dataset.size || ''; });
+  // A company or a sequence spans several forms, so this is a list too.
+  var forms = cards.map(function (c) {
+    return (c.dataset.form || '').split(' ');
+  });
   var routine = cards.map(function (c) { return c.dataset.routine === 'yes'; });
 
   function apply() {
@@ -55,7 +61,8 @@
       var okPeriod = activePeriod === 'all' || periods[i].some(function (p) {
         return p.indexOf(activePeriod) === 0;
       });
-      var show = okSignal && okSize && okTerm && okRoutine && okPeriod;
+      var okForm = activeForm === 'all' || forms[i].indexOf(activeForm) !== -1;
+      var show = okSignal && okSize && okTerm && okRoutine && okPeriod && okForm;
       card.hidden = !show;
       if (show) shown++;
     });
@@ -79,6 +86,8 @@
         var okSignal = activeSignal === 'all' || row.s === activeSignal;
         var okSize = !activeSizes || activeSizes.indexOf(row.z) !== -1;
         var okRoutine = showRoutine || !row.r;
+        // Chart rows carry no form, so a form filter is not applied to the
+        // chart - the same reasoning as the search box above.
         return okSignal && okSize && okRoutine;
       }, describeScope());
     }
@@ -118,7 +127,16 @@
       var sb = sizeChips.querySelector('.chip.is-on');
       if (sb && sb.dataset.size !== 'all') parts.push(sb.textContent.trim());
     }
-    if (showRoutine) parts.push('routine notices shown');
+    if (activeForm !== 'all' && formChips) {
+      var fb = formChips.querySelector('.chip.is-on');
+      if (fb) parts.push(fb.textContent.trim());
+    }
+    // Only where there is a toggle to have set it. On a page with none, the
+    // routine entries are simply shown, and saying so labels a choice nobody
+    // made.
+    if (showRoutine && document.getElementById('routinechips')) {
+      parts.push('routine notices shown');
+    }
     refineActive.textContent = parts.length ? parts.join(' \u00b7 ') : '';
     refineActive.classList.toggle('is-set', parts.length > 0);
   }
@@ -229,6 +247,7 @@
     var v = btn.dataset.size;
     activeSizes = v === 'all' ? null : v.split(',');
   });
+  wire(formChips, function (btn) { activeForm = btn.dataset.form; });
 
   apply();
 })();
