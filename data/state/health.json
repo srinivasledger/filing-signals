@@ -96,7 +96,7 @@
       "status": "ok"
     },
     {
-      "detail": "heaviest file events.json is 829 KB over the wire (limit 1024 KB), 3 file(s) checked",
+      "detail": "heaviest file events.json is 829 KB over the wire (limit 4096 KB), 6 file(s) checked",
       "name": "Data file weight",
       "status": "ok"
     }

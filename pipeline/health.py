@@ -435,10 +435,12 @@ def _size_check(today: dt.date) -> Dict:
 # gzipped, so this is measured over the wire, not on disk. 250 KB is generous:
 # the home page is ~39 KB today and the whole record page ~8 KB.
 MAX_PAGE_WIRE_BYTES = 250 * 1024
-# events.json is the whole record in one response and is meant to be fetched
-# by other people's scripts. 1 MB gzipped is roughly five times today's size:
-# far enough away not to nag, close enough to arrive before anyone is annoyed.
-MAX_DATA_WIRE_BYTES = 1024 * 1024
+# The data files are one calendar year each, and a year of this record is
+# about 1.3 MB over the wire. 4 MB is three times that: a file only reaches
+# it if a year triples, or the schema has bloated - either of which is worth
+# knowing about. A bulk download is not a page; the 250 KB above is for
+# things people read in a browser.
+MAX_DATA_WIRE_BYTES = 4 * 1024 * 1024
 
 
 def page_weight_check(public: "pathlib.Path") -> Dict:

@@ -2,7 +2,7 @@
 
 **Live: <https://srinivasledger.github.io/filing-signals>** ·
 [RSS](https://srinivasledger.github.io/filing-signals/feed.xml) ·
-[JSON](https://srinivasledger.github.io/filing-signals/events.json)
+[JSON](https://srinivasledger.github.io/filing-signals/events.json) (one file per year — see [events-index.json](https://srinivasledger.github.io/filing-signals/events-index.json))
 
 > **If it has stopped, or a run has gone red:** see [RUNBOOK.md](RUNBOOK.md) — what each kind of failure
 > means, and what to do about it. No code required for most of them.

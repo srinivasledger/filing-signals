@@ -123,3 +123,35 @@ def test_every_headline_figure_carries_its_exact_value():
         value = re.search(r">([^<]*)</dd>", dd).group(1)
         if re.fullmatch(r"[\d,.]+[KMBT]?", value):
             assert "title=" in dd, f"{label} shows {value} with no exact value"
+
+
+# --- the JSON API is one file per year -----------------------------------------
+def test_the_year_files_partition_the_record_and_events_json_is_the_current_year():
+    """A single events.json would pass any sensible size within months of the
+    fill completing and never stop growing. Split by the year of the filing
+    day, with events.json holding the year of the newest one - so today it is
+    everything, and nothing anyone fetches changes until January."""
+    import json
+    from pathlib import Path
+
+    public = Path(__file__).resolve().parent.parent / "public"
+    if not (public / "events-index.json").exists():
+        import pytest
+        pytest.skip("site not built")
+
+    index = json.loads((public / "events-index.json").read_text())
+    years = {y["year"]: json.loads((public / y["file"]).read_text())
+             for y in index["years"]}
+    current = json.loads((public / "events.json").read_text())
+
+    # every event in exactly one year file, filed in that year
+    seen = set()
+    for year, blob in years.items():
+        for e in blob["events"]:
+            assert e["filed"].startswith(year), (year, e["filed"])
+            assert e["id"] not in seen, "an event appears in two year files"
+            seen.add(e["id"])
+    assert len(seen) == index["total"]
+
+    # events.json is byte-for-byte the current year's file
+    assert current == years[index["current"]["year"]]

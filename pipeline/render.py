@@ -844,13 +844,35 @@ def build(second_pass: bool = False) -> None:
                analysis_on=analysis_on, health=health, **common))
 
     # --- machine-readable ---
-    _write(config.PUBLIC / "events.json",
-           json.dumps({
-               "generated_at": built_at,
-               "last_filing_day": state.get("last_processed"),
-               "count": len(events),
-               "events": [e.to_dict() for e in events],
-           }, indent=2))
+    #
+    # One file per calendar year, so no file grows without bound: a year of
+    # this record is about 1.3 MB over the wire, and a single file holding
+    # every year would pass that within months and never stop. events.json
+    # stays where it has always been and holds the year of the newest filing
+    # day - which today is everything, so nothing anyone fetches changes
+    # until January, when the previous year moves to its dated file.
+    # events-index.json says what exists.
+    def _blob(rows):
+        return json.dumps({
+            "generated_at": built_at,
+            "last_filing_day": state.get("last_processed"),
+            "count": len(rows),
+            "events": [e.to_dict() for e in rows],
+        }, indent=2)
+
+    by_year_all: Dict[str, List[Event]] = defaultdict(list)
+    for e in events:
+        by_year_all[e.filed[:4]].append(e)
+    current_year = (state.get("last_processed") or built_at)[:4]
+    for year, rows in sorted(by_year_all.items()):
+        _write(config.PUBLIC / f"events-{year}.json", _blob(rows))
+    _write(config.PUBLIC / "events.json", _blob(by_year_all.get(current_year, [])))
+    _write(config.PUBLIC / "events-index.json", json.dumps({
+        "current": {"year": current_year, "file": "events.json"},
+        "years": [{"year": y, "file": f"events-{y}.json", "count": len(r)}
+                  for y, r in sorted(by_year_all.items(), reverse=True)],
+        "total": len(events),
+    }, indent=2))
     # A compact company index so the search box can reach the whole record.
     # The home page holds a window, so searching it found only what happened
     # to be on the page: Sandisk sat at position 161 and simply returned
