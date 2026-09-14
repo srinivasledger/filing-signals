@@ -68,8 +68,33 @@ def tier_for(float_usd: Optional[float]) -> str:
     return TIER_SMALL
 
 
-def _periods() -> list:
-    return [f"CY{y}Q{q}I" for y in (2024, 2025, 2026) for q in (1, 2, 3, 4)]
+# How far back each frame union reaches, in calendar quarters, counted from the
+# most recent completed quarter-end. Float is measured once a year at each
+# filer's own fiscal mid-year, so three years of quarter-ends holds everyone;
+# assets and share counts are on every 10-Q and 10-K, so six quarters is ample
+# to verify a float against.
+FLOAT_QUARTERS = 12
+CHECK_QUARTERS = 6
+
+
+def _quarter_ends(n: int, today) -> list:
+    """The `n` most recent completed calendar quarter-ends, newest first, as
+    XBRL frame periods - CY2026Q2I is the instant 30 June 2026.
+
+    Derived from the date rather than written down. The list used to read
+    (2024, 2025, 2026): in 2027 it would have gone on asking for 2026's frames
+    and never for 2027's, so the floats reported on 2027's 10-Ks would never
+    have been seen and every company's size would have frozen at its last
+    2026 figure - silently, because the cached index would still have loaded.
+    """
+    year, quarter = today.year, (today.month - 1) // 3   # quarters done this year
+    out = []
+    for _ in range(n):
+        if quarter == 0:
+            year, quarter = year - 1, 4
+        out.append(f"CY{year}Q{quarter}I")
+        quarter -= 1
+    return out
 
 
 def _union_frame(tag: str, periods, unit: str = "USD") -> Dict[str, float]:
@@ -97,7 +122,7 @@ def _union_frame(tag: str, periods, unit: str = "USD") -> Dict[str, float]:
     return out
 
 
-def build_index() -> Dict[str, float]:
+def build_index(today=None) -> Dict[str, float]:
     """CIK (as string) -> public float in USD, verified against total assets.
 
     Filers make units errors in their own XBRL, and they are not detectable by
@@ -107,15 +132,17 @@ def build_index() -> Dict[str, float]:
     NVIDIA, 3,459x for Universal Display.
 
     Total assets come from a second frame union rather than a request per
-    company, so verifying ~5,900 filers costs five extra requests, not 5,900.
+    company, so verifying ~5,900 filers costs a dozen extra requests, not
+    5,900.
     """
-    floats = _union_frame("dei/EntityPublicFloat", _periods())
-    assets = _union_frame("us-gaap/Assets",
-                          ["CY2024Q4I", "CY2025Q2I", "CY2025Q3I",
-                           "CY2025Q4I", "CY2026Q1I"])
+    import datetime as dt
+
+    today = today or dt.date.today()
+    floats = _union_frame("dei/EntityPublicFloat",
+                          _quarter_ends(FLOAT_QUARTERS, today))
+    assets = _union_frame("us-gaap/Assets", _quarter_ends(CHECK_QUARTERS, today))
     shares = _union_frame("dei/EntityCommonStockSharesOutstanding",
-                          ["CY2025Q2I", "CY2025Q3I", "CY2025Q4I", "CY2026Q1I"],
-                          unit="shares")
+                          _quarter_ends(CHECK_QUARTERS, today), unit="shares")
 
     clean: Dict[str, float] = {}
     rejected = 0
@@ -181,7 +208,7 @@ def load_or_refresh(store_path, today) -> Dict[str, float]:
         return stored
 
     try:
-        rebuilt = build_index()
+        rebuilt = build_index(today)
     except fetch.SECBlocked:
         raise
     except Exception as exc:                     # noqa: BLE001
