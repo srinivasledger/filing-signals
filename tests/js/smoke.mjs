@@ -137,11 +137,14 @@ for (const name of ["chart", "filter", "theme", "currency"]) {
     const node = el({dataset});
     const notice = el();
     const gap = el();
+    const lead = el();
     gap.textContent = "current";               // what a build made while current says
+    lead.textContent = "This dataset is current.";
     for (const id of Object.keys(byId)) delete byId[id];
     byId.currency = node;
     byId["stale-notice"] = notice;
     byId["stale-gap"] = gap;
+    byId["stale-lead"] = lead;
     // Freeze "now". toLocaleString is what currency.js uses to reach New York.
     global.Date = class extends RealDate {
       constructor(...args) {
@@ -157,7 +160,7 @@ for (const name of ["chart", "filter", "theme", "currency"]) {
       global.Date = RealDate;
     }
     return {text: node.textContent, noticeHidden: notice.hidden,
-            gap: gap.textContent};
+            gap: gap.textContent, lead: lead.textContent};
   }
 
   // Wed 9 Sep, 10:00 in New York. EDGAR has published through Tue 8 Sep.
@@ -182,6 +185,8 @@ for (const name of ["chart", "filter", "theme", "currency"]) {
   // own sentence. Revealed unchanged it would read "not current ... current".
   check(`the revealed notice carries the live gap, not the build's (got "${r.gap}")`,
         r.gap === "4 business days behind");
+  check(`and its verdict agrees with its figure (got "${r.lead}")`,
+        r.lead === "This dataset is not current.");
 
   // Past 23:00 ET the day's own index is out, so it counts from then.
   r = withClock("9/9/2026, 11:30:00 PM",

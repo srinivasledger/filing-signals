@@ -56,7 +56,10 @@
   // visit.
   var notice = document.getElementById('stale-notice');
   if (notice) notice.hidden = behind <= 1;
-  // The notice's own figure, or it is revealed still reading "current".
+  // The notice's own verdict and figure, or it is revealed still reading
+  // "current" from the build that made it.
+  var lead = document.getElementById('stale-lead');
+  if (lead) lead.textContent = 'This dataset is ' + (behind <= 1 ? '' : 'not ') + 'current.';
   var gap = document.getElementById('stale-gap');
   if (gap) gap.textContent = words;
   if (mark) {

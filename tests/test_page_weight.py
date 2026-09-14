@@ -77,6 +77,48 @@ def test_a_stale_dataset_is_not_reported_as_fine():
     assert next(c for c in fresh if c["name"] == "Pipeline is current")["status"] == health.OK
 
 
+def test_the_stale_notice_never_contradicts_itself():
+    """The notice is rendered on every build and hidden while the data is
+    current. A crawler that ignores `hidden` read "This dataset is not
+    current ... 2026-09-11, current" and reported it, fairly. Whatever state
+    the page is built in, the verdict and the figure have to agree."""
+    import re
+
+    from pipeline.render import _env
+
+    tmpl = _env().get_template("status.html")
+    base = dict(rel="", page_path="status.html", asset_v={}, site_title="t",
+                site_url="https://x", repo_url="https://r", site_tagline="",
+                status_state="ok", status_label="All 21 checks passing",
+                built_at="2026-09-14 07:57 UTC", data_through="2026-09-11",
+                closed_days="", event_total=1, hidden_evidence=set(), blurbs={},
+                signal_labels=[], health={"checks": [], "summary": {"overall": "ok"}},
+                runs=[], last_run="2026-09-11", last_success="2026-09-12 07:53 UTC",
+                og_description="", scanned=0, candidates=0, flag_rate="0%",
+                total_events=1, situations=0, routine_n=0, companies=0, days=0,
+                periods=[], forms=[], sizes=[])
+
+    def notice(**over):
+        html = tmpl.render(**{**base, **over})
+        m = re.search(r'<p class="notice" id="stale-notice"(?P<attrs>[^>]*)>(?P<body>.*?)</p>',
+                      html, re.S)
+        assert m, "notice missing"
+        body = re.sub(r"<[^>]+>", "", m["body"])                 # tags out
+        body = re.sub(r"\s+", " ", body).replace(" .", ".")       # then whitespace
+        return m["attrs"], body.strip()
+
+    attrs, text = notice(stale=False, currency_label="current")
+    assert "hidden" in attrs
+    assert text.startswith("This dataset is current. The newest filing day it holds "
+                           "is 2026-09-11, which is current."), text
+    assert "not current" not in text
+
+    attrs, text = notice(stale=True, currency_label="3 business days behind")
+    assert "hidden" not in attrs
+    assert text.startswith("This dataset is not current. The newest filing day it "
+                           "holds is 2026-09-11, which is 3 business days behind."), text
+
+
 # --- headline figures cannot outgrow their box -------------------------------
 def test_a_figure_stays_short_however_large_it_gets():
     """Filings scanned climbs by roughly 5,000 a day. Left as a raw integer
