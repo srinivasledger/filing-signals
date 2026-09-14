@@ -29,10 +29,16 @@ events means.</p>
 
 {# Always rendered, hidden unless the data really is behind, so the script can
    reveal or hide it on the reader's own clock. Without JavaScript it says what
-   the build found, which is the honest fallback. #}
+   the build found, which is the honest fallback.
+
+   The gap has its own element because the script rewrites it. It used to be
+   baked into the sentence, so a page built while current and read days later,
+   after the scans had stopped, was revealed still saying "..., current" one
+   clause after "This dataset is not current." #}
 <p class="notice" id="stale-notice"{% if not stale %} hidden{% endif %}>
 <strong>This dataset is not current.</strong> The newest
-filing day it holds is {{ last_run }}, {{ currency_label|lower }}. The pipeline
+filing day it holds is {{ last_run }}, which is
+<span id="stale-gap">{{ currency_label|lower }}</span>. The pipeline
 fails closed: a run that trips an integrity check commits nothing, so what you
 see is the last state that passed every check rather than a partial or
 doubtful one. The <a href="{{ repo_url }}/actions">workflow history</a> shows

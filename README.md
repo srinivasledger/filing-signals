@@ -92,12 +92,15 @@ daily index ──► filing headers ──► universe filter ──┬─► 8
    site ◄── render ◄── self-checks ◄── follow-on rates ◄── size index ◄── optional AI
 ```
 
-Sixteen **self-checks** run after every pass and publish to the
+A set of **self-checks** runs after every pass and publishes to the
 [status page](https://srinivasledger.github.io/filing-signals/status.html)
 rather than to a log — that every entry cites a filing, that comparisons name
 what they were compared against, that re-running never duplicates, that a
-quote never contradicts the state it is filed under, and that no page has
-grown heavy enough to feel slow. They have caught real regressions.
+quote never contradicts the state it is filed under, that every page describes
+the same build of the same data, and that no page has grown heavy enough to
+feel slow. The status page lists the current set; the count is not repeated
+here because it has drifted every time it was. They have caught real
+regressions, and a failing one commits nothing.
 
 ## Deployment
 
@@ -105,17 +108,23 @@ Served directly from **GitHub Pages** at `srinivasledger.github.io`, built and
 deployed by the workflow itself — there is no external host and no custom
 domain in front of it.
 
-Two workflows deploy. **Daily filing scan** runs at **03:30 UTC Tuesday to
-Saturday** — 23:30 ET on weekday evenings — or on demand via *Actions → Daily
-filing scan → Run workflow*, which accepts a `days` input to reprocess recent
-dates. The time is set by when EDGAR publishes the day's index, about 22:00 ET,
-**not** by the 17:30 ET filing cutoff: an earlier schedule asked for an index
-that did not exist yet and left every day to be backfilled by the next run.
+Two workflows deploy. **Daily filing scan** is scheduled **twice a night,
+Tuesday to Saturday**: a first attempt shortly after EDGAR publishes the day's
+index (about 22:00 ET — the schedule follows that, **not** the 17:30 ET filing
+cutoff; an earlier one asked for an index that did not exist yet and left every
+day to be backfilled by the next run), and a second attempt some hours later.
+The second exists because GitHub starts scheduled jobs late — measured at four
+to twenty hours after the requested minute — which on a bad night pushed the
+one attempt past the point of being that night's. The scan is safe to repeat:
+a second attempt on a day already done finds nothing new and changes nothing.
+The exact minutes live in `.github/workflows/daily.yml` and are not repeated
+here. It also runs on demand via *Actions → Daily filing scan → Run workflow*,
+which accepts a `days` input to reprocess recent dates.
 **Publish site** runs on any push touching `site/` or `pipeline/`, rebuilding
 from the data already committed.
 
-The second exists because the scan used to be the only thing that deployed, so a
-template fix sat unpublished until the next night — a page could be committed,
+The publish workflow exists because the scan used to be the only thing that
+deployed, so a template fix sat unpublished until the next night — a page could be committed,
 tested and still 404 on the live site. It never contacts SEC, so it adds no load
 there and a block cannot affect it. Both share one concurrency group: two Pages
 deployments must never run at once, and a push landing mid-scan queues behind
@@ -402,11 +411,11 @@ derived from EDGAR.
 
 ## Known limitations
 
-- **History is being filled in.** `HISTORY_FROM` is set to 2026-01-01, and
-  each nightly run adds twelve older days until it reaches that date, then
-  stops. Until it finishes, counts describe a partial period. This runs
-  unattended rather than as one long job because it cannot exceed a job time
-  limit that way, and a blocked or failed night simply resumes the next night.
+- **The record starts on 2 January 2026.** `HISTORY_FROM` is 2026-01-01 and
+  the fill that worked backwards to it — twelve older days a night, so no
+  single run could hit a job time limit — reached it in September 2026 and
+  stopped. Every filing day from then on is held; nothing before it is, and
+  nothing will be unless `HISTORY_FROM` is moved earlier.
 - **Revenue recognition is beta** and remains the signal most likely to produce
   a wrong entry, being the only one resting on text similarity.
 - **Section extraction depends on filing structure.** Unusual formatting causes

@@ -402,8 +402,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     # publishing something it should not.
     #
     # An unhandled exception exits non-zero on its own and still fails.
-    failed = [c for c in (report or {}).get("checks", [])
-              if c.get("status") == "fail"]
+    #
+    # Read back from disk, not from `report`: the build appends checks that
+    # can only be measured on the finished pages (filter options, firm labels,
+    # that every page describes the same build), and it saves them there. Judged
+    # from `report` alone, one of those failing turned the status badge red and
+    # deployed anyway - the page promising "commits nothing" under a failure it
+    # had just shipped.
+    checks = (report or {}).get("checks", [])
+    if not args.no_render:
+        try:
+            checks = publish.load_health().get("checks", checks)
+        except Exception as exc:                 # noqa: BLE001
+            log.warning("could not re-read health after render: %s", exc)
+    failed = [c for c in checks if c.get("status") == "fail"]
     if failed:
         for c in failed:
             log.error("integrity check failed: %s - %s", c["name"], c["detail"])

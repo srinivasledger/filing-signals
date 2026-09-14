@@ -567,6 +567,13 @@ def build(second_pass: bool = False) -> None:
     if static_out.exists():
         shutil.rmtree(static_out)
     shutil.copytree(config.STATIC, static_out)
+    # Pages are overwritten, never removed: a company whose last entry was
+    # dropped kept its page from the build that made it, stamped with that
+    # build's date and total. The workflow starts from an empty directory so
+    # the live site never had one, but a local build did, and the output has to
+    # be one build wherever it is made.
+    for stale in config.PUBLIC.rglob("*.html"):
+        stale.unlink()
 
     # Ordered by when each run actually executed, newest first. Reversing the
     # append order interleaved the nightly scan with the history fill, which
@@ -622,6 +629,7 @@ def build(second_pass: bool = False) -> None:
         # one page nobody visits when they have no reason to suspect anything.
         "data_through": state.get("last_processed") or "",
         "closed_days": " ".join(state.get("no_filings") or []),
+        "event_total": len(events),
         # Deliberately not here. Every page renders a different slice, so each
         # one passes the months it actually holds.
         "signal_labels": [(k, SIGNAL_LABELS[k]) for k in SIGNAL_ORDER],
@@ -903,7 +911,8 @@ def build(second_pass: bool = False) -> None:
             built = [health_mod.page_weight_check(config.PUBLIC),
                      health_mod.firm_labels_check(config.PUBLIC),
                      health_mod.period_options_check(config.PUBLIC),
-                     health_mod.data_weight_check(config.PUBLIC)]
+                     health_mod.data_weight_check(config.PUBLIC),
+                     health_mod.pages_agree_check(config.PUBLIC)]
             for c in built:
                 log.info("%s", c["detail"])
             names = {c["name"] for c in built}
@@ -914,8 +923,19 @@ def build(second_pass: bool = False) -> None:
                 health["summary"] = health_mod._summarise(checks)
                 publish.save_health(health)
                 build(second_pass=True)
+            # The second pass is the one that ships, so the one check whose
+            # answer could change between passes is asked again of the final
+            # output. A disagreement here is saved for the exit code to see;
+            # it is not rendered onto a page, because nothing is deploying.
+            final = health_mod.pages_agree_check(config.PUBLIC)
+            if final["status"] != health_mod.OK:
+                log.error("%s: %s", final["name"], final["detail"])
+                health["checks"] = [c for c in health.get("checks", [])
+                                    if c["name"] != final["name"]] + [final]
+                health["summary"] = health_mod._summarise(health["checks"])
+                publish.save_health(health)
         except Exception as exc:                 # noqa: BLE001
-            log.warning("page weight check did not run: %s", exc)
+            log.warning("post-render checks did not run: %s", exc)
 
 
 if __name__ == "__main__":

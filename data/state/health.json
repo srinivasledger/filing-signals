@@ -81,7 +81,7 @@
       "status": "ok"
     },
     {
-      "detail": "heaviest page companies.html is 85 KB over the wire (limit 250 KB), 2380 pages checked",
+      "detail": "heaviest page companies.html is 85 KB over the wire (limit 250 KB), 2378 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
@@ -99,14 +99,19 @@
       "detail": "heaviest file events.json is 829 KB over the wire (limit 4096 KB), 6 file(s) checked",
       "name": "Data file weight",
       "status": "ok"
+    },
+    {
+      "detail": "all 2378 pages built 2026-09-14 07:56 UTC, data through 2026-09-11, 4,085 events",
+      "name": "Pages agree",
+      "status": "ok"
     }
   ],
   "generated_at": "2026-09-12T12:56:37+00:00",
   "summary": {
     "fail": 0,
-    "ok": 20,
+    "ok": 21,
     "overall": "ok",
-    "total": 20,
+    "total": 21,
     "unknown": 0,
     "warn": 0
   }

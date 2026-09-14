@@ -136,9 +136,12 @@ for (const name of ["chart", "filter", "theme", "currency"]) {
   function withClock(etString, dataset) {
     const node = el({dataset});
     const notice = el();
+    const gap = el();
+    gap.textContent = "current";               // what a build made while current says
     for (const id of Object.keys(byId)) delete byId[id];
     byId.currency = node;
     byId["stale-notice"] = notice;
+    byId["stale-gap"] = gap;
     // Freeze "now". toLocaleString is what currency.js uses to reach New York.
     global.Date = class extends RealDate {
       constructor(...args) {
@@ -153,7 +156,8 @@ for (const name of ["chart", "filter", "theme", "currency"]) {
     } finally {
       global.Date = RealDate;
     }
-    return {text: node.textContent, noticeHidden: notice.hidden};
+    return {text: node.textContent, noticeHidden: notice.hidden,
+            gap: gap.textContent};
   }
 
   // Wed 9 Sep, 10:00 in New York. EDGAR has published through Tue 8 Sep.
@@ -174,6 +178,10 @@ for (const name of ["chart", "filter", "theme", "currency"]) {
   check(`a real gap still counts (got "${r.text}")`,
         r.text === "4 business days behind");
   check("a real gap shows the notice", r.noticeHidden === false);
+  // The notice was built while the data was current and says so inside its
+  // own sentence. Revealed unchanged it would read "not current ... current".
+  check(`the revealed notice carries the live gap, not the build's (got "${r.gap}")`,
+        r.gap === "4 business days behind");
 
   // Past 23:00 ET the day's own index is out, so it counts from then.
   r = withClock("9/9/2026, 11:30:00 PM",

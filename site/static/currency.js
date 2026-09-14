@@ -56,6 +56,9 @@
   // visit.
   var notice = document.getElementById('stale-notice');
   if (notice) notice.hidden = behind <= 1;
+  // The notice's own figure, or it is revealed still reading "current".
+  var gap = document.getElementById('stale-gap');
+  if (gap) gap.textContent = words;
   if (mark) {
     mark.hidden = behind <= 1;
     mark.textContent = 'Data ' + words;

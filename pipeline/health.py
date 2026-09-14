@@ -562,6 +562,66 @@ def period_options_check(public: "pathlib.Path") -> Dict:
     return _check("Filter options match the page", OK, detail)
 
 
+_PAGE_STAMP = re.compile(
+    r'<html\b[^>]*\bdata-built="(?P<built>[^"]*)"[^>]*'
+    r'\bdata-through="(?P<through>[^"]*)"[^>]*\bdata-events="(?P<events>[^"]*)"')
+
+
+def pages_agree_check(public: "pathlib.Path") -> Dict:
+    """Every page describes the same build of the same data.
+
+    They cannot disagree by construction: one render pass, one artifact,
+    deployed atomically. This measures that on the output anyway, because a
+    reader who finds the home page saying 910 events and /status saying 4,085
+    has no way to tell which is the site. A page left over from an earlier
+    build in the output directory, a render that died halfway, or a template
+    that stopped extending the base would all show up here - and a mixed
+    build is wrong output, so it fails rather than warns.
+    """
+    pages = sorted(public.rglob("*.html"))
+    if not pages:
+        return _check("Pages agree", UNKNOWN, "nothing built yet")
+
+    stamps: Dict[tuple, list] = {}
+    unstamped = []
+    for path in pages:
+        try:
+            head = path.read_text(encoding="utf-8", errors="replace")[:2048]
+        except OSError:
+            unstamped.append(path)
+            continue
+        m = _PAGE_STAMP.search(head)
+        if not m:
+            unstamped.append(path)
+            continue
+        stamps.setdefault((m["built"], m["through"], m["events"]), []).append(path)
+
+    def rel(p):
+        return str(p.relative_to(public))
+
+    if unstamped:
+        names = ", ".join(rel(p) for p in unstamped[:3])
+        return _check("Pages agree", FAIL,
+                      f"{len(unstamped)} of {len(pages)} pages carry no build "
+                      f"stamp ({names}{'...' if len(unstamped) > 3 else ''})")
+    if len(stamps) > 1:
+        parts = []
+        for (built, through, events), paths in sorted(stamps.items(), reverse=True):
+            parts.append(f"{len(paths)} built {built} through {through} with "
+                         f"{events} events (e.g. {rel(paths[0])})")
+        return _check("Pages agree", FAIL,
+                      f"{len(pages)} pages come from {len(stamps)} different "
+                      f"builds: " + "; ".join(parts))
+    (built, through, events), = stamps.keys()
+    try:
+        events = f"{int(events):,}"
+    except ValueError:
+        pass
+    return _check("Pages agree", OK,
+                  f"all {len(pages)} pages built {built}, data through "
+                  f"{through}, {events} events")
+
+
 def firm_labels_check(public: "pathlib.Path") -> Dict:
     """One firm, one label, on the page that was actually generated.
 
