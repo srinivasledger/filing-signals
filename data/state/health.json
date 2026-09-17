@@ -1,12 +1,12 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-09-15, which is everything EDGAR has published",
+      "detail": "last complete filing day 2026-09-16, which is everything EDGAR has published",
       "name": "Pipeline is current",
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 38,392 index rows read",
+      "detail": "10 runs recorded, 37,545 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,52 +16,52 @@
       "status": "ok"
     },
     {
-      "detail": "4119/4119 link to the accession they report",
+      "detail": "4138/4138 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "4119/4119 name a detection method the pipeline implements",
+      "detail": "4138/4138 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "480 entries from SEC item codes, 0 carrying the wrong code for their signal",
+      "detail": "485 entries from SEC item codes, 0 carrying the wrong code for their signal",
       "name": "Item codes match the signal they produced",
       "status": "ok"
     },
     {
-      "detail": "969/969 compare the same form type against an earlier filing",
+      "detail": "970/970 compare the same form type against an earlier filing",
       "name": "Comparisons are like-for-like",
       "status": "ok"
     },
     {
-      "detail": "4119 unique entries across 4119 rows",
+      "detail": "4138 unique entries across 4138 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 2610 begin mid-sentence, 0 do not open at the substance",
+      "detail": "0 of 2619 begin mid-sentence, 0 do not open at the substance",
       "name": "Quotes open with the substance",
       "status": "ok"
     },
     {
-      "detail": "0 of 2610 end mid-sentence with no ellipsis to mark the cut",
+      "detail": "0 of 2619 end mid-sentence with no ellipsis to mark the cut",
       "name": "Quotes end where the filing does",
       "status": "ok"
     },
     {
-      "detail": "0 of 908 going-concern and material-weakness entries quote a passage that negates the state they assert",
+      "detail": "0 of 909 going-concern and material-weakness entries quote a passage that negates the state they assert",
       "name": "No entry contradicts its own quote",
       "status": "ok"
     },
     {
-      "detail": "420 firm names across 87 firms; 14 spelled more than one way by filers",
+      "detail": "426 firm names across 88 firms; 14 spelled more than one way by filers",
       "name": "Auditor names are firm-shaped",
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 4119, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 4138, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -71,42 +71,42 @@
       "status": "ok"
     },
     {
-      "detail": "5,158 companies, refreshed 4 day(s) ago",
+      "detail": "5,158 companies, refreshed 5 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
     {
-      "detail": "2370 companies, 18,069 historical events",
+      "detail": "2376 companies, 18,119 historical events",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page companies.html is 85 KB over the wire (limit 250 KB), 2387 pages checked",
+      "detail": "heaviest page companies.html is 85 KB over the wire (limit 250 KB), 2393 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
     {
-      "detail": "87 firms on the auditors page, one label each",
+      "detail": "88 firms on the auditors page, one label each",
       "name": "Firm labels are consistent",
       "status": "ok"
     },
     {
-      "detail": "752 pages with a period or form filter, 0 option(s) that filter to nothing",
+      "detail": "753 pages with a period or form filter, 0 option(s) that filter to nothing",
       "name": "Filter options match the page",
       "status": "ok"
     },
     {
-      "detail": "heaviest file events.json is 836 KB over the wire (limit 4096 KB), 6 file(s) checked",
+      "detail": "heaviest file events.json is 839 KB over the wire (limit 4096 KB), 6 file(s) checked",
       "name": "Data file weight",
       "status": "ok"
     },
     {
-      "detail": "all 2387 pages built 2026-09-16 14:15 UTC, data through 2026-09-15, 4,119 events",
+      "detail": "all 2393 pages built 2026-09-17 08:45 UTC, data through 2026-09-16, 4,138 events",
       "name": "Pages agree",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-16T14:15:09+00:00",
+  "generated_at": "2026-09-17T08:45:11+00:00",
   "summary": {
     "fail": 0,
     "ok": 21,
