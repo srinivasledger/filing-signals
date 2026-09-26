@@ -13,16 +13,6 @@
   "runs": [
     {
       "analysis": "deterministic-only",
-      "candidates": 433,
-      "date": "2026-03-24",
-      "events": 18,
-      "events_written": 18,
-      "finished_at": "2026-09-09T14:53:56+00:00",
-      "index_rows": 4831,
-      "operating": 294
-    },
-    {
-      "analysis": "deterministic-only",
       "candidates": 398,
       "date": "2026-03-25",
       "events": 32,
@@ -608,6 +598,16 @@
       "events": 20,
       "events_written": 17,
       "finished_at": "2026-09-26T08:33:02+00:00",
+      "index_rows": 4411,
+      "operating": 211
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 231,
+      "date": "2026-09-25",
+      "events": 20,
+      "events_written": 0,
+      "finished_at": "2026-09-26T10:34:01+00:00",
       "index_rows": 4411,
       "operating": 211
     }

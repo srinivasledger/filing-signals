@@ -6,7 +6,7 @@
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 37,493 index rows read",
+      "detail": "10 runs recorded, 37,923 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -76,9 +76,9 @@
       "status": "ok"
     },
     {
-      "detail": "history calculation is outdated; rebuild before publishing follow-on rates",
+      "detail": "2409 company archives, 18,373 historical events; 4537 mature eligible observations across rate rows",
       "name": "Follow-on rates computed",
-      "status": "warn"
+      "status": "ok"
     },
     {
       "detail": "heaviest page companies.html is 87 KB over the wire (limit 250 KB), 2426 pages checked",
@@ -101,18 +101,18 @@
       "status": "ok"
     },
     {
-      "detail": "all 2426 pages built 2026-09-26 10:29 UTC, data through 2026-09-25, 4,207 events",
+      "detail": "all 2426 pages built 2026-09-26 10:44 UTC, data through 2026-09-25, 4,207 events",
       "name": "Pages agree",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-26T10:27:49+00:00",
+  "generated_at": "2026-09-26T10:44:56+00:00",
   "summary": {
     "fail": 0,
-    "ok": 20,
-    "overall": "warn",
+    "ok": 21,
+    "overall": "ok",
     "total": 21,
     "unknown": 0,
-    "warn": 1
+    "warn": 0
   }
 }

@@ -1,45 +1,59 @@
 {
+  "as_of": "2026-09-25",
   "built_on": "2026-09-26",
-  "companies": 2412,
+  "companies": 2409,
   "event_counts": {
-    "auditor_change": 4178,
-    "late_filing": 13091,
-    "restatement": 972
+    "auditor_change": 4527,
+    "late_filing": 12705,
+    "restatement": 1141
   },
+  "methodology_version": 2,
+  "observation_start": "2004-08-23",
+  "omitted_ciks": [],
+  "omitted_companies": 0,
+  "requested_companies": 2409,
   "rows": [
     {
-      "eligible": 1389,
+      "eligible": 1279,
       "first": "auditor_change",
-      "followed": 139,
+      "followed": 142,
+      "immature": 209,
       "label": "An auditor change was followed by a non-reliance filing",
-      "rate": "10%",
-      "second": "restatement"
+      "rate": "11%",
+      "second": "restatement",
+      "with_first": 1488
     },
     {
-      "eligible": 1456,
+      "eligible": 1321,
       "first": "late_filing",
-      "followed": 172,
+      "followed": 210,
+      "immature": 215,
       "label": "A late filing was followed by a non-reliance filing",
-      "rate": "12%",
-      "second": "restatement"
+      "rate": "16%",
+      "second": "restatement",
+      "with_first": 1536
     },
     {
-      "eligible": 1456,
+      "eligible": 1321,
       "first": "late_filing",
-      "followed": 426,
+      "followed": 466,
+      "immature": 215,
       "label": "A late filing was followed by an auditor change",
-      "rate": "29%",
-      "second": "auditor_change"
+      "rate": "35%",
+      "second": "auditor_change",
+      "with_first": 1536
     },
     {
-      "eligible": 598,
+      "eligible": 616,
       "first": "restatement",
       "followed": 249,
+      "immature": 73,
       "label": "A non-reliance filing was followed by an auditor change",
-      "rate": "42%",
-      "second": "auditor_change"
+      "rate": "40%",
+      "second": "auditor_change",
+      "with_first": 689
     }
   ],
-  "total_historical_events": 18241,
+  "total_historical_events": 18373,
   "window_days": 540
 }
