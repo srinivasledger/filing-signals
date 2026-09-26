@@ -13,7 +13,7 @@
     {% elif e.evidence.severity == 'elevated' %}<span class="tag tag-sev-elevated">elevated</span>{% endif %}
     {% if e.beta %}<span class="tag tag-beta" title="Derived from comparing two filings; higher chance of noise">beta</span>{% endif %}
     <span class="tag tag-conf tag-conf-{{ e.confidence }}">
-      {{ 'SEC item code' if e.confidence == 'confirmed' else 'Filing comparison' }}
+      {{ 'SEC item code' if e.confidence == 'confirmed' else ('SEC correspondence' if e.signal_type == 'comment_letter' else 'Filing comparison') }}
     </span>
     <time datetime="{{ e.filed }}">{{ e.filed }}</time>
   </div>

@@ -114,6 +114,8 @@ main p{max-width:var(--reading)}
 /* The one piece of decoration on the page, and it uses the accent the nav
    already uses for the current tab rather than introducing a tenth colour. */
 .dot{width:7px;height:7px;background:var(--series-2);flex:none;border-radius:50%}
+.nav-strip{display:contents}
+.nav-scroll-cue{display:none}
 .site-head nav{display:flex;gap:0;flex-wrap:wrap;font-size:.8rem;font-family:var(--mono)}
 .site-head nav a{color:var(--head-muted);text-decoration:none;padding:5px 11px;
   letter-spacing:.05em;text-transform:uppercase;border-left:1px solid var(--head-line)}
@@ -146,11 +148,26 @@ h1{font-family:var(--sans);font-size:clamp(1.55rem,3.1vw,2.35rem);line-height:1.
   letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1}
 .figures .dd-date{font-size:1rem;letter-spacing:0}
 @media (min-width:1080px){
-  .hero-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);
     gap:clamp(28px,3.5vw,56px);align-items:start}
   .figures{grid-template-columns:repeat(2,1fr);margin-top:4px}
 }
 .mixbar{display:block;width:100%;height:9px;margin:24px 0 0;border-radius:0}
+.record-jump{display:inline-block;margin-top:14px;padding:8px 11px;
+  border:1px solid var(--line-strong);background:var(--surface);font-family:var(--mono);
+  font-size:.74rem;font-weight:700;text-decoration:none;text-transform:uppercase;
+  letter-spacing:.06em}
+.record-jump:hover,.record-jump:focus-visible{border-color:var(--ink);background:var(--surface-2)}
+#record{scroll-margin-top:130px}
+.activity-panel{margin:18px 0 28px;border:1px solid var(--line);
+  background:var(--surface);border-radius:var(--radius)}
+.activity-panel>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;
+  padding:9px 14px;color:var(--ink-2);font:700 .72rem var(--mono);
+  text-transform:uppercase;letter-spacing:.09em}
+.activity-panel>summary:hover,.activity-panel>summary:focus-visible{color:var(--ink)}
+.activity-panel[open]>summary{border-bottom:1px solid var(--line)}
+.activity-panel>.eyebrow{margin:12px 12px 10px}
+.activity-panel .chart{margin:12px;border:0;padding:0}
 
 /* ── charts ───────────────────────────────────────────────── */
 .chart{margin:0 0 28px;background:var(--surface);border:1px solid var(--line);
@@ -337,11 +354,7 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 
 @media (max-width:620px){
   body{font-size:15px}
-  /* The header is sticky, so every row costs screen for the whole session.
-     Three stacked rows came to 155px on a 812px phone - roughly a fifth of the
-     viewport. Collapsed to one row: the wordmark holds its width and the nav
-     scrolls beside it. The provenance line moves to the footer, where it is
-     read once rather than carried forever. */
+  /* Keep source, health and any stale-data warning visible in a compact row. */
   /* The nav gets its own full-width row. Sharing one line with the brand and
      the theme toggle left it about 190px -- barely one and a half tabs -- so
      reaching anything meant scrolling a strip most of which was off-screen. */
@@ -353,18 +366,28 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
   /* flex-start, not flex-end: with flex-end the overflow runs off the LEFT
      edge, where scrolling cannot reach it - the first four links were simply
      unreachable. Overflow must run right so the scroll gesture recovers it. */
+  .site-head .nav-strip{display:block;position:relative;
+    flex:0 0 calc(100% + var(--wrap-pad) + var(--wrap-pad));min-width:0;
+    order:3;margin-inline:calc(-1 * var(--wrap-pad))}
   .site-head nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;min-width:0;
-    justify-content:flex-start;
-    flex:0 0 100%;order:3;border-top:1px solid var(--line);
-    margin-inline:calc(-1 * var(--wrap-pad));padding-inline:var(--wrap-pad)}
+    justify-content:flex-start;width:100%;border-top:1px solid var(--line);
+    padding-inline:var(--wrap-pad)}
+  .nav-scroll-cue{display:flex;position:absolute;right:0;top:1px;bottom:0;
+    align-items:center;pointer-events:none;padding:0 8px 0 24px;
+    background:linear-gradient(90deg,transparent,var(--head-bg) 35%);
+    color:var(--head-ink-2);font:700 .6rem var(--mono);letter-spacing:.05em;
+    text-transform:uppercase}
   .site-head nav::-webkit-scrollbar{display:none}
   .site-head nav a{white-space:nowrap;border-left:none}
-  .figures{grid-template-columns:1fr}
+  .figures{grid-template-columns:repeat(2,minmax(0,1fr))}
   .figures dd{font-size:1.15rem}
   .event{padding:13px 14px 13px 16px}
   .event-head time{margin-left:0;width:100%}
   .chart{padding:12px 10px 6px}
   .chart-scroll svg{min-width:660px}
+  .chart:has(.chart-scroll)::after{content:"Swipe chart for more dates →";
+    display:block;text-align:right;color:var(--muted);font:600 .64rem var(--mono);
+    letter-spacing:.04em;padding:3px 2px 0}
   .rates{padding:15px}
   .rate-head{flex-direction:column;gap:1px}
   th,td{padding:8px 10px}
@@ -389,8 +412,10 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
 .statusline .live-fail{color:var(--head-fail);font-weight:700}
 .statusline .live-warn{color:var(--head-warn)}
 @media (max-width:620px){
-  /* Must live after the base .statusline rule, or source order wins. */
-  .statusline{display:none}
+  .statusline{order:4;margin:0;padding:5px 0 6px;gap:3px 9px;
+    align-items:center;font-size:.58rem;letter-spacing:.04em}
+  .statusline .compiled{display:none}
+  .statusline .live{margin-left:auto}
 }
 
 
@@ -513,7 +538,7 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
    refinements so nothing is ever filtered invisibly. */
 .refine{border:1px solid var(--line);border-radius:var(--radius);
   background:var(--surface);margin:0 0 14px}
-.refine summary{cursor:pointer;padding:11px 15px;display:flex;gap:11px;
+.refine summary{cursor:pointer;padding:11px 15px;display:flex;gap:11px;flex-wrap:wrap;
   align-items:baseline;font-family:var(--mono);font-size:.74rem;
   text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
   list-style:none;min-height:44px;box-sizing:border-box}
@@ -544,6 +569,10 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
   border-radius:var(--radius);background:var(--surface);padding:12px 15px;margin:0 0 14px}
 .elsewhere-head{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;
   letter-spacing:.09em;color:var(--muted);margin:0 0 7px}
+.reset-filters{margin-left:8px;border:1px solid var(--line-strong);background:var(--surface-2);
+  color:var(--ink);padding:4px 7px;font:700 .7rem var(--mono);cursor:pointer;
+  text-transform:uppercase;letter-spacing:.04em}
+.reset-filters:hover,.reset-filters:focus-visible{border-color:var(--ink)}
 .elsewhere .mini li{border-bottom:none;padding:3px 0}
 
 /* ── run it yourself ──────────────────────────────────────── */

@@ -44,7 +44,8 @@
     {# The current page is marked with aria-current, which both styles the tab
        and tells a screen reader where it is. A signal page counts as Signals,
        so the nav never shows nothing selected while you are inside one. #}
-    <nav>
+    <div class="nav-strip">
+    <nav aria-label="Primary navigation">
       {% for href, text, match in [
            ("index.html", "Latest", "index.html"),
            ("signals.html", "Signals", "signals"),
@@ -64,6 +65,8 @@
       <a href="{{ rel }}{{ href }}"{% if here %} aria-current="page"{% endif %}>{{ text }}</a>
       {% endfor %}
     </nav>
+    <span class="nav-scroll-cue" aria-hidden="true">More &rarr;</span>
+    </div>
     <div class="theme-toggle" role="group" aria-label="Colour theme">
       <button type="button" data-theme-set="light">Light</button>
       <button type="button" data-theme-set="dark">Dark</button>
@@ -73,7 +76,7 @@
             aria-label="Change colour theme"><span data-theme-icon>◐</span></button>
     <p class="statusline">
       <span>Source: SEC EDGAR</span>
-      <span>Compiled {{ built_at }}</span>
+      <span class="compiled">Compiled {{ built_at }}</span>
       {# Filled in by the browser, not by the build. A site whose scans have
          stopped keeps serving the last pages it made, and every one of them
          goes on looking healthy: the checks passed, the day it holds is

@@ -106,7 +106,7 @@ def build(stats: Dict[str, object], out: Optional[Path] = None) -> Optional[Path
         (f"{stats.get('events', 0):,}", "EVENTS"),
         (f"{stats.get('companies', 0):,}", "COMPANIES"),
         (f"{stats.get('days', 0)}", "FILING DAYS"),
-        (str(stats.get("flag_rate", "—")), "FLAGGED"),
+        (str(stats.get("signals", 9)), "SIGNAL TYPES"),
     ]
     col = (WIDTH - pad * 2) / len(figures)
     for i, (value, label) in enumerate(figures):

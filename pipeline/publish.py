@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 STATE_FILE = config.STATE_DIR / "pipeline.json"
 HISTORY_FILE = config.STATE_DIR / "history.json"
 HEALTH_FILE = config.STATE_DIR / "health.json"
+CORRECTIONS_FILE = config.DATA / "corrections.jsonl"
 MAX_RUN_HISTORY = 60
 
 
@@ -36,8 +37,28 @@ def load_state() -> Dict:
 
 def save_state(state: Dict) -> None:
     config.STATE_DIR.mkdir(parents=True, exist_ok=True)
+    # Coverage counters must survive pruning of the bounded run log.
+    state["scan_days"] = scan_day_totals(state)
     state["runs"] = state.get("runs", [])[-MAX_RUN_HISTORY:]
     STATE_FILE.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
+
+
+def scan_day_totals(state: Dict) -> Dict:
+    """Known successful scan counts, one record per filing day."""
+    totals = {}
+    records = list((state.get("scan_days") or {}).items())
+    records.extend((r.get("date"), r) for r in state.get("runs", []))
+    for day, record in records:
+        if not day or record.get("blocked") or not record.get("index_rows"):
+            continue
+        if "candidates" not in record:
+            continue
+        previous = totals.get(day, {})
+        totals[day] = {
+            key: max(previous.get(key, 0), record.get(key) or 0)
+            for key in ("index_rows", "candidates", "operating")
+        }
+    return dict(sorted(totals.items()))
 
 
 def record_run(state: Dict, stats: Dict) -> None:
@@ -49,6 +70,21 @@ def record_run(state: Dict, stats: Dict) -> None:
 # --- events ------------------------------------------------------------------
 def _event_file(day: str) -> Path:
     return config.EVENTS_DIR / f"{day}.jsonl"
+
+
+def withdrawn_event_ids() -> set:
+    """Permanent tombstones for withdrawn findings, including after a rescan."""
+    if not CORRECTIONS_FILE.exists():
+        return set()
+    ids = set()
+    for line in CORRECTIONS_FILE.read_text(encoding="utf-8").splitlines():
+        try:
+            correction = json.loads(line)
+            if correction.get("action") == "withdraw":
+                ids.add(correction["event_id"])
+        except (ValueError, KeyError, TypeError):
+            log.warning("ignoring malformed correction row")
+    return ids
 
 
 def load_events_for_day(day: str) -> List[Event]:
@@ -65,6 +101,7 @@ def load_events_for_day(day: str) -> List[Event]:
         return []
     out: List[Event] = []
     seen = set()
+    withdrawn = withdrawn_event_ids()
     for line in path.read_text().splitlines():
         line = line.strip()
         if not line or not line.startswith("{"):
@@ -76,7 +113,7 @@ def load_events_for_day(day: str) -> List[Event]:
         except (ValueError, TypeError) as exc:
             log.warning("skipping malformed event row in %s: %s", path.name, exc)
             continue
-        if event.id in seen:
+        if event.id in seen or event.id in withdrawn:
             continue
         seen.add(event.id)
         out.append(event)
@@ -129,9 +166,10 @@ def append_events(day: str, events: Iterable[Event]) -> int:
     # ...and against every other day already recorded, because the key has no
     # day in it and EDGAR does re-list a filing on a later index.
     elsewhere = recorded_elsewhere(day)
+    withdrawn = withdrawn_event_ids()
     fresh, seen = [], set(existing)
     for e in events:
-        if e.id in seen or e.id in elsewhere:
+        if e.id in seen or e.id in elsewhere or e.id in withdrawn:
             continue
         seen.add(e.id)
         fresh.append(e)

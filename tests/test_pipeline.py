@@ -704,16 +704,15 @@ def test_every_chart_colour_is_defined_in_every_theme():
 
 
 def test_the_page_states_the_right_number_of_signals():
-    """The lede claimed "six things" after the count reached nine. Copy drifts
-    silently when signals are added."""
+    """The link to the methodology must keep pace with the signal taxonomy."""
     from pipeline.render import SIGNAL_ORDER
 
     words = {6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
     tpl = (Path(__file__).resolve().parent.parent
            / "site" / "templates" / "index.html").read_text()
     expected = words[len(SIGNAL_ORDER)]
-    assert f"reports {expected} things" in tpl, (
-        f"lede should say '{expected}' for {len(SIGNAL_ORDER)} signals")
+    assert f"How the {expected} signals work" in tpl, (
+        f"methodology link should say '{expected}' for {len(SIGNAL_ORDER)} signals")
 
 
 def test_only_broken_output_fails_the_run():
@@ -798,7 +797,7 @@ def test_preview_card_is_within_whatsapp_limits(tmp_path):
     from pipeline import preview
 
     out = preview.build({"events": 334, "companies": 284, "days": 11,
-                         "flag_rate": "6.6%", "through": "2026-08-26"},
+                         "signals": 9, "through": "2026-08-26"},
                         out=tmp_path / "og.png")
     if out is None:
         import pytest

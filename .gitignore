@@ -6,6 +6,7 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 .claude/
+backups/
 us-listed-companies-by-public-float.csv
 
 # Derived exports — regenerate rather than commit; an early version of this

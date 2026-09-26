@@ -7,40 +7,37 @@
       <p class="eyebrow"><span>Daily record</span><span>{{ last_run or "—" }}</span></p>
       <h1>{{ site_tagline }}</h1>
       <p class="lede">
-        Every weekday this site reads new SEC filings and reports nine things
-        that are otherwise hard to see: companies withdrawing reliance on past
-        financial statements, SEC staff questioning a company&rsquo;s accounting
-        in writing, material weaknesses appearing and being remediated, auditors
-        resigning or being dismissed, finance chiefs departing, periodic reports
-        filed late, going-concern conclusions appearing or lifting, and
-        accounting-policy language being rewritten. It runs on a schedule with
-        no one at the controls.
+        Follow restatements, auditor and finance-chief changes, SEC comment
+        letters, and other disclosure changes. Each entry links to its source
+        filing and explains how it was detected.
       </p>
+      <p><a class="record-jump" href="#record">Jump to latest events &darr;</a>
+        &middot; <a href="{{ rel }}methodology.html">How the nine signals work</a></p>
     </div>
     <dl class="figures">
       <div><dt>Events recorded</dt><dd title="{{ total_events|exact }}">{{ total_events|figure }}</dd></div>
       <div><dt>Companies</dt><dd title="{{ companies|exact }}">{{ companies|figure }}</dd></div>
-      <div><dt>Company-days</dt><dd title="{{ situations|exact }}">{{ situations|figure }}</dd></div>
-      <div><dt>Filing days</dt><dd title="{{ days_covered|exact }}">{{ days_covered|figure }}</dd></div>
-      <div><dt>Filings scanned</dt><dd title="{{ filings_scanned|exact }}">{{ filings_scanned|figure }}</dd></div>
-      <div><dt>Flagged</dt><dd>{{ flag_rate }}</dd></div>
-      <div><dt>Through</dt><dd class="dd-date">{{ last_run or '—' }}</dd></div>
+      <div><dt>Filing dates represented</dt><dd title="{{ days_covered|exact }}">{{ days_covered|figure }}</dd></div>
+      <div><dt>Data through</dt><dd class="dd-date">{{ last_run or '—' }}</dd></div>
     </dl>
   </div>
   {{ mix_bar|safe }}
 </section>
 
 {% if activity_chart %}
-<p class="eyebrow"><span>Activity by filing day</span>
-  <span id="chart-scope">{{ days_covered }} days</span></p>
+<details class="activity-panel">
+<summary>Recent filing activity</summary>
+<h2 class="eyebrow"><span>Activity by filing day</span>
+  <span id="chart-scope">{{ days_covered }} days</span></h2>
 {{ activity_chart|safe }}
 {{ activity_data|safe }}
+</details>
 {% endif %}
 
 {% if events %}
-<p class="eyebrow"><span>The record</span>
+<h2 class="eyebrow" id="record"><span>The record</span>
   <span>{% if truncated %}most recent {{ total_events - truncated }} of
-  {{ total_events }}{% else %}{{ total_events }} entries{% endif %}</span></p>
+  {{ total_events }}{% else %}{{ total_events }} entries{% endif %}</span></h2>
 {% if truncated %}
 <p class="notice"><strong>This page holds a window, not the whole record.</strong>
   The {{ total_events - truncated }} most recent entries are shown; {{ truncated }}
@@ -55,10 +52,10 @@
     <span class="visually-hidden">Filter events</span>
     <input type="search" id="q" placeholder="Search company, ticker or filing text…" autocomplete="off">
   </label>
-  <div class="chips" id="chips">
-    <button class="chip is-on" data-filter="all">All</button>
+  <div class="chips" id="chips" role="group" aria-label="Signal type">
+    <button class="chip is-on" data-filter="all" aria-pressed="true">All</button>
     {% for key, label in signal_labels %}
-    <button class="chip" data-filter="{{ key }}">{{ label }}</button>
+    <button class="chip" data-filter="{{ key }}" aria-pressed="false">{{ label }}</button>
     {% endfor %}
   </div>
 </section>

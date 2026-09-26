@@ -2,12 +2,10 @@
 {% block title %}Sequences &middot; {{ site_title }}{% endblock %}
 {% block content %}
 <h1>Sequences</h1>
-<p class="lede">Companies that have reached more than one signal. A raw filing
-feed shows each event alone; the order they arrive in is often the more
-informative thing.</p>
-<p class="muted">A recognisable progression runs late filing &rarr; auditor
-change &rarr; going concern &rarr; non-reliance. Not every company follows it,
-and reaching one step does not imply the next. Dates are filing dates.</p>
+<p class="lede">Companies with signals from more than one filing occasion.
+Each timeline shows their order and elapsed time, using filing dates.</p>
+<p class="muted">These records show what was disclosed and when. One event
+does not imply that another will follow.</p>
 
 <p class="notice"><strong>What is not a sequence.</strong> A Form 12b-25
 followed by the report it deferred is Rule 12b-25 working, not a company
@@ -16,36 +14,50 @@ deteriorating: the rule grants five calendar days for a 10-Q and fifteen for a
 Those pairs are excluded, as are two signals read out of a single filing. One
 filing is one occasion.</p>
 
-{% if history and history.rows %}
+{% if history and history.methodology_version == 2 and history.rows %}
 <h2>How often one signal follows another</h2>
-<p>Across the <b>{{ history.companies }}</b> companies recorded here, using
-their full filing history from SEC EDGAR &mdash;
+<p>As of <b>{{ history.as_of }}</b>, all filing-history files listed by SEC
+EDGAR were loaded for <b>{{ history.companies }} of
+{{ history.requested_companies }}</b> companies recorded here &mdash;
 <b title="{{ history.total_historical_events|exact }}">{{ history.total_historical_events|figure }}</b> historical events
-in total.</p>
+from {{ history.observation_start }} through {{ history.as_of }}.</p>
+{% if history.omitted_companies %}
+<p class="notice"><strong>Incomplete coverage.</strong>
+{{ history.omitted_companies }} compan{{ 'y was' if history.omitted_companies == 1 else 'ies were' }}
+excluded because at least one filing-history file could not be loaded.
+The rates below describe only the companies whose listed files were all available.</p>
+{% endif %}
 
 <p class="notice"><strong>The rule, exactly.</strong> A company counts once, not
-once per event. For each pair, the denominator is every company whose EDGAR
-history contains the first event at all; it counts as a follow-on if the second
-event appears strictly after the company&rsquo;s <em>first</em> occurrence of
-the first event and within {{ history.window_days }} days of it. Same-day pairs
-are excluded, and two signals read out of one filing are never a pair.</p>
+once per event. For each pair, the denominator includes companies whose
+<em>earliest observed</em> first event was at least {{ history.window_days }} days
+before the date above. A follow-on counts if the second event appears strictly
+after that first event and within {{ history.window_days }} days of it.
+Same-day pairs are excluded. Companies still within the window are excluded
+even if a second event has already appeared.</p>
 
-<p class="muted">Measuring from the first occurrence matters. Counting from any
-occurrence gave a company one chance per event &mdash; a filer submitting an NT
-form every quarter had eight or ten overlapping windows in which an auditor
-change could land &mdash; which roughly doubled every rate, and doubled them
-most for the frequent filers this population is full of.</p>
+<p class="muted">Records include the recent submissions index and every older
+file it lists. The observation period starts on {{ history.observation_start }},
+when the <a href="https://www.sec.gov/file/2004-federal-register-pdf-4">current
+8-K item numbering took effect</a>; earlier late notices are excluded because
+their follow-on events were not reported under the same item codes.
+EDGAR coverage and item coding vary across issuers, so the
+earliest observed event may not be the first in a company&rsquo;s life.
+The window measures elapsed calendar time; a company that stops SEC reporting
+can leave later events unobserved.</p>
 
 {{ rates_chart|safe }}
 <details class="evidence">
   <summary>View as a table</summary>
   <div class="table-scroll">
   <table>
-    <thead><tr><th>Sequence</th><th>Companies with the first event</th>
+    <thead><tr><th>Sequence</th><th>Companies with a full {{ history.window_days }}-day window</th>
+      <th>Excluded: window still open</th>
       <th>Followed by the second</th><th>Rate</th></tr></thead>
     <tbody>
     {% for r in history.rows %}
     <tr><td>{{ r.label }}</td><td>{{ r.eligible }}</td>
+        <td>{{ r.immature }}</td>
         <td>{{ r.followed }}</td><td><b>{{ r.rate }}</b></td></tr>
     {% endfor %}
     </tbody>
@@ -56,10 +68,14 @@ most for the frequent filers this population is full of.</p>
 rates inside a population this tracker already flagged, not population base
 rates. There is no matched control group, so they cannot tell you that one
 event makes another more likely &mdash; only how often, among these companies,
-one followed the other. The sample is small and skewed toward smaller issuers,
-which file NT forms and change auditors far more often than listed companies
-generally: within a window of this length, common events co-occur readily. The
-counts beside each rate are the more useful figure.</p>
+one followed the other. Companies were selected because this tracker flagged
+them, and historical coverage varies. Read each rate alongside its company
+count and the exclusions above.</p>
+{% else %}
+<h2>How often one signal follows another</h2>
+<p class="notice">Historical rates are awaiting a rebuild that includes older
+EDGAR history files and allows a full 540-day follow-on window. Earlier rates
+have been withdrawn because they did not account for both of those limits.</p>
 {% endif %}
 
 {% if sequences_total and sequences_total > sequences|length %}

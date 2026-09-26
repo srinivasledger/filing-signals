@@ -48,3 +48,43 @@ def test_a_report_filed_long_after_the_notice_is_not_the_extension():
 
 def test_a_non_notice_is_never_an_extension():
     assert _is_extension_of(E("8-K", "2026-08-14"), [E("10-Q", "2026-08-16")]) is False
+
+
+def _render_rates(stats):
+    from jinja2 import ChoiceLoader, DictLoader, Environment, FileSystemLoader
+
+    from pipeline import config
+
+    env = Environment(loader=ChoiceLoader([
+        DictLoader({"base.html": "{% block content %}{% endblock %}"}),
+        FileSystemLoader(config.TEMPLATES)]))
+    env.filters.update(exact=str, figure=str)
+    return env.get_template("sequences.html").render(
+        history=stats, sequences=[], sequences_total=0,
+        rates_chart="<div>published-rate-chart</div>")
+
+
+def test_legacy_rates_are_withdrawn_until_the_new_method_is_computed():
+    html = _render_rates({"companies": 2397, "rows": [{"rate": "41%"}]})
+    assert "awaiting a rebuild" in html
+    assert "41%" not in html
+    assert "published-rate-chart" not in html
+    assert "full filing history" not in html
+
+
+def test_current_rates_disclose_unavailable_and_immature_coverage():
+    html = _render_rates({
+        "methodology_version": 2, "as_of": "2026-09-24", "companies": 7,
+        "observation_start": "2004-08-23",
+        "requested_companies": 9, "omitted_companies": 2,
+        "total_historical_events": 20, "window_days": 540,
+        "rows": [{"label": "Late filing followed by non-reliance", "eligible": 4,
+                  "followed": 1, "immature": 3, "rate": "25%"}]})
+    assert "published-rate-chart" in html
+    assert "2026-09-24" in html
+    assert "2 companies were" in html
+    assert "window still open" in html
+    assert "25%" in html
+    assert "earliest observed" in html
+    assert "2004-08-23" in html
+    assert "earlier late notices are excluded" in html

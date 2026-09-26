@@ -43,7 +43,7 @@ def gc_bucket(state: str) -> str:
 
 
 GC_STATE_LABELS = {
-    GC_NONE: "No going-concern disclosure",
+    GC_NONE: "No substantial-doubt conclusion identified",
     GC_RISK_FACTOR_ONLY: "Risk-factor language only",
     GC_DOUBT_ALLEVIATED: "Substantial doubt raised, alleviated by management's plans",
     GC_SUBSTANTIAL_DOUBT: "Substantial doubt about ability to continue as a going concern",
@@ -91,7 +91,20 @@ _GC_NEGATED = re.compile(
     r"|(?:do|does|did)\s+not\s+raise\s+(?:any\s+)?substantial\s+doubt"
     r"|substantial\s+doubt[^.]{0,160}?(?:do|does|did)\s+not\s+exist"
     r"|substantial\s+doubt[^.]{0,160}?\bis\s+not\s+raised"
+    r"|substantial\s+doubt[^.]{0,160}?\b(?:is|was)\s+no\s+longer\s+present"
     r"|alleviat\w+[^.]{0,60}?\bsubstantial\s+doubt[^.]{0,60}?\bno\s+longer",
+    re.I,
+)
+
+# A possible future outcome is not management's present ASC 205-40 conclusion.
+# Optimum's 2025 annual report says a failure to refinance *may raise*
+# substantial doubt in the future. Treating "raise substantial doubt" alone as
+# affirmative published the opposite of what that sentence says.
+_GC_CONDITIONAL = re.compile(
+    r"\b(?:may|might|could|would|will)\s+(?:\w+ly\s+)?"
+    r"raise\s+(?:a\s+)?substantial\s+doubt"
+    r"|\b(?:may|might|could|would|will)\s+be\s+raised\s+"
+    r"(?:as\s+)?substantial\s+doubt",
     re.I,
 )
 
@@ -129,11 +142,15 @@ def classify_going_concern(note: str) -> str:
     # Position alone cannot resolve the overlap: in "do not raise substantial
     # doubt" the negation starts earlier than the phrase it negates, so a
     # last-match-wins rule would let the positive reading win.
+    negated = list(_GC_NEGATED.finditer(note))
     cleaned = _GC_NEGATED.sub(lambda m: " " * len(m.group(0)), note)
+    cleaned = _GC_CONDITIONAL.sub(lambda m: " " * len(m.group(0)), cleaned)
 
     doubt = _last(_GC_CONCLUDES_DOUBT, cleaned)
     alleviated = _last(_GC_CONCLUDES_ALLEVIATED, cleaned)
 
+    if negated and negated[-1].start() > max(doubt, alleviated):
+        return GC_NONE
     if doubt >= 0 and doubt > alleviated:
         return GC_SUBSTANTIAL_DOUBT
     if alleviated >= 0:
@@ -143,6 +160,19 @@ def classify_going_concern(note: str) -> str:
     # as no conclusion. Defaulting to the severe reading is what published
     # ChronoScale as the opposite of what its filing said.
     return GC_NONE
+
+
+def _gc_conclusion_position(note: str, state: str) -> Optional[int]:
+    """Find the statement that supports a classified conclusion for the quote."""
+    cleaned = _GC_NEGATED.sub(lambda m: " " * len(m.group(0)), note)
+    cleaned = _GC_CONDITIONAL.sub(lambda m: " " * len(m.group(0)), cleaned)
+    pattern = (_GC_CONCLUDES_DOUBT if state == GC_SUBSTANTIAL_DOUBT else
+               _GC_CONCLUDES_ALLEVIATED if state == GC_DOUBT_ALLEVIATED else None)
+    if pattern is None:
+        negated = list(_GC_NEGATED.finditer(note))
+        return negated[-1].start() if negated else None
+    matches = list(pattern.finditer(cleaned))
+    return matches[-1].start() if matches else None
 
 
 # --- policy sections ---------------------------------------------------------
@@ -381,7 +411,11 @@ def find_going_concern_note(text: str) -> Optional[Tuple[int, int]]:
         # the page as "...financial statements have been prepare".
         start = m.end()
         limit = min(len(text), start + GC_NOTE_MAX_CHARS)
-        body = _bound_to_note(text[start:limit])
+        # A short note may be followed by the next note well before 600
+        # characters. Optimum's conditional warning ended before NOTE 12; the
+        # old minimum swallowed that heading and quoted the next note as if it
+        # were part of the going-concern evidence.
+        body = _bound_to_note(text[start:limit], min_chars=0)
         if start + len(body) == limit < len(text):
             # No next-note heading inside the budget, so the cut fell wherever
             # the character count ran out, possibly inside a word.
@@ -516,9 +550,11 @@ def going_concern_state(text: str) -> Dict[str, object]:
     note = find_going_concern_note(text)
     if note:
         body = text[note[0]:note[1]]
-        match = _GC_CONCLUSION.search(body)
-        ctx = _context(body, match.start()) if match else body[:900]
         state = classify_going_concern(body)
+        pos = _gc_conclusion_position(body, state)
+        match = _GC_CONCLUSION.search(body) if pos is None else None
+        anchor = pos if pos is not None else match.start() if match else None
+        ctx = _context(body, anchor) if anchor is not None else body[:900]
         return {
             "state": state,
             "quote": close_quote(truncate_words(ctx, 600)),
@@ -528,8 +564,15 @@ def going_concern_state(text: str) -> Dict[str, object]:
     substantive = _strip_forward_looking(strip_risk_factors(text))
     match = _GC_CONCLUSION.search(substantive)
     if match:
-        ctx = _context(substantive, match.start())
-        state = classify_going_concern(ctx)
+        # The conclusion can follow the first ASC 205-40 sentence by several
+        # paragraphs. Classifying only the 900-character displayed window
+        # missed Capstone's later "plans alleviate the substantial doubt".
+        start = max(0, match.start() - 400)
+        body = _bound_to_note(substantive[start:match.start() + 4_000],
+                              min_chars=match.end() - start)
+        state = classify_going_concern(body)
+        pos = _gc_conclusion_position(body, state)
+        ctx = _context(body, pos if pos is not None else match.start() - start)
         return {
             "state": state,
             "quote": close_quote(truncate_words(ctx, 600)),
@@ -725,16 +768,24 @@ ICFR_LABELS = {
 }
 
 _ICFR_HEADING = re.compile(
-    r"(?:Item\s*9A\b|Controls\s+and\s+Procedures"
-    r"|Management'?s?\s+Report\s+on\s+Internal\s+Control)", re.I)
+    r"^[ \t]*(?:Item\s*(?:9A|15)\b[^\n]{0,100}"
+    r"|Item\s*4\b[^\n]{0,80}Controls\s+and\s+Procedures[^\n]{0,40}"
+    r"|Controls\s+and\s+Procedures\b[^\n]{0,80}"
+    r"|Management[\u2019']?s?\s+Report\s+on\s+Internal\s+Control[^\n]{0,80})",
+    re.I | re.M,
+)
+_ICFR_NEXT_ITEM = re.compile(
+    r"^[ \t]*Item\s*(?:1A?|2|3|5|6|9B|9C|10|16[A-Z]?)\b", re.I | re.M)
 
 _ICFR_NOT_EFFECTIVE = re.compile(
     r"internal\s+control\s+over\s+financial\s+reporting\s+(?:was|were|is|are)\s+not\s+effective"
     r"|(?:was|were|is|are)\s+not\s+effective[^.]{0,120}?internal\s+control"
     r"|concluded[^.]{0,80}?not\s+effective"
-    r"|identified\s+(?:the\s+following\s+|a\s+|one\s+or\s+more\s+)?material\s+weakness"
-    r"|we\s+identified\s+a\s+material\s+weakness"
-    r"|the\s+following\s+material\s+weakness(?:es)?\s+(?:were|was|has|have)",
+    r"|(?:cannot|can\s+not|could\s+not|(?:is|are|was|were)\s+unable\s+to|"
+    r"(?:is|are|was|were)\s+not\s+able\s+to)\s+conclude[^.]{0,140}?"
+    r"internal\s+control\s+over\s+financial\s+reporting\s+(?:was|were|is|are)\s+effective"
+    r"|internal\s+control\s+over\s+financial\s+reporting\s+(?:was|were|is|are)\s+ineffective"
+    r"|material\s+weakness(?:es)?\s+continued\s+to\s+exist\s+as\s+of",
     re.I,
 )
 _ICFR_EFFECTIVE = re.compile(
@@ -745,7 +796,7 @@ _ICFR_EFFECTIVE = re.compile(
 )
 _ICFR_REMEDIATED = re.compile(
     r"material\s+weakness(?:es)?[^.]{0,120}?(?:has|have)\s+been\s+remediated"
-    r"|remediat\w+[^.]{0,80}?material\s+weakness(?:es)?"
+    r"|(?:has|have)\s+(?:fully\s+)?remediated[^.]{0,80}?material\s+weakness(?:es)?"
     r"|no\s+longer[^.]{0,60}?material\s+weakness",
     re.I,
 )
@@ -758,16 +809,26 @@ def internal_control_state(text: str) -> Dict[str, object]:
     # match scoped a 312,000 character 10-K to the wrong 30,000. Use the first
     # occurrence whose following text actually reaches a conclusion.
     scope = ""
-    for m in _ICFR_HEADING.finditer(text):
-        candidate = text[m.start(): m.start() + 30_000]
+    # The table of contents and risk factors can mention the section and then
+    # speculate that controls "may not be effective". Never fall back to the
+    # entire document: that made risk-factor boilerplate a remediation finding.
+    # Prefer the final substantive section; the first heading is often a TOC
+    # entry, while the actual Item 9A/Item 15 appears later in the filing.
+    for m in reversed(list(_ICFR_HEADING.finditer(text))):
+        tail = text[m.start(): m.start() + 30_000]
+        nxt = _ICFR_NEXT_ITEM.search(tail, m.end() - m.start())
+        candidate = tail[:nxt.start()] if nxt else tail
         if _ICFR_NOT_EFFECTIVE.search(candidate) or _ICFR_EFFECTIVE.search(candidate):
             scope = candidate
             break
     if not scope:
-        scope = text
+        return {"state": ICFR_UNKNOWN, "quote": "", "remediated": False}
 
     not_eff = _last(_ICFR_NOT_EFFECTIVE, scope)
-    eff = _last(_ICFR_EFFECTIVE, scope)
+    # "cannot conclude ... is effective" contains a positive-looking suffix.
+    # Mask the full negative statement before seeking an affirmative finding.
+    affirmative = _ICFR_NOT_EFFECTIVE.sub(lambda m: " " * len(m.group(0)), scope)
+    eff = _last(_ICFR_EFFECTIVE, affirmative)
 
     if not_eff < 0 and eff < 0:
         return {"state": ICFR_UNKNOWN, "quote": "", "remediated": False}

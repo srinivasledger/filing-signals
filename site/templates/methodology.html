@@ -12,17 +12,22 @@ descriptive rather than causal. Counts describe the filing history covered so
 far, which is still being extended backwards.</p>
 
 <h2>How much is flagged</h2>
-<p>A count of events means little without the population it came from. Across
-the filing days processed so far:</p>
+<p>These figures cover the same {{ scan_days_covered }} filing days with saved
+scan counts{% if scan_first %}, from {{ scan_first }} through {{ scan_last }}{% endif %}.
+There may be gaps within that period.</p>
 <dl class="figures">
-  <div><dt>Filings in the daily index</dt><dd title="{{ filings_scanned|exact }}">{{ filings_scanned|figure }}</dd></div>
-  <div><dt>Read in full</dt><dd title="{{ candidates_scanned|exact }}">{{ candidates_scanned|figure }}</dd></div>
-  <div><dt>Events published</dt><dd title="{{ total_events|exact }}">{{ total_events|figure }}</dd></div>
-  <div><dt>Flagged</dt><dd>{{ flag_rate }}</dd></div>
+  <div><dt>Daily-index entries</dt><dd title="{{ filings_scanned|exact }}">{{ filings_scanned|figure }}</dd></div>
+  <div><dt>Entries selected by form</dt><dd title="{{ candidates_scanned|exact }}">{{ candidates_scanned|figure }}</dd></div>
+  <div><dt>Distinct filings flagged</dt><dd title="{{ flagged_filings|exact }}">{{ flagged_filings|figure }}</dd></div>
+  <div><dt>Filing days with scan counts</dt><dd>{{ scan_days_covered }}</dd></div>
 </dl>
-<p class="muted">Most filings are never candidates: fund and securitisation
-paperwork makes up the bulk of daily volume and cannot carry these signals.
-The flag rate is deliberately low &mdash; these are meant to be rare events.</p>
+<p class="muted">Flagged filings are counted by distinct accession number on
+those same days; a filing with several signals counts once. Selected entries
+are daily-index rows counted before the operating-company filter, and selection
+does not mean every document was read in full. Repeated scans of a day count
+once, but the SEC can list the same filing on different days. These saved
+counters therefore cannot establish an exact percentage of unique filings
+flagged. The counts describe pipeline output, not company risk.</p>
 
 <h2>Where the data comes from</h2>
 <p>Every weekday the pipeline reads the SEC's EDGAR daily index &mdash; the
@@ -47,11 +52,11 @@ match is a fact about what was disclosed, not an inference. These are labelled
 <p><strong>The sub-classification is the signal.</strong> The same item code
 covers materially different events, so the filing itself is read to separate
 them. Under <strong>Item 4.02(a)</strong> management or the board reached the
-conclusion; under <strong>4.02(b)</strong> the auditor told them, which is more
-serious because the company did not find it itself. For Item 4.01, an auditor
-<em>resigning</em> is a stronger signal than a company <em>dismissing</em> one,
-a disclosed disagreement stronger still, and a move from a large firm to a much
-smaller one is ranked above a rotation between equals.</p>
+conclusion; under <strong>4.02(b)</strong> the auditor notified the company.
+For Item 4.01, the site distinguishes resignation from dismissal, records any
+disclosed disagreement, and identifies changes in firm size. Severity badges
+reflect these detection rules; they are not a validated measure of investment
+risk or audit quality.</p>
 
 <p><strong>What Item 4.02 does not mean.</strong> It means the company told
 investors that earlier figures should no longer be relied upon. It is not by
@@ -59,9 +64,10 @@ itself evidence of fraud or misconduct. Restatements frequently arise from
 technical accounting corrections.</p>
 
 <h2>Late filings</h2>
-<p>A company that cannot file on time is often the earliest public warning, and
-it usually <em>precedes</em> a restatement rather than following it. These come
-from <strong>Form 12b-25</strong> (filed as NT 10-K or NT 10-Q).</p>
+<p>These record a notification that a periodic report will be filed late,
+using <strong>Form 12b-25</strong> (including NT 10-K and NT 10-Q).
+A late notice alone does not establish an accounting problem or predict a
+restatement.</p>
 <p>Beyond the fact of lateness, the form asks whether the company anticipates a
 significant change in results of operations, answered as a checkbox. A "yes" is
 the company pre-announcing that the delayed numbers will look materially
@@ -69,18 +75,17 @@ different, and those are marked <em>elevated</em>. So are late annual reports,
 and companies that are also behind on their other periodic reports.</p>
 
 <h2>Going concern</h2>
-<p>This is the signal most often done badly, so it is worth being precise.</p>
 <p>Searching filings for the phrase "going concern" does not work. The phrase
 appears in the Risk Factors of most speculative issuers as standing boilerplate,
 unchanged for years. It also appears in forward-looking-statement disclaimers.
 None of that is news.</p>
 <p>Instead the pipeline locates the actual accounting note &mdash; the
-disclosure made under <strong>ASC 205-40</strong> &mdash; and reads its
-conclusion. That note always opens by reciting both possible outcomes as
-methodology, so the conclusion sentence, not nearby wording, decides the
-classification. Each filing is placed on a ladder:</p>
+disclosure made under <strong>ASC 205-40</strong> &mdash; and looks for its
+conclusion. Notes may recite both possible outcomes as methodology or describe
+conditional future risks. Those passages are excluded from affirmative
+conclusions. Each filing is placed on a ladder:</p>
 <ol class="ladder">
-  <li><b>No going-concern disclosure</b></li>
+  <li><b>No substantial-doubt conclusion identified</b></li>
   <li><b>Risk-factor language only</b> &mdash; boilerplate, no accounting conclusion</li>
   <li><b>Substantial doubt raised, alleviated</b> by management's plans</li>
   <li><b>Substantial doubt</b> about the ability to continue as a going concern</li>
@@ -118,8 +123,10 @@ not a review of published accounts &mdash; so the "Re:" line is parsed and only
 periodic-report reviews are kept.</p>
 
 <h2>Material weakness</h2>
-<p>Every annual report states management's conclusion on internal control over
-financial reporting under <strong>Item 9A</strong>. A material weakness means a
+<p>The pipeline looks for management's conclusion on internal control over
+financial reporting in the report's controls section, including
+<strong>Item 9A</strong> in a 10-K, <strong>Item 4</strong> in a 10-Q,
+and <strong>Item 15</strong> in a 20-F. A material weakness means a
 deficiency severe enough that a material misstatement might not be prevented or
 detected in time.</p>
 <p>As with going concern, only a <em>change</em> is published: control reported
@@ -143,9 +150,8 @@ controller</strong> are kept &mdash; the roles that own the financial statements
 director's resignation gets joined to whichever CFO is named further down.</p>
 <p>Whether a successor was named, an interim appointed, or the seat left vacant
 is recorded, as is whether the filing states there was no disagreement. That
-last sentence is standard and its presence is <em>reassuring</em>, not adverse
-&mdash; reading it as a disclosed disagreement is a mistake this pipeline made
-and corrected.</p>
+last sentence is standard disclosure language; its presence is not evidence of
+a disagreement or assurance about the company's accounts.</p>
 <p>A finance chief leaving is an ordinary event. It is published because it is
 worth knowing alongside the other signals, not because it implies anything is
 wrong.</p>
@@ -208,15 +214,17 @@ publish &mdash; with evidence and quotes intact.</p>
 </ul>
 
 <h2>Corrections</h2>
+<p>The <a href="{{ rel }}corrections.json">published correction log</a> records
+withdrawn or revised entries, the reason for each change, and its source.</p>
 <p>Every entry links to its source. If an entry misreads a filing &mdash; a
 mischaracterised disclosure, a quote taken out of context, a company matched to
 the wrong filing &mdash; it should be corrected, and corrections are welcome
 from anyone, including the filer.</p>
 {% if repo_url %}
 <p>Raise it at <a href="{{ repo_url }}/issues" rel="noopener">{{ repo_url }}/issues</a>
-with the accession number and what the entry should say. There is no editorial
-gatekeeping: the detection rules are open, and the fix lands in the next
-scheduled run.</p>
+with the accession number and what the entry should say. The detection rules
+are open; reports need to be checked against the source before a correction
+is published.</p>
 {% else %}
 <p>Corrections can be raised on the project repository, with the accession
 number and what the entry should say.</p>

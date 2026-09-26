@@ -205,6 +205,28 @@ Do not archive the repository. An archived repository runs nothing.
 
 ## Backups
 
+Before the September 2026 accuracy review, the original source, stored data,
+and complete Git history at `00d04e8146e664173413e61fffbc17215e011867` were
+saved locally under `backups/original-00d04e8/`. The directory is ignored by
+Git; its README contains archive checksums. Keep it outside deployment output.
+
+Published corrections are versioned in `data/corrections.jsonl` and exported
+as `corrections.json`. Withdrawn event IDs are blocked from later appends.
+The original record remains available in Git history and the backup.
+
+Scan coverage totals are now retained per filing day in `pipeline.json` under
+`scan_days`, independently of the 60-entry operational run log. Older counters
+were recovered from the repository's saved run records; missing days must not
+be inferred as zero. Published flagged accession counts cover those same days.
+The old percentage is removed: selected daily-index rows can include SEC
+re-listings, and those saved counters cannot reconstruct a unique-filing denominator.
+
+Sequence methodology version 2 loads all declared SEC submissions archives,
+uses a common observation period beginning August 23, 2004, and only counts
+precursors with a complete 540-day follow-on window. Legacy rates stay hidden
+until the next successful history refresh. The daily workflow with `days=1`
+refreshes these rates without starting the older-date backfill.
+
 **The data can always be rebuilt.** Every event was derived from EDGAR, which
 is the permanent public record. If the repository were lost entirely,
 re-running the fill with `HISTORY_FROM` set would rebuild it from source in a

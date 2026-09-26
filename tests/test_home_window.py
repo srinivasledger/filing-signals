@@ -17,7 +17,7 @@ def _render(total, truncated):
     src = (config.TEMPLATES / "index.html").read_text()
     # Render the record header alone: the surrounding page needs the whole
     # event model, and the contract under test is only this block.
-    block = src[src.index('<p class="eyebrow"><span>The record'):
+    block = src[src.index('<h2 class="eyebrow" id="record"><span>The record'):
                 src.index('<section class="controls">')]
     return env.from_string(block).render(total_events=total, truncated=truncated, rel="")
 
