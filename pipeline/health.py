@@ -18,7 +18,7 @@ import re
 from collections import defaultdict
 from typing import Dict, List
 
-from . import config
+from . import config, history, sections
 from .models import (AUDITOR_CHANGE, COMMENT_LETTER, CONFIRMED, GOING_CONCERN, LATE_FILING,
                      MATERIAL_WEAKNESS, OFFICER_DEPARTURE, POLICY_CHANGE,
                      RESTATEMENT, REVENUE_RECOGNITION)
@@ -37,6 +37,45 @@ STALE_WARN_AFTER_DAYS = 1     # beyond this, say so on the page
 STALE_AFTER_DAYS = 5          # beyond this, fail the run
 SIZE_STALE_AFTER_DAYS = 14
 MIN_SIZE_COVERAGE = 3000
+
+# These are known wording failures, not a claim to validate every accounting
+# conclusion. In particular, a sentence saying management *cannot conclude*
+# control is effective must not support a remediation headline.
+_ICFR_EFFECTIVENESS_DENIED = re.compile(
+    r"\b(?:cannot|can\s+not|could\s+not|(?:is|are|was|were)\s+"
+    r"(?:unable|not\s+able)\s+to)"
+    r"\s+conclude[^.]{0,140}?internal\s+control\s+over\s+financial\s+"
+    r"reporting\s+(?:was|were|is|are)\s+effective"
+    r"|internal\s+control\s+over\s+financial\s+reporting\s+"
+    r"(?:was|were|is|are)\s+not\s+effective",
+    re.I,
+)
+
+
+def _known_quote_contradictions(events) -> list:
+    """Find published claims refuted by known patterns in their own excerpts."""
+    contradictions = []
+    for e in events:
+        quote = e.quote or ""
+        state = e.evidence.get("current_state")
+        if not quote:
+            continue
+        if e.signal_type == GOING_CONCERN and state == sections.GC_SUBSTANTIAL_DOUBT:
+            # A conditional future warning is not a present substantial-doubt
+            # conclusion. If the quote also contains an affirmative conclusion,
+            # let the ordinary classifier resolve the two statements.
+            if ((sections._GC_NEGATED.search(quote) or
+                 sections._GC_CONDITIONAL.search(quote)) and
+                    sections.classify_going_concern(quote) != state):
+                contradictions.append(e)
+        elif e.signal_type == MATERIAL_WEAKNESS:
+            if state == sections.ICFR_EFFECTIVE and _ICFR_EFFECTIVENESS_DENIED.search(quote):
+                contradictions.append(e)
+            elif (state == sections.ICFR_MATERIAL_WEAKNESS and
+                  re.search(r"concluded[^.]{0,80}?internal\s+control[^.]{0,60}?"
+                            r"\b(?:was|were|is|are)\s+effective", quote, re.I)):
+                contradictions.append(e)
+    return contradictions
 
 
 def _check(name: str, status: str, detail: str) -> Dict:
@@ -257,36 +296,15 @@ def run_checks(events, state: Dict, today: dt.date,
         f"{len(cut_short)} of {len(quoted)} end mid-sentence "
         f"with no ellipsis to mark the cut"))
 
-    # --- does any entry contradict its own quoted evidence? ---
-    # The defect that most damages the site is an event whose label says the
-    # opposite of the passage printed underneath it. Nothing on the status page
-    # would have caught the ChronoScale case, which published "substantial
-    # doubt" over a quote saying doubt was not raised.
-    CONTRADICTS = {
-        GOING_CONCERN: (
-            ("substantial_doubt",),
-            re.compile(r"\b(?:does|do|did)\s+not\s+raise\s+substantial\s+doubt"
-                       r"|substantial\s+doubt\s+(?:is|was)\s+not\s+raised"
-                       r"|\bno\s+substantial\s+doubt\b", re.I)),
-        MATERIAL_WEAKNESS: (
-            ("material_weakness",),
-            re.compile(r"concluded[^.]{0,80}?internal\s+control[^.]{0,60}?"
-                       r"\b(?:was|were|is|are)\s+effective", re.I)),
-    }
-    contradictions = []
-    for e in events:
-        rule = CONTRADICTS.get(e.signal_type)
-        if not rule or not e.quote:
-            continue
-        adverse_states, pattern = rule
-        if e.evidence.get("current_state") in adverse_states and pattern.search(e.quote):
-            contradictions.append(e)
+    # --- known quote/headline contradiction patterns ---
+    contradictions = _known_quote_contradictions(events)
     checks.append(_check(
-        "No entry contradicts its own quote",
+        "Known quote contradictions",
         OK if not contradictions else FAIL,
-        f"{len(contradictions)} of {sum(1 for e in events if e.signal_type in CONTRADICTS)} "
-        "going-concern and material-weakness entries quote a passage that "
-        "negates the state they assert"))
+        f"{len(contradictions)} of "
+        f"{sum(1 for e in events if e.signal_type in (GOING_CONCERN, MATERIAL_WEAKNESS))} "
+        "going-concern and material-weakness entries match a known wording "
+        "pattern that conflicts with their reported state"))
 
     # --- are extracted auditor names actually firms? ---
     # The other checks are structural: they confirm a field is populated and
@@ -375,32 +393,38 @@ def run_checks(events, state: Dict, today: dt.date,
     checks.append(_size_check(today))
 
     # --- follow-on statistics ---
-    # A partial history is worse than none: the sequences page prints the rates
-    # as percentages, so a run that only reached a handful of companies
-    # publishes "0 of 6" beside a population of several hundred and reads as a
-    # real finding. This happened twice, both times because a local run wrote
-    # over the state the scheduled run had produced.
+    # Rates need a complete company archive and a compatible calculation.
+    # Cohort size alone says nothing about completeness: a mature eligible
+    # denominator can legitimately be small when most observations are young.
     hist_path = config.STATE_DIR / "history.json"
     if hist_path.exists():
         try:
             hist = json.loads(hist_path.read_text())
             n = hist.get("total_historical_events", 0)
             companies = hist.get("companies", 0)
-            eligible = max((r.get("eligible", 0) for r in hist.get("rows", [])),
-                           default=0)
-            # Every company contributes at least the event that flagged it, so
-            # a total below the company count means the refresh did not finish.
-            if companies > 20 and (n < companies or eligible * 4 < companies):
+            omitted = hist.get("omitted_companies", 0)
+            eligible = sum(r.get("eligible", 0) for r in hist.get("rows", []))
+            if hist.get("methodology_version") != history.METHODOLOGY_VERSION:
                 checks.append(_check(
-                    "Follow-on rates computed", FAIL,
-                    f"{companies} companies but only {n:,} historical events, "
-                    f"at most {eligible} eligible - the history refresh did not "
-                    "complete, so the published rates would come from a "
-                    "fraction of the population"))
+                    "Follow-on rates computed", WARN,
+                    "history calculation is outdated; rebuild before publishing "
+                    "follow-on rates"))
+            elif omitted:
+                checks.append(_check(
+                    "Follow-on rates computed", WARN,
+                    f"{omitted} of {hist.get('requested_companies', companies)} "
+                    "company archive(s) were omitted; rates describe available "
+                    "company archives only"))
+            elif not eligible:
+                checks.append(_check(
+                    "Follow-on rates computed", WARN,
+                    f"{companies} company archives, {n:,} historical events; "
+                    "no mature eligible observations for rates"))
             else:
                 checks.append(_check(
-                    "Follow-on rates computed", OK if n else WARN,
-                    f"{companies} companies, {n:,} historical events"))
+                    "Follow-on rates computed", OK,
+                    f"{companies} company archives, {n:,} historical events; "
+                    f"{eligible} mature eligible observations across rate rows"))
         except ValueError:
             checks.append(_check("Follow-on rates computed", WARN, "stats file unreadable"))
     else:

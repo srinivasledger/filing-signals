@@ -46,6 +46,7 @@
     return (c.dataset.form || '').split(' ');
   });
   var routine = cards.map(function (c) { return c.dataset.routine === 'yes'; });
+  var routineCount = routine.filter(Boolean).length;
 
   function apply() {
     var term = ((q && q.value) || '').trim().toLowerCase();
@@ -77,6 +78,7 @@
     if (noresults) noresults.hidden = shown !== 0;
     syncGroups();
     describeRefinements();
+    if (q) showElsewhere(term);
 
     // Keep the chart showing the same population as the cards. Search text is
     // deliberately excluded: it matches card text, which the chart rows do not
@@ -131,11 +133,11 @@
       var fb = formChips.querySelector('.chip.is-on');
       if (fb) parts.push(fb.textContent.trim());
     }
-    // Only where there is a toggle to have set it. On a page with none, the
-    // routine entries are simply shown, and saying so labels a choice nobody
-    // made.
-    if (showRoutine && document.getElementById('routinechips')) {
-      parts.push('routine notices shown');
+    // The default suppression needs to be visible even while Refine is
+    // closed; otherwise "141 of 150" has no explanation beside the feed.
+    if (document.getElementById('routinechips')) {
+      parts.push(showRoutine ? 'routine notices shown'
+        : routineCount + ' routine notice' + (routineCount === 1 ? '' : 's') + ' hidden');
     }
     refineActive.textContent = parts.length ? parts.join(' \u00b7 ') : '';
     refineActive.classList.toggle('is-set', parts.length > 0);
@@ -162,11 +164,15 @@
 
   function wire(group, onPick) {
     if (!group) return;
+    group.querySelectorAll('.chip').forEach(function (c) {
+      c.setAttribute('aria-pressed', String(c === group.querySelector('.chip.is-on')));
+    });
     group.addEventListener('click', function (e) {
       var btn = e.target.closest('.chip');
       if (!btn) return;
       group.querySelectorAll('.chip').forEach(function (c) {
         c.classList.toggle('is-on', c === btn);
+        c.setAttribute('aria-pressed', String(c === btn));
       });
       onPick(btn);
       apply();
@@ -176,11 +182,11 @@
   // --- reaching beyond the page ------------------------------------------
   // The feed is a window, so filtering it can only ever find what is already
   // rendered. A company outside that window returned nothing at all, which
-  // reads as "not tracked" rather than "not on this page". The index is
-  // fetched once, on the first search, and only companies NOT already visible
-  // are offered - otherwise every query would list the same company twice.
+  // reads as "not tracked" rather than "not on this page". Search suggestions
+  // distinguish genuinely absent companies from cards suppressed by filters.
   var elsewhere = null;
   var indexPromise = null;
+  var searchGeneration = 0;
 
   function ensureIndex() {
     if (!indexPromise) {
@@ -199,46 +205,97 @@
   }
 
   function showElsewhere(term) {
+    var generation = ++searchGeneration;
+    if (term.length < 2) {
+      if (elsewhere) elsewhere.hidden = true;
+      return;
+    }
     if (!elsewhere) {
       elsewhere = document.createElement('div');
       elsewhere.className = 'elsewhere';
+      elsewhere.setAttribute('aria-live', 'polite');
       elsewhere.hidden = true;
       feed.parentNode.insertBefore(elsewhere, feed);
-    }
-    if (term.length < 2) { elsewhere.hidden = true; return; }
-    ensureIndex().then(function (index) {
-      if ((q.value || '').trim().toLowerCase() !== term) return;   // stale
-      var onPage = {};
-      cards.forEach(function (c, i) {
-        if (!c.hidden) onPage[(c.dataset.cik || '')] = true;
+      elsewhere.addEventListener('click', function (e) {
+        if (e.target.closest('.reset-filters')) resetFilters();
       });
-      var hits = index.filter(function (r) {
-        return !onPage[String(r.k)]
-          && ((r.c || '').toLowerCase().indexOf(term) !== -1
-              || (r.t || '').toLowerCase().indexOf(term) === 0);
+    }
+    ensureIndex().then(function (index) {
+      if (generation !== searchGeneration) return;  // newer input or filter
+      var onPage = {}, visible = {};
+      cards.forEach(function (c) {
+        var cik = c.dataset.cik || '';
+        if (!cik) return;
+        onPage[cik] = true;
+        if (!c.hidden) visible[cik] = true;
+      });
+      var matches = index.filter(function (r) {
+        return (r.c || '').toLowerCase().indexOf(term) !== -1
+          || (r.t || '').toLowerCase().indexOf(term) === 0;
+      });
+      var hiddenHere = matches.filter(function (r) {
+        return onPage[String(r.k)] && !visible[String(r.k)];
       }).slice(0, 8);
-      if (!hits.length) { elsewhere.hidden = true; return; }
-      elsewhere.innerHTML =
-        '<p class="elsewhere-head">Not on this page &mdash; found in the full record</p>'
-        + '<ul class="mini">' + hits.map(function (r) {
-            return '<li><a href="' + rootPath() + 'company/' + r.k + '.html">'
-              + r.c.replace(/[<>&]/g, '') + '</a>'
-              + (r.t ? ' <span class="ticker">' + r.t.replace(/[<>&]/g, '') + '</span>' : '')
-              + ' <span class="muted">' + r.n + (r.n === 1 ? ' entry' : ' entries')
-              + '</span></li>';
-          }).join('') + '</ul>';
+      var outside = matches.filter(function (r) {
+        return !onPage[String(r.k)];
+      }).slice(0, 8);
+      if (!hiddenHere.length && !outside.length) { elsewhere.hidden = true; return; }
+
+      function resultList(rows) {
+        return '<ul class="mini">' + rows.map(function (r) {
+          // CIKs are SEC numeric identifiers; keep the URL numeric even if a
+          // malformed search-index row is ever published.
+          var cik = String(r.k).replace(/\D/g, '');
+          return '<li><a href="' + rootPath() + 'company/' + cik + '.html">'
+            + r.c.replace(/[<>&]/g, '') + '</a>'
+            + (r.t ? ' <span class="ticker">' + r.t.replace(/[<>&]/g, '') + '</span>' : '')
+            + ' <span class="muted">' + r.n + (r.n === 1 ? ' entry' : ' entries')
+            + '</span></li>';
+        }).join('') + '</ul>';
+      }
+      elsewhere.innerHTML = (hiddenHere.length
+        ? '<p class="elsewhere-head">On this page, hidden by current filters'
+          + ' <button type="button" class="reset-filters">Clear filters</button></p>'
+          + resultList(hiddenHere) : '')
+        + (outside.length
+          ? '<p class="elsewhere-head">Not among the entries on this page &mdash; found in the full record</p>'
+          + resultList(outside) : '');
       elsewhere.hidden = false;
     });
   }
 
+  function resetFilters() {
+    activeSignal = 'all';
+    activePeriod = 'all';
+    activeForm = 'all';
+    activeSizes = null;
+    showRoutine = true;
+    if (period) period.value = 'all';
+    [[chips, 'filter', 'all'], [sizeChips, 'size', 'all'],
+      [formChips, 'form', 'all'], [document.getElementById('routinechips'), 'routine', 'show']]
+      .forEach(function (item) {
+        var group = item[0], key = item[1], value = item[2];
+        if (!group) return;
+        group.querySelectorAll('.chip').forEach(function (btn) {
+          var selected = btn.dataset[key] === value;
+          btn.classList.toggle('is-on', selected);
+          btn.setAttribute('aria-pressed', String(selected));
+        });
+      });
+    apply();
+  }
+
   if (q) q.addEventListener('input', function () {
     apply();
-    showElsewhere((q.value || '').trim().toLowerCase());
   });
   if (period) period.addEventListener('change', function () {
     activePeriod = period.value;
     apply();
   });
+  if (chips) {
+    chips.setAttribute('role', 'group');
+    chips.setAttribute('aria-label', 'Signal type');
+  }
   wire(chips, function (btn) { activeSignal = btn.dataset.filter; });
   wire(document.getElementById('routinechips'), function (btn) {
     showRoutine = btn.dataset.routine === 'show';

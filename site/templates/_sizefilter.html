@@ -2,11 +2,11 @@
    same wording; the tier values must match Event.size_tier. #}
 <section class="controls controls-size">
   <span class="filter-label">Company size</span>
-  <div class="chips" id="sizechips">
-    <button class="chip is-on" data-size="all">Any</button>
-    <button class="chip" data-size="mega">$10B+</button>
-    <button class="chip" data-size="mega,large">$700M+</button>
-    <button class="chip" data-size="mid,small">Under $700M</button>
+  <div class="chips" id="sizechips" role="group" aria-label="Company size">
+    <button type="button" class="chip is-on" data-size="all" aria-pressed="true">Any</button>
+    <button type="button" class="chip" data-size="mega" aria-pressed="false">$10B+</button>
+    <button type="button" class="chip" data-size="mega,large" aria-pressed="false">$700M+</button>
+    <button type="button" class="chip" data-size="mid,small" aria-pressed="false">Under $700M</button>
   </div>
   <span class="filter-note">Public float from the 10-K cover &mdash; the SEC&rsquo;s own size test</span>
 </section>

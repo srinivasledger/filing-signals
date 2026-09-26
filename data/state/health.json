@@ -16,12 +16,12 @@
       "status": "ok"
     },
     {
-      "detail": "4218/4218 link to the accession they report",
+      "detail": "4207/4207 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "4218/4218 name a detection method the pipeline implements",
+      "detail": "4207/4207 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
@@ -31,28 +31,28 @@
       "status": "ok"
     },
     {
-      "detail": "980/980 compare the same form type against an earlier filing",
+      "detail": "976/976 compare the same form type against an earlier filing",
       "name": "Comparisons are like-for-like",
       "status": "ok"
     },
     {
-      "detail": "4218 unique entries across 4218 rows",
+      "detail": "4207 unique entries across 4207 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 2651 begin mid-sentence, 0 do not open at the substance",
+      "detail": "0 of 2640 begin mid-sentence, 0 do not open at the substance",
       "name": "Quotes open with the substance",
       "status": "ok"
     },
     {
-      "detail": "0 of 2651 end mid-sentence with no ellipsis to mark the cut",
+      "detail": "0 of 2640 end mid-sentence with no ellipsis to mark the cut",
       "name": "Quotes end where the filing does",
       "status": "ok"
     },
     {
-      "detail": "0 of 917 going-concern and material-weakness entries quote a passage that negates the state they assert",
-      "name": "No entry contradicts its own quote",
+      "detail": "0 of 906 going-concern and material-weakness entries match a known wording pattern that conflicts with their reported state",
+      "name": "Known quote contradictions",
       "status": "ok"
     },
     {
@@ -61,7 +61,7 @@
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 4218, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 4207, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -76,12 +76,12 @@
       "status": "ok"
     },
     {
-      "detail": "2412 companies, 18,241 historical events",
+      "detail": "history calculation is outdated; rebuild before publishing follow-on rates",
       "name": "Follow-on rates computed",
-      "status": "ok"
+      "status": "warn"
     },
     {
-      "detail": "heaviest page companies.html is 87 KB over the wire (limit 250 KB), 2429 pages checked",
+      "detail": "heaviest page companies.html is 87 KB over the wire (limit 250 KB), 2426 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
@@ -91,28 +91,28 @@
       "status": "ok"
     },
     {
-      "detail": "771 pages with a period or form filter, 0 option(s) that filter to nothing",
+      "detail": "769 pages with a period or form filter, 0 option(s) that filter to nothing",
       "name": "Filter options match the page",
       "status": "ok"
     },
     {
-      "detail": "heaviest file events.json is 855 KB over the wire (limit 4096 KB), 6 file(s) checked",
+      "detail": "heaviest file events.json is 851 KB over the wire (limit 4096 KB), 7 file(s) checked",
       "name": "Data file weight",
       "status": "ok"
     },
     {
-      "detail": "all 2429 pages built 2026-09-26 08:41 UTC, data through 2026-09-25, 4,218 events",
+      "detail": "all 2426 pages built 2026-09-26 10:29 UTC, data through 2026-09-25, 4,207 events",
       "name": "Pages agree",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-09-26T08:41:16+00:00",
+  "generated_at": "2026-09-26T10:27:49+00:00",
   "summary": {
     "fail": 0,
-    "ok": 21,
-    "overall": "ok",
+    "ok": 20,
+    "overall": "warn",
     "total": 21,
     "unknown": 0,
-    "warn": 0
+    "warn": 1
   }
 }

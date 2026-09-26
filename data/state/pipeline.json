@@ -611,5 +611,932 @@
       "index_rows": 4411,
       "operating": 211
     }
-  ]
+  ],
+  "scan_days": {
+    "2026-01-02": {
+      "candidates": 168,
+      "index_rows": 4777,
+      "operating": 162
+    },
+    "2026-01-05": {
+      "candidates": 244,
+      "index_rows": 8478,
+      "operating": 228
+    },
+    "2026-01-06": {
+      "candidates": 209,
+      "index_rows": 6453,
+      "operating": 196
+    },
+    "2026-01-07": {
+      "candidates": 259,
+      "index_rows": 3997,
+      "operating": 243
+    },
+    "2026-01-08": {
+      "candidates": 319,
+      "index_rows": 4464,
+      "operating": 300
+    },
+    "2026-01-09": {
+      "candidates": 221,
+      "index_rows": 3576,
+      "operating": 205
+    },
+    "2026-01-12": {
+      "candidates": 420,
+      "index_rows": 3985,
+      "operating": 402
+    },
+    "2026-01-13": {
+      "candidates": 374,
+      "index_rows": 3394,
+      "operating": 326
+    },
+    "2026-01-14": {
+      "candidates": 272,
+      "index_rows": 3380,
+      "operating": 245
+    },
+    "2026-01-15": {
+      "candidates": 254,
+      "index_rows": 3455,
+      "operating": 211
+    },
+    "2026-01-16": {
+      "candidates": 267,
+      "index_rows": 4066,
+      "operating": 255
+    },
+    "2026-01-20": {
+      "candidates": 325,
+      "index_rows": 4342,
+      "operating": 270
+    },
+    "2026-01-21": {
+      "candidates": 339,
+      "index_rows": 5479,
+      "operating": 296
+    },
+    "2026-01-22": {
+      "candidates": 320,
+      "index_rows": 3680,
+      "operating": 309
+    },
+    "2026-01-23": {
+      "candidates": 263,
+      "index_rows": 4975,
+      "operating": 218
+    },
+    "2026-01-26": {
+      "candidates": 250,
+      "index_rows": 3834,
+      "operating": 210
+    },
+    "2026-01-27": {
+      "candidates": 382,
+      "index_rows": 5417,
+      "operating": 354
+    },
+    "2026-01-28": {
+      "candidates": 363,
+      "index_rows": 5556,
+      "operating": 338
+    },
+    "2026-01-29": {
+      "candidates": 460,
+      "index_rows": 5697,
+      "operating": 447
+    },
+    "2026-01-30": {
+      "candidates": 370,
+      "index_rows": 6076,
+      "operating": 342
+    },
+    "2026-02-02": {
+      "candidates": 295,
+      "index_rows": 5772,
+      "operating": 277
+    },
+    "2026-02-03": {
+      "candidates": 386,
+      "index_rows": 7698,
+      "operating": 363
+    },
+    "2026-02-04": {
+      "candidates": 418,
+      "index_rows": 5276,
+      "operating": 401
+    },
+    "2026-02-05": {
+      "candidates": 516,
+      "index_rows": 5655,
+      "operating": 482
+    },
+    "2026-02-06": {
+      "candidates": 402,
+      "index_rows": 5770,
+      "operating": 355
+    },
+    "2026-02-09": {
+      "candidates": 304,
+      "index_rows": 4730,
+      "operating": 283
+    },
+    "2026-02-10": {
+      "candidates": 342,
+      "index_rows": 6081,
+      "operating": 313
+    },
+    "2026-02-11": {
+      "candidates": 476,
+      "index_rows": 6005,
+      "operating": 444
+    },
+    "2026-02-12": {
+      "candidates": 551,
+      "index_rows": 6766,
+      "operating": 525
+    },
+    "2026-02-13": {
+      "candidates": 404,
+      "index_rows": 8767,
+      "operating": 380
+    },
+    "2026-02-17": {
+      "candidates": 569,
+      "index_rows": 12072,
+      "operating": 539
+    },
+    "2026-02-18": {
+      "candidates": 472,
+      "index_rows": 7650,
+      "operating": 425
+    },
+    "2026-02-19": {
+      "candidates": 539,
+      "index_rows": 5787,
+      "operating": 512
+    },
+    "2026-02-20": {
+      "candidates": 378,
+      "index_rows": 5648,
+      "operating": 351
+    },
+    "2026-02-23": {
+      "candidates": 369,
+      "index_rows": 6004,
+      "operating": 345
+    },
+    "2026-02-24": {
+      "candidates": 653,
+      "index_rows": 7012,
+      "operating": 572
+    },
+    "2026-02-25": {
+      "candidates": 694,
+      "index_rows": 6694,
+      "operating": 671
+    },
+    "2026-02-26": {
+      "candidates": 883,
+      "index_rows": 9055,
+      "operating": 856
+    },
+    "2026-02-27": {
+      "candidates": 637,
+      "index_rows": 10388,
+      "operating": 607
+    },
+    "2026-03-02": {
+      "candidates": 535,
+      "index_rows": 8927,
+      "operating": 498
+    },
+    "2026-03-03": {
+      "candidates": 357,
+      "index_rows": 11603,
+      "operating": 346
+    },
+    "2026-03-04": {
+      "candidates": 436,
+      "index_rows": 7406,
+      "operating": 381
+    },
+    "2026-03-05": {
+      "candidates": 440,
+      "index_rows": 5732,
+      "operating": 402
+    },
+    "2026-03-06": {
+      "candidates": 337,
+      "index_rows": 6181,
+      "operating": 317
+    },
+    "2026-03-09": {
+      "candidates": 335,
+      "index_rows": 5210,
+      "operating": 307
+    },
+    "2026-03-10": {
+      "candidates": 325,
+      "index_rows": 5825,
+      "operating": 294
+    },
+    "2026-03-11": {
+      "candidates": 308,
+      "index_rows": 5029,
+      "operating": 284
+    },
+    "2026-03-12": {
+      "candidates": 605,
+      "index_rows": 5889,
+      "operating": 558
+    },
+    "2026-03-13": {
+      "candidates": 336,
+      "index_rows": 5502,
+      "operating": 313
+    },
+    "2026-03-16": {
+      "candidates": 494,
+      "index_rows": 6281,
+      "operating": 405
+    },
+    "2026-03-17": {
+      "candidates": 439,
+      "index_rows": 8237,
+      "operating": 340
+    },
+    "2026-03-18": {
+      "candidates": 343,
+      "index_rows": 12575,
+      "operating": 248
+    },
+    "2026-03-19": {
+      "candidates": 585,
+      "index_rows": 4764,
+      "operating": 427
+    },
+    "2026-03-20": {
+      "candidates": 540,
+      "index_rows": 4740,
+      "operating": 454
+    },
+    "2026-03-23": {
+      "candidates": 406,
+      "index_rows": 4528,
+      "operating": 256
+    },
+    "2026-03-24": {
+      "candidates": 433,
+      "index_rows": 4831,
+      "operating": 294
+    },
+    "2026-03-25": {
+      "candidates": 398,
+      "index_rows": 5173,
+      "operating": 333
+    },
+    "2026-03-26": {
+      "candidates": 658,
+      "index_rows": 7133,
+      "operating": 457
+    },
+    "2026-03-27": {
+      "candidates": 554,
+      "index_rows": 9206,
+      "operating": 410
+    },
+    "2026-03-30": {
+      "candidates": 528,
+      "index_rows": 6392,
+      "operating": 437
+    },
+    "2026-03-31": {
+      "candidates": 1165,
+      "index_rows": 7962,
+      "operating": 958
+    },
+    "2026-04-01": {
+      "candidates": 494,
+      "index_rows": 6573,
+      "operating": 447
+    },
+    "2026-04-02": {
+      "candidates": 292,
+      "index_rows": 8682,
+      "operating": 270
+    },
+    "2026-04-03": {
+      "candidates": 219,
+      "index_rows": 4597,
+      "operating": 194
+    },
+    "2026-04-06": {
+      "candidates": 189,
+      "index_rows": 3906,
+      "operating": 170
+    },
+    "2026-04-07": {
+      "candidates": 310,
+      "index_rows": 4373,
+      "operating": 289
+    },
+    "2026-04-08": {
+      "candidates": 227,
+      "index_rows": 3769,
+      "operating": 209
+    },
+    "2026-04-09": {
+      "candidates": 211,
+      "index_rows": 3844,
+      "operating": 191
+    },
+    "2026-04-10": {
+      "candidates": 200,
+      "index_rows": 3546,
+      "operating": 183
+    },
+    "2026-04-13": {
+      "candidates": 191,
+      "index_rows": 3197,
+      "operating": 176
+    },
+    "2026-04-14": {
+      "candidates": 267,
+      "index_rows": 3737,
+      "operating": 240
+    },
+    "2026-04-15": {
+      "candidates": 379,
+      "index_rows": 3742,
+      "operating": 344
+    },
+    "2026-04-16": {
+      "candidates": 320,
+      "index_rows": 4650,
+      "operating": 296
+    },
+    "2026-04-17": {
+      "candidates": 262,
+      "index_rows": 4916,
+      "operating": 243
+    },
+    "2026-04-20": {
+      "candidates": 248,
+      "index_rows": 3577,
+      "operating": 230
+    },
+    "2026-04-21": {
+      "candidates": 368,
+      "index_rows": 4265,
+      "operating": 341
+    },
+    "2026-04-22": {
+      "candidates": 374,
+      "index_rows": 4430,
+      "operating": 350
+    },
+    "2026-04-23": {
+      "candidates": 522,
+      "index_rows": 4938,
+      "operating": 490
+    },
+    "2026-04-24": {
+      "candidates": 346,
+      "index_rows": 5760,
+      "operating": 322
+    },
+    "2026-04-27": {
+      "candidates": 309,
+      "index_rows": 6172,
+      "operating": 287
+    },
+    "2026-04-28": {
+      "candidates": 682,
+      "index_rows": 7072,
+      "operating": 651
+    },
+    "2026-04-29": {
+      "candidates": 709,
+      "index_rows": 10200,
+      "operating": 690
+    },
+    "2026-04-30": {
+      "candidates": 1106,
+      "index_rows": 10506,
+      "operating": 1068
+    },
+    "2026-05-01": {
+      "candidates": 618,
+      "index_rows": 7440,
+      "operating": 593
+    },
+    "2026-05-04": {
+      "candidates": 492,
+      "index_rows": 6714,
+      "operating": 469
+    },
+    "2026-05-05": {
+      "candidates": 1001,
+      "index_rows": 6710,
+      "operating": 952
+    },
+    "2026-05-06": {
+      "candidates": 1093,
+      "index_rows": 6283,
+      "operating": 1045
+    },
+    "2026-05-07": {
+      "candidates": 1522,
+      "index_rows": 6417,
+      "operating": 1454
+    },
+    "2026-05-08": {
+      "candidates": 888,
+      "index_rows": 6441,
+      "operating": 846
+    },
+    "2026-05-11": {
+      "candidates": 695,
+      "index_rows": 5996,
+      "operating": 640
+    },
+    "2026-05-12": {
+      "candidates": 751,
+      "index_rows": 6324,
+      "operating": 705
+    },
+    "2026-05-13": {
+      "candidates": 746,
+      "index_rows": 6022,
+      "operating": 684
+    },
+    "2026-05-14": {
+      "candidates": 1011,
+      "index_rows": 7620,
+      "operating": 890
+    },
+    "2026-05-15": {
+      "candidates": 1169,
+      "index_rows": 11996,
+      "operating": 1028
+    },
+    "2026-05-18": {
+      "candidates": 402,
+      "index_rows": 5707,
+      "operating": 365
+    },
+    "2026-05-19": {
+      "candidates": 397,
+      "index_rows": 6133,
+      "operating": 369
+    },
+    "2026-05-20": {
+      "candidates": 478,
+      "index_rows": 4871,
+      "operating": 451
+    },
+    "2026-05-21": {
+      "candidates": 540,
+      "index_rows": 5943,
+      "operating": 499
+    },
+    "2026-05-22": {
+      "candidates": 410,
+      "index_rows": 5990,
+      "operating": 384
+    },
+    "2026-05-26": {
+      "candidates": 510,
+      "index_rows": 6563,
+      "operating": 470
+    },
+    "2026-05-27": {
+      "candidates": 308,
+      "index_rows": 5747,
+      "operating": 265
+    },
+    "2026-05-28": {
+      "candidates": 522,
+      "index_rows": 8228,
+      "operating": 460
+    },
+    "2026-05-29": {
+      "candidates": 330,
+      "index_rows": 7238,
+      "operating": 303
+    },
+    "2026-06-01": {
+      "candidates": 367,
+      "index_rows": 6901,
+      "operating": 341
+    },
+    "2026-06-02": {
+      "candidates": 370,
+      "index_rows": 7309,
+      "operating": 349
+    },
+    "2026-06-03": {
+      "candidates": 358,
+      "index_rows": 6341,
+      "operating": 332
+    },
+    "2026-06-04": {
+      "candidates": 368,
+      "index_rows": 4657,
+      "operating": 348
+    },
+    "2026-06-05": {
+      "candidates": 321,
+      "index_rows": 5194,
+      "operating": 304
+    },
+    "2026-06-08": {
+      "candidates": 332,
+      "index_rows": 4678,
+      "operating": 307
+    },
+    "2026-06-09": {
+      "candidates": 308,
+      "index_rows": 4499,
+      "operating": 285
+    },
+    "2026-06-10": {
+      "candidates": 284,
+      "index_rows": 4497,
+      "operating": 257
+    },
+    "2026-06-11": {
+      "candidates": 401,
+      "index_rows": 4527,
+      "operating": 375
+    },
+    "2026-06-12": {
+      "candidates": 352,
+      "index_rows": 5489,
+      "operating": 316
+    },
+    "2026-06-15": {
+      "candidates": 305,
+      "index_rows": 5213,
+      "operating": 285
+    },
+    "2026-06-16": {
+      "candidates": 387,
+      "index_rows": 4855,
+      "operating": 356
+    },
+    "2026-06-17": {
+      "candidates": 275,
+      "index_rows": 4647,
+      "operating": 253
+    },
+    "2026-06-18": {
+      "candidates": 350,
+      "index_rows": 4836,
+      "operating": 323
+    },
+    "2026-06-22": {
+      "candidates": 328,
+      "index_rows": 4693,
+      "operating": 293
+    },
+    "2026-06-23": {
+      "candidates": 269,
+      "index_rows": 4489,
+      "operating": 249
+    },
+    "2026-06-24": {
+      "candidates": 225,
+      "index_rows": 4159,
+      "operating": 198
+    },
+    "2026-06-25": {
+      "candidates": 356,
+      "index_rows": 5044,
+      "operating": 324
+    },
+    "2026-06-26": {
+      "candidates": 313,
+      "index_rows": 5927,
+      "operating": 279
+    },
+    "2026-06-29": {
+      "candidates": 300,
+      "index_rows": 6278,
+      "operating": 272
+    },
+    "2026-06-30": {
+      "candidates": 429,
+      "index_rows": 5295,
+      "operating": 396
+    },
+    "2026-07-01": {
+      "candidates": 364,
+      "index_rows": 6593,
+      "operating": 341
+    },
+    "2026-07-02": {
+      "candidates": 387,
+      "index_rows": 8863,
+      "operating": 354
+    },
+    "2026-07-06": {
+      "candidates": 218,
+      "index_rows": 5041,
+      "operating": 195
+    },
+    "2026-07-07": {
+      "candidates": 254,
+      "index_rows": 3593,
+      "operating": 234
+    },
+    "2026-07-08": {
+      "candidates": 325,
+      "index_rows": 3930,
+      "operating": 302
+    },
+    "2026-07-09": {
+      "candidates": 239,
+      "index_rows": 3117,
+      "operating": 221
+    },
+    "2026-07-10": {
+      "candidates": 264,
+      "index_rows": 3354,
+      "operating": 240
+    },
+    "2026-07-13": {
+      "candidates": 292,
+      "index_rows": 2989,
+      "operating": 262
+    },
+    "2026-07-14": {
+      "candidates": 282,
+      "index_rows": 3761,
+      "operating": 235
+    },
+    "2026-07-15": {
+      "candidates": 264,
+      "index_rows": 3250,
+      "operating": 232
+    },
+    "2026-07-16": {
+      "candidates": 218,
+      "index_rows": 3748,
+      "operating": 195
+    },
+    "2026-07-17": {
+      "candidates": 198,
+      "index_rows": 4084,
+      "operating": 177
+    },
+    "2026-07-20": {
+      "candidates": 184,
+      "index_rows": 3036,
+      "operating": 163
+    },
+    "2026-07-21": {
+      "candidates": 281,
+      "index_rows": 3306,
+      "operating": 252
+    },
+    "2026-07-22": {
+      "candidates": 356,
+      "index_rows": 3525,
+      "operating": 333
+    },
+    "2026-07-23": {
+      "candidates": 476,
+      "index_rows": 3703,
+      "operating": 444
+    },
+    "2026-07-24": {
+      "candidates": 360,
+      "index_rows": 4005,
+      "operating": 336
+    },
+    "2026-07-27": {
+      "candidates": 258,
+      "index_rows": 4099,
+      "operating": 241
+    },
+    "2026-07-28": {
+      "candidates": 451,
+      "index_rows": 6029,
+      "operating": 432
+    },
+    "2026-07-29": {
+      "candidates": 706,
+      "index_rows": 5969,
+      "operating": 661
+    },
+    "2026-07-30": {
+      "candidates": 777,
+      "index_rows": 5667,
+      "operating": 747
+    },
+    "2026-07-31": {
+      "candidates": 476,
+      "index_rows": 5772,
+      "operating": 453
+    },
+    "2026-08-03": {
+      "candidates": 466,
+      "index_rows": 6095,
+      "operating": 444
+    },
+    "2026-08-04": {
+      "candidates": 812,
+      "index_rows": 6978,
+      "operating": 787
+    },
+    "2026-08-05": {
+      "candidates": 1097,
+      "index_rows": 5586,
+      "operating": 1053
+    },
+    "2026-08-06": {
+      "candidates": 1499,
+      "index_rows": 6853,
+      "operating": 1448
+    },
+    "2026-08-07": {
+      "candidates": 801,
+      "index_rows": 6116,
+      "operating": 763
+    },
+    "2026-08-10": {
+      "candidates": 670,
+      "index_rows": 5152,
+      "operating": 625
+    },
+    "2026-08-11": {
+      "candidates": 782,
+      "index_rows": 5796,
+      "operating": 743
+    },
+    "2026-08-12": {
+      "candidates": 673,
+      "index_rows": 5580,
+      "operating": 608
+    },
+    "2026-08-13": {
+      "candidates": 911,
+      "index_rows": 7132,
+      "operating": 799
+    },
+    "2026-08-14": {
+      "candidates": 1091,
+      "index_rows": 11140,
+      "operating": 923
+    },
+    "2026-08-17": {
+      "candidates": 311,
+      "index_rows": 4730,
+      "operating": 271
+    },
+    "2026-08-18": {
+      "candidates": 237,
+      "index_rows": 5551,
+      "operating": 213
+    },
+    "2026-08-19": {
+      "candidates": 285,
+      "index_rows": 4423,
+      "operating": 260
+    },
+    "2026-08-20": {
+      "candidates": 350,
+      "index_rows": 4183,
+      "operating": 312
+    },
+    "2026-08-21": {
+      "candidates": 292,
+      "index_rows": 4983,
+      "operating": 271
+    },
+    "2026-08-24": {
+      "candidates": 162,
+      "index_rows": 5251,
+      "operating": 149
+    },
+    "2026-08-25": {
+      "candidates": 298,
+      "index_rows": 4825,
+      "operating": 275
+    },
+    "2026-08-26": {
+      "candidates": 265,
+      "index_rows": 5690,
+      "operating": 238
+    },
+    "2026-08-27": {
+      "candidates": 254,
+      "index_rows": 6615,
+      "operating": 227
+    },
+    "2026-08-28": {
+      "candidates": 267,
+      "index_rows": 7417,
+      "operating": 246
+    },
+    "2026-08-31": {
+      "candidates": 217,
+      "index_rows": 6019,
+      "operating": 192
+    },
+    "2026-09-01": {
+      "candidates": 406,
+      "index_rows": 5200,
+      "operating": 343
+    },
+    "2026-09-02": {
+      "candidates": 311,
+      "index_rows": 5259,
+      "operating": 266
+    },
+    "2026-09-03": {
+      "candidates": 290,
+      "index_rows": 4779,
+      "operating": 269
+    },
+    "2026-09-04": {
+      "candidates": 221,
+      "index_rows": 3987,
+      "operating": 208
+    },
+    "2026-09-08": {
+      "candidates": 403,
+      "index_rows": 4109,
+      "operating": 345
+    },
+    "2026-09-09": {
+      "candidates": 247,
+      "index_rows": 3640,
+      "operating": 235
+    },
+    "2026-09-10": {
+      "candidates": 337,
+      "index_rows": 3864,
+      "operating": 308
+    },
+    "2026-09-11": {
+      "candidates": 212,
+      "index_rows": 3784,
+      "operating": 190
+    },
+    "2026-09-14": {
+      "candidates": 273,
+      "index_rows": 3981,
+      "operating": 246
+    },
+    "2026-09-15": {
+      "candidates": 340,
+      "index_rows": 4307,
+      "operating": 325
+    },
+    "2026-09-16": {
+      "candidates": 293,
+      "index_rows": 3617,
+      "operating": 255
+    },
+    "2026-09-17": {
+      "candidates": 240,
+      "index_rows": 4149,
+      "operating": 211
+    },
+    "2026-09-18": {
+      "candidates": 178,
+      "index_rows": 3819,
+      "operating": 163
+    },
+    "2026-09-21": {
+      "candidates": 191,
+      "index_rows": 2867,
+      "operating": 167
+    },
+    "2026-09-22": {
+      "candidates": 323,
+      "index_rows": 3407,
+      "operating": 281
+    },
+    "2026-09-23": {
+      "candidates": 224,
+      "index_rows": 3236,
+      "operating": 208
+    },
+    "2026-09-24": {
+      "candidates": 241,
+      "index_rows": 3699,
+      "operating": 215
+    },
+    "2026-09-25": {
+      "candidates": 231,
+      "index_rows": 4411,
+      "operating": 211
+    }
+  }
 }

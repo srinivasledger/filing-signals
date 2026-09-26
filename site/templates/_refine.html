@@ -36,10 +36,10 @@
     {% if forms and forms|length > 1 %}
     <div class="refine-group">
       <span class="filter-label">Form</span>
-      <div class="chips" id="formchips">
-        <button class="chip is-on" data-form="all">Any</button>
+      <div class="chips" id="formchips" role="group" aria-label="Filing form">
+        <button type="button" class="chip is-on" data-form="all" aria-pressed="true">Any</button>
         {% for key, label in forms %}
-        <button class="chip" data-form="{{ key }}">{{ label }}</button>
+        <button type="button" class="chip" data-form="{{ key }}" aria-pressed="false">{{ label }}</button>
         {% endfor %}
       </div>
       <span class="filter-note">An amendment is grouped with the report it
@@ -52,11 +52,11 @@
     {% if not period_only %}
     <div class="refine-group">
       <span class="filter-label">Company size</span>
-      <div class="chips" id="sizechips">
-        <button class="chip is-on" data-size="all">Any</button>
-        <button class="chip" data-size="mega">$10B+</button>
-        <button class="chip" data-size="mega,large">$700M+</button>
-        <button class="chip" data-size="mid,small">Under $700M</button>
+      <div class="chips" id="sizechips" role="group" aria-label="Company size">
+        <button type="button" class="chip is-on" data-size="all" aria-pressed="true">Any</button>
+        <button type="button" class="chip" data-size="mega" aria-pressed="false">$10B+</button>
+        <button type="button" class="chip" data-size="mega,large" aria-pressed="false">$700M+</button>
+        <button type="button" class="chip" data-size="mid,small" aria-pressed="false">Under $700M</button>
       </div>
       <span class="filter-note">Public float from the 10-K cover &mdash; the SEC&rsquo;s own size test</span>
     </div>
@@ -65,9 +65,9 @@
     {% if routine_n and not period_only %}
     <div class="refine-group">
       <span class="filter-label">Routine late filings</span>
-      <div class="chips" id="routinechips">
-        <button class="chip is-on" data-routine="hide">Hidden</button>
-        <button class="chip" data-routine="show">Shown</button>
+      <div class="chips" id="routinechips" role="group" aria-label="Routine late filings">
+        <button type="button" class="chip is-on" data-routine="hide" aria-pressed="true">Hidden</button>
+        <button type="button" class="chip" data-routine="show" aria-pressed="false">Shown</button>
       </div>
       <span class="filter-note">{{ routine_n }} notices filed on or within three days
       of the statutory due date &mdash; the filing calendar, not distress</span>

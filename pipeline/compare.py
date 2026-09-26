@@ -122,6 +122,28 @@ _SUCCESSOR_LANGUAGE = re.compile(
     re.I,
 )
 
+# SEC formerNames records a legal rename, not necessarily a different business.
+# Optimum Communications is the same broadband operator as Altice USA; the
+# former-name field alone made its 2025 10-K look non-comparable. A documented
+# accounting predecessor change is stronger evidence. Abundia's 2025 report,
+# for example, explicitly describes its share exchange as a reverse acquisition
+# with a different accounting acquirer and historical financial statements.
+_BUSINESS_REPLACEMENT = re.compile(
+    r"(?:is|was|has\s+been)\s+(?:accounted\s+for|treated)\s+as\s+a\s+"
+    r"reverse\s+acquisition"
+    r"|reverse\s+recapitali[sz]ation"
+    r"|historical\s+financial\s+statements\s+of\s+the\s+accounting\s+acquirer",
+    re.I,
+)
+
+
+def business_replaced_between(former_name: Optional[str], current_text: str,
+                              prior_text: str) -> bool:
+    """A legal rename is comparable unless new accounting-predecessor evidence appears."""
+    return bool(former_name
+                and _BUSINESS_REPLACEMENT.search(current_text[:100_000])
+                and not _BUSINESS_REPLACEMENT.search(prior_text[:100_000]))
+
 
 def registrant_change_between(sub: Dict, prior_date: str, current_date: str) -> Optional[str]:
     """The former name, if the registrant was renamed between two filings."""
@@ -299,7 +321,7 @@ def _gc_headline(company: str, prior_state: str, current_state: str) -> str:
     if current_state == sections.GC_NONE and prior_state in (
         sections.GC_SUBSTANTIAL_DOUBT, sections.GC_DOUBT_ALLEVIATED
     ):
-        return f"{company} no longer discloses a going-concern conclusion"
+        return f"{company} no longer reports substantial doubt about going concern"
     return f"{company}'s going-concern disclosure changed"
 
 
@@ -434,7 +456,8 @@ def analyse_periodic(filing) -> List[Event]:
     former_name = registrant_change_between(
         sub or {}, prior["filingDate"] or "", filing.filed) if sub else None
     successor = bool(_SUCCESSOR_LANGUAGE.search(str(cur_gc.get("quote", ""))))
-    comparable = not (former_name or successor)
+    business_replaced = business_replaced_between(former_name, current_text, prior_text)
+    comparable = not (business_replaced or successor)
 
     # A change of state is required in every case. Comparability only changes
     # how the event is *described*, never whether it is reported: if the prior
@@ -482,7 +505,7 @@ def analyse_periodic(filing) -> List[Event]:
                 "current_state_label": sections.GC_STATE_LABELS[cur_gc["state"]],
                 "direction": (_severity_direction(pri_gc["state"], cur_gc["state"])
                               if comparable else "not comparable"),
-                "registrant_changed_from": former_name,
+                "registrant_changed_from": former_name if business_replaced else None,
                 "blank_check": is_blank_check(
                     filing.company, getattr(filing, "sic", None), cur_gc.get("quote", "")),
                 "caveat": (
@@ -508,7 +531,10 @@ def analyse_periodic(filing) -> List[Event]:
     # --- internal control over financial reporting ---
     cur_ic = sections.internal_control_state(current_text)
     pri_ic = sections.internal_control_state(prior_text)
-    if (cur_ic["state"] and pri_ic["state"]
+    # A reverse acquisition may keep the CIK while replacing the accounting
+    # predecessor. Its current ICFR conclusion cannot remediate a weakness
+    # reported by the old business. A mere legal rename remains comparable.
+    if (comparable and cur_ic["state"] and pri_ic["state"]
             and cur_ic["state"] != pri_ic["state"]):
         newly = cur_ic["state"] == sections.ICFR_MATERIAL_WEAKNESS
         events.append(base(

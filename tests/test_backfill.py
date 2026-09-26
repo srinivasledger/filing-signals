@@ -199,7 +199,9 @@ def test_the_rates_are_not_recomputed_when_nothing_moved(tmp_path, monkeypatch):
     monkeypatch.setattr(publish, "HISTORY_FILE", tmp_path / "history.json")
     today = dt.date.today().isoformat()
     (tmp_path / "history.json").write_text(json.dumps(
-        {"companies": 1366, "total_historical_events": 12497, "built_on": today}))
+        {"companies": 1364, "requested_companies": 1366,
+         "methodology_version": 2, "total_historical_events": 12497,
+         "built_on": today}))
 
     assert run.history_needs_refresh(0, 1366) is False, "recomputed for nothing"
     assert run.history_needs_refresh(7, 1366) is True, "new events must refresh"
@@ -217,7 +219,9 @@ def test_the_rates_are_refreshed_when_they_go_stale(tmp_path, monkeypatch):
     monkeypatch.setattr(publish, "HISTORY_FILE", tmp_path / "history.json")
     old = (dt.date.today() - dt.timedelta(days=run.HISTORY_MAX_AGE_DAYS)).isoformat()
     (tmp_path / "history.json").write_text(json.dumps(
-        {"companies": 1366, "total_historical_events": 12497, "built_on": old}))
+        {"companies": 1366, "requested_companies": 1366,
+         "methodology_version": 2, "total_historical_events": 12497,
+         "built_on": old}))
     assert run.history_needs_refresh(0, 1366) is True
 
 

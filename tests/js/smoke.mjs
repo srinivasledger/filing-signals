@@ -244,4 +244,87 @@ for (const name of ["chart", "filter", "theme", "currency"]) {
   }
 }
 
+// --- the homepage filter must explain hidden entries and recover matches ---
+// A company card that is on the page but hidden by a signal filter used to
+// appear under "Not on this page". Exercise the click/input path, not just the
+// top-level load, so the label and reset action cannot drift apart.
+{
+  function chip(data, selected = false) {
+    const classes = new Set(["chip", ...(selected ? ["is-on"] : [])]);
+    return el({
+      dataset: data,
+      classList: {
+        contains: (name) => classes.has(name),
+        toggle(name, state) { if (state) classes.add(name); else classes.delete(name); },
+      },
+    });
+  }
+  function group(buttons) {
+    const listeners = {};
+    return el({
+      addEventListener(type, cb) { listeners[type] = cb; },
+      querySelectorAll: () => buttons,
+      querySelector(sel) {
+        if (sel === ".chip.is-on") return buttons.find(b => b.classList.contains("is-on"));
+        const wanted = /\[data-filter="([^"]+)"\]/.exec(sel);
+        return wanted ? buttons.find(b => b.dataset.filter === wanted[1]) : null;
+      },
+      click(button) { listeners.click({target: {closest: () => button}}); },
+    });
+  }
+  const underArmour = el({textContent: "Under Armour, Inc. SEC comment letter",
+    dataset: {cik: "1336917", signal: "comment_letter", size: "mega",
+              period: "2026-09", form: "UPLOAD", routine: "no"}});
+  const restatement = el({textContent: "Other Co restatement",
+    dataset: {cik: "222", signal: "restatement", size: "mega",
+              period: "2026-09", form: "8-K", routine: "no"}});
+  const routineNotice = el({textContent: "Routine late notice",
+    dataset: {cik: "333", signal: "late_filing", size: "small",
+              period: "2026-09", form: "NT", routine: "yes"}});
+  let suggestion;
+  const feed4 = el({querySelectorAll: () => [underArmour, restatement, routineNotice],
+    parentNode: {insertBefore(node) { suggestion = node; return node; }}});
+  const q = el({value: "", listeners: {},
+    addEventListener(type, cb) { this.listeners[type] = cb; },
+    input(value) { this.value = value; this.listeners.input(); }});
+  const all = chip({filter: "all"}, true);
+  const restatementChip = chip({filter: "restatement"});
+  const signals = group([all, restatementChip]);
+  const routineHide = chip({routine: "hide"}, true);
+  const routineShow = chip({routine: "show"});
+  const routines = group([routineHide, routineShow]);
+  const count = el();
+  const refineActive = el();
+  for (const id of Object.keys(byId)) delete byId[id];
+  Object.assign(byId, {feed: feed4, q, chips: signals, routinechips: routines,
+                       count, refineactive: refineActive, noresults: el()});
+  global.document.createElement = () => el({listeners: {},
+    addEventListener(type, cb) { this.listeners[type] = cb; },
+    clickReset() { this.listeners.click({target: {closest: () => ({})}}); }});
+  global.location = {pathname: "/filing-signals/index.html"};
+  global.fetch = async () => ({ok: true, json: async () => [
+    {c: "Under Armour, Inc.", t: "UAA", k: 1336917, n: 1},
+  ]});
+  (0, eval)(fs.readFileSync("site/static/filter.js", "utf8"));
+
+  check("default routine suppression is named beside Refine",
+        refineActive.textContent === "1 routine notice hidden");
+  check("selected signal is exposed to assistive technology",
+        all.getAttribute("aria-pressed") === "true"
+        && restatementChip.getAttribute("aria-pressed") === "false"
+        && signals.getAttribute("aria-label") === "Signal type");
+  signals.click(restatementChip);
+  q.input("Under Armour");
+  await new Promise(resolve => setImmediate(resolve));
+  check("a filtered on-page match is labelled as hidden, not absent",
+        suggestion.innerHTML.includes("On this page, hidden by current filters")
+        && !suggestion.innerHTML.includes("Not among the entries on this page"));
+  suggestion.clickReset();
+  await new Promise(resolve => setImmediate(resolve));
+  check("Clear filters reveals the matching card and updates pressed states",
+        !underArmour.hidden && count.textContent === "1 of 3 events"
+        && all.getAttribute("aria-pressed") === "true"
+        && routineShow.getAttribute("aria-pressed") === "true");
+}
+
 process.exit(failed);

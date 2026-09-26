@@ -74,21 +74,20 @@ def _rank(event) -> tuple:
             event.company)
 
 
-def _scan_totals(runs):
-    """Denominator for the flag rate. Counts each filing day once, since a day
-    may be re-run and would otherwise be double counted."""
-    per_day = {}
-    for r in runs:
-        day = r.get("date")
-        if not day:
-            continue
-        prev = per_day.get(day, {})
-        per_day[day] = {
-            "index_rows": max(prev.get("index_rows", 0), r.get("index_rows") or 0),
-            "candidates": max(prev.get("candidates", 0), r.get("candidates") or 0),
-        }
-    return (sum(v["index_rows"] for v in per_day.values()),
-            sum(v["candidates"] for v in per_day.values()))
+def _scan_metrics(events, state):
+    """Use distinct filings and the same known filing days on both sides."""
+    per_day = publish.scan_day_totals(state)
+    candidates = sum(v["candidates"] for v in per_day.values())
+    flagged = len({e.accession for e in events if e.filed in per_day})
+    days = sorted(per_day)
+    return {
+        "filings_scanned": sum(v["index_rows"] for v in per_day.values()),
+        "candidates_scanned": candidates,
+        "flagged_filings": flagged,
+        "scan_days_covered": len(days),
+        "scan_first": days[0] if days else "",
+        "scan_last": days[-1] if days else "",
+    }
 
 
 # What each notice defers, and how long Rule 12b-25 allows for it. The windows
@@ -608,7 +607,7 @@ def build(second_pass: bool = False) -> None:
         status_label = f"{n} warning{'s' if n > 1 else ''}"
     else:
         status_state = "ok"
-        status_label = f"All {summary.get('total', 0)} checks passing"
+        status_label = f"{summary.get('total', 0)} automated checks passing"
 
     common = {
         "asset_v": asset_versions(),
@@ -639,18 +638,16 @@ def build(second_pass: bool = False) -> None:
 
     situations = len({(e.cik, e.filed) for e in events})
     routine_n = sum(1 for e in events if e.routine)
-    scanned, candidates = _scan_totals(state.get("runs", []))
-    flag_rate = (f"{len(events) / candidates * 100:.1f}%"
-                 if candidates else "—")
+    scan_metrics = _scan_metrics(events, state)
 
-    # The link-preview card, drawn with the live figures. After flag_rate,
+    # The link-preview card, drawn with the live figures. After signals,
     # which it puts on the card.
     try:
         preview.build({
             "events": len(events),
             "companies": len({e.cik for e in events}),
             "days": len({e.filed for e in events}),
-            "flag_rate": flag_rate,
+            "signals": len({e.signal_type for e in events}),
             "through": state.get("last_processed") or "",
         })
     except Exception as exc:                     # noqa: BLE001
@@ -710,8 +707,7 @@ def build(second_pass: bool = False) -> None:
             situations=situations, routine_n=routine_n,
             days_covered=len({e.filed for e in events}),
             last_run=state.get("last_processed"),
-            filings_scanned=scanned, candidates_scanned=candidates,
-            flag_rate=flag_rate, truncated=truncated,
+            truncated=truncated,
             shown_events=len(home_events), activity_chart=activity_svg,
             activity_data=activity_data, mix_bar=mix_svg,
             **common,
@@ -843,8 +839,7 @@ def build(second_pass: bool = False) -> None:
                # methodology page said "about eleven months" in prose while the
                # letters page computed 261 days from the same data.
                letter_median_lag=(letter_stats or {}).get("median_lag"),
-               filings_scanned=scanned, candidates_scanned=candidates,
-               total_events=len(events), flag_rate=flag_rate, **common))
+               total_events=len(events), **scan_metrics, **common))
     _write(config.PUBLIC / "status.html",
            env.get_template("status.html").render(
                rel="", page_path="status.html", runs=runs, last_run=state.get("last_processed"),
@@ -880,6 +875,13 @@ def build(second_pass: bool = False) -> None:
         "years": [{"year": y, "file": f"events-{y}.json", "count": len(r)}
                   for y, r in sorted(by_year_all.items(), reverse=True)],
         "total": len(events),
+    }, indent=2))
+    corrections_path = config.DATA / "corrections.jsonl"
+    corrections = [json.loads(line) for line in corrections_path.read_text().splitlines()
+                   if line.strip()] if corrections_path.exists() else []
+    _write(config.PUBLIC / "corrections.json", json.dumps({
+        "generated_at": built_at, "count": len(corrections),
+        "corrections": corrections,
     }, indent=2))
     # A compact company index so the search box can reach the whole record.
     # The home page holds a window, so searching it found only what happened
