@@ -101,12 +101,12 @@
       "status": "ok"
     },
     {
-      "detail": "all 2458 pages built 2026-10-02 09:51 UTC, data through 2026-10-01, 4,291 events",
+      "detail": "all 2458 pages built 2026-10-02 15:53 UTC, data through 2026-10-01, 4,291 events",
       "name": "Pages agree",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-10-02T09:51:41+00:00",
+  "generated_at": "2026-10-02T15:53:30+00:00",
   "summary": {
     "fail": 0,
     "ok": 21,
