@@ -1,12 +1,12 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-10-08, which is everything EDGAR has published",
+      "detail": "last complete filing day 2026-10-09, which is everything EDGAR has published",
       "name": "Pipeline is current",
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 46,253 index rows read",
+      "detail": "10 runs recorded, 45,058 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,17 +16,17 @@
       "status": "ok"
     },
     {
-      "detail": "4334/4334 link to the accession they report",
+      "detail": "4342/4342 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "4334/4334 name a detection method the pipeline implements",
+      "detail": "4342/4342 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "524 entries from SEC item codes, 0 carrying the wrong code for their signal",
+      "detail": "527 entries from SEC item codes, 0 carrying the wrong code for their signal",
       "name": "Item codes match the signal they produced",
       "status": "ok"
     },
@@ -36,7 +36,7 @@
       "status": "ok"
     },
     {
-      "detail": "4334 unique entries across 4334 rows",
+      "detail": "4342 unique entries across 4342 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
@@ -56,12 +56,12 @@
       "status": "ok"
     },
     {
-      "detail": "458 firm names across 94 firms; 14 spelled more than one way by filers",
+      "detail": "459 firm names across 94 firms; 14 spelled more than one way by filers",
       "name": "Auditor names are firm-shaped",
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 4334, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 4342, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -71,17 +71,17 @@
       "status": "ok"
     },
     {
-      "detail": "5,201 companies, refreshed 6 day(s) ago",
+      "detail": "5,203 companies, refreshed 0 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
     {
-      "detail": "2457 company archives, 18,675 historical events; 4624 mature eligible observations across rate rows",
+      "detail": "2460 company archives, 18,728 historical events; 4632 mature eligible observations across rate rows",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page companies.html is 89 KB over the wire (limit 250 KB), 2474 pages checked",
+      "detail": "heaviest page companies.html is 89 KB over the wire (limit 250 KB), 2477 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
@@ -91,22 +91,22 @@
       "status": "ok"
     },
     {
-      "detail": "794 pages with a period or form filter, 0 option(s) that filter to nothing",
+      "detail": "796 pages with a period or form filter, 0 option(s) that filter to nothing",
       "name": "Filter options match the page",
       "status": "ok"
     },
     {
-      "detail": "heaviest file events.json is 874 KB over the wire (limit 4096 KB), 7 file(s) checked",
+      "detail": "heaviest file events.json is 875 KB over the wire (limit 4096 KB), 7 file(s) checked",
       "name": "Data file weight",
       "status": "ok"
     },
     {
-      "detail": "all 2474 pages built 2026-10-09 16:22 UTC, data through 2026-10-08, 4,334 events",
+      "detail": "all 2477 pages built 2026-10-10 09:56 UTC, data through 2026-10-09, 4,342 events",
       "name": "Pages agree",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-10-09T16:22:51+00:00",
+  "generated_at": "2026-10-10T09:56:01+00:00",
   "summary": {
     "fail": 0,
     "ok": 21,
