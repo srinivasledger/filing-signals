@@ -92,7 +92,13 @@ _GC_NEGATED = re.compile(
     r"|substantial\s+doubt[^.]{0,160}?(?:do|does|did)\s+not\s+exist"
     r"|substantial\s+doubt[^.]{0,160}?\bis\s+not\s+raised"
     r"|substantial\s+doubt[^.]{0,160}?\b(?:is|was)\s+no\s+longer\s+present"
-    r"|alleviat\w+[^.]{0,60}?\bsubstantial\s+doubt[^.]{0,60}?\bno\s+longer",
+    r"|alleviat\w+[^.]{0,60}?\bsubstantial\s+doubt[^.]{0,60}?\bno\s+longer"
+    # The negation can govern the *conditions*, not the words "substantial
+    # doubt": "no conditions or events ... raise substantial doubt". Keep
+    # this inside one sentence so a later affirmative conclusion survives.
+    r"|\bno\s+(?:(?:known|relevant|such|material)\s+)?"
+    r"(?:conditions?\s+(?:or|and)\s+events?|events?\s+(?:or|and)\s+conditions?)\b"
+    r"[^.!?;]{0,220}?\braise[sd]?\s+(?:a\s+)?substantial\s+doubt",
     re.I,
 )
 

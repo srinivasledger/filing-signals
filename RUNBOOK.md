@@ -174,8 +174,9 @@ An email titled "Run failed". The site keeps showing the last good data and
 does not update.
 
 ### Why
-Every run ends by asserting the things the site depends on — that no entry
-contradicts its own quoted filing text, that nothing is duplicated, that every
+Every run ends by asserting the things the site depends on — that known
+contradictions between entries and their quoted filing text are rejected,
+that nothing is duplicated, that every
 entry links to the filing it reports. **If any of those fail, the run commits
 nothing and publishes nothing.** You are looking at the last state that passed
 every check, rather than a partial or doubtful one.
