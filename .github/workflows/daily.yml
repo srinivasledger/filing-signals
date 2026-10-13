@@ -46,7 +46,7 @@ permissions:
 
 jobs:
   scan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -84,6 +84,13 @@ jobs:
           else
             python -m pipeline.run
           fi
+
+      # Validate the generated pages before any new data is committed. A
+      # browser failure leaves the previous repository state and site intact.
+      - name: Verify rendered site before commit
+        uses: ./.github/actions/verify-site
+        with:
+          phase: daily-precommit
 
       - name: Commit new events
         id: commit
@@ -129,6 +136,11 @@ jobs:
               echo "::warning::another run committed first and this one could not be rebased onto it; its work is discarded and the next run will redo it. Nothing is lost and nothing is published."
               exit 0
             fi
+            # The rebase may bring in source or data newer than public/.
+            # Commit the rebased data, but leave publication to the next
+            # build so an artifact made before the rebase cannot go live.
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::rebased onto newer main; pre-rebase pages will not be deployed. The next build publishes the current repository state."
             sleep 5
           done
           echo "::error::could not push the day's events after three attempts"
@@ -164,3 +176,22 @@ jobs:
       - id: deployment
         if: steps.commit.outputs.published != 'false'
         uses: actions/deploy-pages@v5
+      - name: Verify deployed site
+        id: verify_live
+        if: steps.commit.outputs.published != 'false'
+        env:
+          BASE_URL: ${{ steps.deployment.outputs.page_url }}
+          VERIFY_DEPLOYED_BUILD: '1'
+          CHECK_PHASE: daily-live
+        run: |
+          test -n "$BASE_URL"
+          for engine in chromium firefox webkit; do
+            BROWSER_ENGINE="$engine" node tests/browser/check-site.cjs
+          done
+      - name: Save live browser failure evidence
+        if: failure() && steps.verify_live.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-check-daily-live-${{ github.run_attempt }}
+          path: artifacts/browser-check
+          if-no-files-found: ignore

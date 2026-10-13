@@ -1,0 +1,48 @@
+name: Verify site in browser
+description: Check pipeline regressions and the rendered site before publication.
+
+inputs:
+  base-url:
+    description: Optional live site URL; empty serves public/ locally.
+    required: false
+    default: ""
+  phase:
+    description: Short name for the check and any failure artifact.
+    required: false
+    default: predeploy
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: "22"
+        cache: npm
+    - name: Install regression checker
+      shell: bash
+      run: python -m pip install -r requirements-dev.txt
+    - name: Check pipeline and client regressions
+      shell: bash
+      run: python -m pytest tests/ -q
+    - name: Install browser checker
+      shell: bash
+      run: npm ci
+    - name: Install test browsers
+      shell: bash
+      run: npx playwright install --with-deps chromium firefox webkit
+    - name: Verify site
+      shell: bash
+      env:
+        BASE_URL: ${{ inputs.base-url }}
+        CHECK_PHASE: ${{ inputs.phase }}
+      run: |
+        for engine in chromium firefox webkit; do
+          BROWSER_ENGINE="$engine" node tests/browser/check-site.cjs
+        done
+    - name: Save browser failure evidence
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: browser-check-${{ inputs.phase }}-${{ github.run_attempt }}
+        path: artifacts/browser-check
+        if-no-files-found: ignore

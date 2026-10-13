@@ -6,7 +6,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -17,8 +17,13 @@ jobs:
         with:
           node-version: "22"
       - run: pip install -r requirements-dev.txt
-      - name: Run tests
-        # No network access is needed: every test runs off saved fixtures.
-        run: python -m pytest tests/ -q
       - name: Check the site renders
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
+          REPO_URL: ${{ vars.REPO_URL }}
         run: python -m pipeline.render
+      - name: Verify rendered site in browser
+        uses: ./.github/actions/verify-site
+        with:
+          phase: ci

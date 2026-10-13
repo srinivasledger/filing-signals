@@ -1,0 +1,13 @@
+{
+  "name": "filing-signals-checks",
+  "private": true,
+  "scripts": {
+    "test:browser": "node tests/browser/check-site.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
