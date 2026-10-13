@@ -6,6 +6,40 @@ from pathlib import Path
 from pipeline import compare, health, history, models, publish, sections
 
 
+def test_no_conditions_or_events_raise_doubt_is_a_negative_conclusion():
+    # Byrna, AirSculpt, Zentalis and IperionX each negated the *conditions*
+    # rather than the nearby words "substantial doubt".
+    conclusions = [
+        "Management concluded that no conditions or events exist that, "
+        "when considered together, raise substantial doubt about its ability "
+        "to continue as a going concern.",
+        "Management concluded there are no conditions or events, considered "
+        "in the aggregate, that raise substantial doubt.",
+        "The company determined there are no conditions or events that raise "
+        "substantial doubt about its ability to continue.",
+        "No events or conditions which raise substantial doubt were found.",
+    ]
+    for conclusion in conclusions:
+        assert sections.classify_going_concern(conclusion) == sections.GC_NONE
+
+    note = ("Going Concern\nManagement evaluates whether conditions or events "
+            "raise substantial doubt about its ability to continue. "
+            + conclusions[0] + "\nNOTE 2 - REVENUE\nRevenue is recognized later.")
+    result = sections.going_concern_state(note)
+    assert result["state"] == sections.GC_NONE
+    assert "no conditions or events exist" in result["quote"]
+
+
+def test_conditions_negation_does_not_mask_a_later_real_doubt_conclusion():
+    negative = ("Management concluded there are no conditions or events that "
+                "raise substantial doubt. ")
+    affirmative = ("A subsequent loss of financing raises substantial doubt "
+                   "about our ability to continue as a going concern.")
+    assert sections.classify_going_concern(negative + affirmative) == sections.GC_SUBSTANTIAL_DOUBT
+    assert sections.classify_going_concern(
+        "No events of default occurred. " + affirmative) == sections.GC_SUBSTANTIAL_DOUBT
+
+
 def test_conditional_future_doubt_does_not_become_present_doubt():
     optimum = ("A failure to secure funding by April 2026 may raise substantial "
                "doubt about our ability to continue as a going concern in the future.")

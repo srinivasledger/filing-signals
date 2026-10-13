@@ -558,6 +558,26 @@ def _feed_xml(events: List[Event], built_at: str) -> str:
 def build(second_pass: bool = False) -> None:
     events = publish.load_all_events()
     state = publish.load_state()
+    health = publish.load_health()
+
+    # A template-only push runs this entry point without running the scanner.
+    # The saved health report can predate a new contradiction rule, so inspect
+    # the actual events before touching public/. Nor may an already-failing
+    # report be rendered into a new deployment merely because it is cached.
+    if not second_pass:
+        contradictions = health_mod._known_quote_contradictions(events)
+        if contradictions:
+            examples = ", ".join(
+                f"{e.company} ({e.accession})" for e in contradictions[:3])
+            raise RuntimeError(
+                f"Known quote contradictions in {len(contradictions)} event(s): {examples}")
+        failed = [c for c in health.get("checks", [])
+                  if c.get("status") == health_mod.FAIL]
+        if failed or (health.get("summary") or {}).get("fail"):
+            names = (", ".join(c.get("name", "unnamed check") for c in failed)
+                     or "summary reports a failure without a matching check")
+            raise RuntimeError(f"Saved health checks are failing: {names}")
+
     env = _env()
     built_at = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -594,7 +614,6 @@ def build(second_pass: bool = False) -> None:
     activity_days = charts.activity_days(events)
     mix_svg = charts.mix_bar(events)
 
-    health = publish.load_health()
     summary = health.get("summary") or {}
     if not summary:
         status_state, status_label = "unknown", "Status unknown"
@@ -937,8 +956,16 @@ def build(second_pass: bool = False) -> None:
                                     if c["name"] != final["name"]] + [final]
                 health["summary"] = health_mod._summarise(health["checks"])
                 publish.save_health(health)
+            failed = [c for c in built if c["status"] == health_mod.FAIL]
+            if final["status"] != health_mod.OK and final["name"] not in {
+                    c["name"] for c in failed}:
+                failed.append(final)
+            if failed:
+                names = ", ".join(c["name"] for c in failed)
+                raise RuntimeError(f"Generated site health checks failed: {names}")
         except Exception as exc:                 # noqa: BLE001
-            log.warning("post-render checks did not run: %s", exc)
+            log.error("post-render validation failed: %s", exc)
+            raise
 
 
 if __name__ == "__main__":
