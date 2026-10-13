@@ -165,18 +165,22 @@ h1{font-family:var(--sans);font-size:clamp(1.55rem,3.1vw,2.35rem);line-height:1.
   padding:9px 14px;color:var(--ink-2);font:700 .72rem var(--mono);
   text-transform:uppercase;letter-spacing:.09em}
 .activity-panel>summary:hover,.activity-panel>summary:focus-visible{color:var(--ink)}
+.activity-panel>summary::after{content:"Show graph +";margin-left:auto;
+  color:var(--muted);font-weight:400}
+.activity-panel[open]>summary::after{content:"Hide graph −"}
 .activity-panel[open]>summary{border-bottom:1px solid var(--line)}
 .activity-panel>.eyebrow{margin:12px 12px 10px}
 .activity-panel .chart{margin:12px;border:0;padding:0}
+.chart-note{margin:8px 12px 14px;color:var(--muted);font-size:.78rem;line-height:1.5}
 
 /* ── charts ───────────────────────────────────────────────── */
 .chart{margin:0 0 28px;background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);padding:15px 16px 10px}
 .chart svg{display:block;width:100%;height:auto;overflow:visible}
 .chart .grid{stroke:var(--line);stroke-width:1}
-.chart .axis{fill:var(--muted);font-size:10.5px;font-family:var(--mono);
+.chart .axis{fill:var(--muted);font-size:12px;font-family:var(--mono);
   font-variant-numeric:tabular-nums;letter-spacing:.02em}
-.chart .bar-total{fill:var(--ink-2);font-size:10.5px;font-weight:700;
+.chart .bar-total{fill:var(--ink-2);font-size:12px;font-weight:700;
   font-family:var(--mono);font-variant-numeric:tabular-nums}
 .chart .seg{transition:opacity .12s}
 .chart svg:hover .seg{opacity:.5}
@@ -218,12 +222,12 @@ h1{font-family:var(--sans);font-size:clamp(1.55rem,3.1vw,2.35rem);line-height:1.
   letter-spacing:.06em;text-transform:uppercase}
 
 /* ── the register ─────────────────────────────────────────── */
-.feed{display:grid;gap:12px}
-@media (min-width:1120px){ .feed{grid-template-columns:1fr 1fr;align-items:start} }
+.feed{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1120px){ .feed{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start} }
 /* A third column past 1700px. Cards are self-contained, so they tile; the
    prose above them stays at --reading regardless of how wide the page gets. */
-@media (min-width:1700px){ .feed{grid-template-columns:repeat(3,1fr)} }
-.event{background:var(--surface);border:1px solid var(--line);
+@media (min-width:1700px){ .feed{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.event{min-width:0;background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);padding:15px 17px 15px 19px;position:relative;
   transition:border-color .12s}
 .event::before{content:"";position:absolute;left:0;top:-1px;bottom:-1px;width:3px}
@@ -384,7 +388,7 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
   .event{padding:13px 14px 13px 16px}
   .event-head time{margin-left:0;width:100%}
   .chart{padding:12px 10px 6px}
-  .chart-scroll svg{min-width:660px}
+  .chart-scroll svg{min-width:960px}
   .chart:has(.chart-scroll)::after{content:"Swipe chart for more dates →";
     display:block;text-align:right;color:var(--muted);font:600 .64rem var(--mono);
     letter-spacing:.04em;padding:3px 2px 0}
@@ -494,7 +498,8 @@ h2{font-family:var(--sans);font-size:clamp(1.05rem,1.7vw,1.28rem);letter-spacing
    approach the viewport. The size hints stop the scrollbar jumping as each
    one is realised. This is what keeps a long feed cheap on a phone, where
    layout -- not download -- is the expensive part. */
-.feed .event { content-visibility: auto; contain-intrinsic-size: auto 280px; }
+.feed .event { content-visibility: auto;
+  contain-intrinsic-width: none; contain-intrinsic-height: auto 280px; }
 .mini li     { content-visibility: auto; contain-intrinsic-size: auto 26px; }
 
 /* Any element given `display` by a rule outranks the [hidden] attribute's

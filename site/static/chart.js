@@ -2,8 +2,8 @@
 //
 // The server renders the unfiltered chart as SVG, which is what a browser
 // without JavaScript keeps. This module takes over only once a filter is
-// applied, redrawing from the same rows the cards were built from so the chart
-// and the register below it always agree.
+// applied, redrawing from the recent filing-day rows. The record below has a
+// separate entry limit, which the page explains beside the graph.
 (function () {
   var holder = document.querySelector('.chart svg');
   var raw = document.getElementById('chart-data');
@@ -31,14 +31,24 @@
            ' V' + (y + h) + ' Z';
   }
 
-  function draw(rows) {
+  function draw(rows, days) {
     var byDay = {};
     rows.forEach(function (r) {
       (byDay[r.d] = byDay[r.d] || {})[r.s] = ((byDay[r.d] || {})[r.s] || 0) + 1;
     });
-    // Keep every day on the axis even when a filter empties it, so the shape
-    // of the period stays comparable instead of silently rescaling.
-    var days = data.days;
+    // Keep every filing day in the selected period on the axis even when a
+    // signal, size or form filter empties it. Changing the period itself does
+    // change the axis, so an October selection never shows September bars.
+    while (holder.firstChild) holder.removeChild(holder.firstChild);
+    if (!days.length) {
+      holder.appendChild(el('text', {x: W / 2, y: H / 2,
+        'text-anchor': 'middle', 'font-size': 18, fill: 'var(--muted)'},
+      'No filing days for this period in the recent chart window'));
+      var emptyLegend = document.querySelector('.chart-legend');
+      if (emptyLegend) emptyLegend.textContent = 'No filing days in this period';
+      return;
+    }
+
     var peak = 0;
     days.forEach(function (d) {
       var t = 0, c = byDay[d] || {};
@@ -50,8 +60,6 @@
     var present = data.order.filter(function (sig) {
       return days.some(function (d) { return (byDay[d] || {})[sig]; });
     });
-
-    while (holder.firstChild) holder.removeChild(holder.firstChild);
 
     // Never more ticks than whole numbers to label: four steps over a peak of
     // 2 rounds to "2, 2, 1, 1, 0", which reads as a broken axis.
@@ -111,10 +119,23 @@
     }
   }
 
-  // Exposed for filter.js; the predicate mirrors the card filters exactly.
-  window.redrawActivityChart = function (matches, scopeLabel) {
-    draw(data.rows.filter(matches));
+  // Exposed for filter.js. The chart contains only the most recent filing
+  // days, so an older period may have no dates in this window at all.
+  window.redrawActivityChart = function (matches, scopeLabel, periodKey) {
+    var days = data.days.filter(function (day) {
+      return !periodKey || periodKey === 'all' || day.indexOf(periodKey) === 0;
+    });
+    var rows = data.rows.filter(function (row) {
+      return (!periodKey || periodKey === 'all' || row.d.indexOf(periodKey) === 0)
+        && matches(row);
+    });
+    draw(rows, days);
+    var dayLabel = days.length + (days.length === 1 ? ' filing day' : ' filing days');
+    var label = dayLabel + (scopeLabel ? ' \u00b7 ' + scopeLabel : '');
     var scope = document.getElementById('chart-scope');
-    if (scope && scopeLabel) scope.textContent = scopeLabel;
+    if (scope) scope.textContent = label;
+    var title = 'Events per filing day by signal type: ' + label;
+    holder.setAttribute('aria-label', title);
+    holder.insertBefore(el('title', {}, title), holder.firstChild);
   };
 })();
