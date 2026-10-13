@@ -80,18 +80,17 @@
     describeRefinements();
     if (q) showElsewhere(term);
 
-    // Keep the chart showing the same population as the cards. Search text is
-    // deliberately excluded: it matches card text, which the chart rows do not
-    // carry, so applying it there would silently disagree with the register.
+    // Apply the same structured filters to the chart's recent filing days.
+    // Search text is excluded: it matches card text, which chart rows do not
+    // carry. The page labels this distinction beside the chart.
     if (window.redrawActivityChart) {
       window.redrawActivityChart(function (row) {
         var okSignal = activeSignal === 'all' || row.s === activeSignal;
         var okSize = !activeSizes || activeSizes.indexOf(row.z) !== -1;
         var okRoutine = showRoutine || !row.r;
-        // Chart rows carry no form, so a form filter is not applied to the
-        // chart - the same reasoning as the search box above.
-        return okSignal && okSize && okRoutine;
-      }, describeScope());
+        var okForm = activeForm === 'all' || row.f === activeForm;
+        return okSignal && okSize && okRoutine && okForm;
+      }, describeScope(), activePeriod);
     }
   }
 
@@ -145,6 +144,9 @@
 
   function describeScope() {
     var parts = [];
+    if (activePeriod !== 'all' && period) {
+      parts.push(period.options[period.selectedIndex].textContent.trim());
+    }
     if (activeSignal !== 'all' && chips) {
       var btn = chips.querySelector('[data-filter="' + activeSignal + '"]');
       if (btn) parts.push(btn.textContent.trim());
@@ -153,13 +155,14 @@
       var sbtn = sizeChips.querySelector('.chip.is-on');
       if (sbtn) parts.push(sbtn.textContent.trim());
     }
-    return parts.length ? parts.join(' \u00b7 ') : (data_days() + ' days');
-  }
-
-  function data_days() {
-    try {
-      return JSON.parse(document.getElementById('chart-data').textContent).days.length;
-    } catch (e) { return ''; }
+    if (activeForm !== 'all' && formChips) {
+      var fbtn = formChips.querySelector('.chip.is-on');
+      if (fbtn) parts.push(fbtn.textContent.trim());
+    }
+    if (!showRoutine && document.getElementById('routinechips')) {
+      parts.push('routine notices hidden');
+    }
+    return parts.join(' \u00b7 ');
   }
 
   function wire(group, onPick) {

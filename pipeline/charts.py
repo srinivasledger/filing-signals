@@ -18,7 +18,7 @@ from typing import Dict, List, Sequence
 
 from .models import (AUDITOR_CHANGE, COMMENT_LETTER, GOING_CONCERN, LATE_FILING,
                      MATERIAL_WEAKNESS, OFFICER_DEPARTURE, POLICY_CHANGE,
-                     RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_LABELS)
+                     RESTATEMENT, REVENUE_RECOGNITION, SIGNAL_LABELS, form_family)
 
 # Fixed slot order. A signal keeps its colour regardless of how many appear.
 SERIES_ORDER = [RESTATEMENT, COMMENT_LETTER, MATERIAL_WEAKNESS, AUDITOR_CHANGE,
@@ -34,6 +34,12 @@ SERIES_VAR[LATE_FILING] = "var(--series-muted)"
 
 GAP = 2          # surface gap between stacked segments
 RADIUS = 4       # rounded data-end
+ACTIVITY_MAX_DAYS = 20
+
+
+def activity_days(events, max_days: int = ACTIVITY_MAX_DAYS) -> List[str]:
+    """The filing dates represented in the recent activity graph."""
+    return sorted({e.filed for e in events})[-max_days:]
 
 
 def _esc(s: str) -> str:
@@ -55,7 +61,7 @@ def _rounded_right(x: float, y: float, w: float, h: float, r: float) -> str:
             f"H{x:.1f} Z")
 
 
-def activity_chart(events, max_days: int = 20) -> str:
+def activity_chart(events, max_days: int = ACTIVITY_MAX_DAYS) -> str:
     """Stacked columns: events per filing day, split by signal type."""
     by_day: "OrderedDict[str, Counter]" = OrderedDict()
     for e in sorted(events, key=lambda x: x.filed):
@@ -150,15 +156,15 @@ def rates_chart(rows: Sequence[Dict]) -> str:
     return "".join(out)
 
 
-def chart_data(events, max_days: int = 20) -> str:
+def chart_data(events, max_days: int = ACTIVITY_MAX_DAYS) -> str:
     """The activity chart's underlying rows, so the browser can redraw it when
     a filter changes. Server-rendered SVG stays the no-JavaScript view."""
     import json as _json
 
-    days = sorted({e.filed for e in events})[-max_days:]
+    days = activity_days(events, max_days)
     keep = set(days)
     rows = [{"d": e.filed, "s": e.signal_type, "z": e.size_tier or "",
-             "r": bool(e.routine)}
+             "r": bool(e.routine), "f": form_family(e.form)}
             for e in events if e.filed in keep]
     # Reuse SERIES_VAR rather than rebuilding the mapping. A second copy here
     # numbered all nine slots, so late filings asked for --series-9, which does

@@ -25,10 +25,14 @@
 </section>
 
 {% if activity_chart %}
-<details class="activity-panel">
+<details class="activity-panel" open>
 <summary>Recent filing activity</summary>
 <h2 class="eyebrow"><span>Activity by filing day</span>
-  <span id="chart-scope">{{ days_covered }} days</span></h2>
+  <span id="chart-scope">{{ activity_days|length }} filing days</span></h2>
+<p class="chart-note">Available window: {{ activity_days|length }} filing dates with recorded
+events, {{ activity_days[0] }} through {{ activity_days[-1] }}.
+The record below shows its latest {{ shown_events }} entries.
+Signal and Refine filters narrow the graph. Text search applies to the record.</p>
 {{ activity_chart|safe }}
 {{ activity_data|safe }}
 </details>

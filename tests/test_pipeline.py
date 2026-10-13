@@ -667,6 +667,7 @@ def test_chart_data_and_svg_use_the_same_palette():
         def __init__(self, filed, sig):
             self.filed, self.signal_type = filed, sig
             self.size_tier, self.routine = "", False
+            self.form = "8-K"
 
     events = [_E("2026-08-21", s) for s in charts.SERIES_ORDER]
     payload = _json.loads(_re.search(r">(.*)</script>",

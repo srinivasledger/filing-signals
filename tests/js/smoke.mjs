@@ -14,7 +14,16 @@ function el(props = {}) {
     setAttribute(k, v) { this.attributes[k] = v; },
     getAttribute(k) { return this.attributes[k]; },
     appendChild(c) { this.children.push(c); return c; },
-    removeChild(c) { return c; },
+    removeChild(c) {
+      const index = this.children.indexOf(c);
+      if (index !== -1) this.children.splice(index, 1);
+      return c;
+    },
+    insertBefore(c, before) {
+      const index = this.children.indexOf(before);
+      this.children.splice(index === -1 ? this.children.length : index, 0, c);
+      return c;
+    },
     addEventListener() {}, closest() { return null; },
     querySelector() { return null; },
     querySelectorAll() { return []; },
@@ -22,7 +31,7 @@ function el(props = {}) {
     scrollIntoView() {},
     ...props,
   };
-  Object.defineProperty(node, "firstChild", {get: () => null});
+  Object.defineProperty(node, "firstChild", {get: () => node.children[0] || null});
   return node;
 }
 
@@ -63,7 +72,7 @@ global.document = {
   querySelectorAll: () => [],
   addEventListener: () => {},
   createElement: () => el(),
-  createElementNS: () => el(),
+  createElementNS: (_, name) => el({tagName: name}),
   createTextNode: (t) => el({textContent: t}),
 };
 global.window = {redrawActivityChart: undefined, matchMedia: () => ({matches: false})};
@@ -325,6 +334,128 @@ for (const name of ["chart", "filter", "theme", "currency"]) {
         !underArmour.hidden && count.textContent === "1 of 3 events"
         && all.getAttribute("aria-pressed") === "true"
         && routineShow.getAttribute("aria-pressed") === "true");
+}
+
+// --- the activity chart must follow period and form controls ---------------
+// Run the controls against chart.js, not a mocked redraw callback. The graph
+// once kept September bars under an October selection and ignored Form even
+// though the register responded to both.
+{
+  function button(data, label, selected = false) {
+    const classes = new Set(["chip", ...(selected ? ["is-on"] : [])]);
+    return el({dataset: data, textContent: label, classList: {
+      contains: (name) => classes.has(name),
+      toggle(name, state) { if (state) classes.add(name); else classes.delete(name); },
+    }});
+  }
+  function group(buttons) {
+    let onClick;
+    return el({
+      addEventListener(type, cb) { if (type === "click") onClick = cb; },
+      querySelectorAll: () => buttons,
+      querySelector(sel) {
+        if (sel === ".chip.is-on") return buttons.find(b => b.classList.contains("is-on"));
+        const wanted = /\[data-filter="([^"]+)"\]/.exec(sel);
+        return wanted ? buttons.find(b => b.dataset.filter === wanted[1]) : null;
+      },
+      click(btn) { onClick({target: {closest: () => btn}}); },
+    });
+  }
+  const sepCard = el({dataset: {signal: "late_filing", size: "small",
+    routine: "yes", period: "2026-09", form: "NT"}});
+  const oct8K = el({dataset: {signal: "restatement", size: "mega",
+    routine: "no", period: "2026-10", form: "8-K"}});
+  const oct10K = el({dataset: {signal: "restatement", size: "mega",
+    routine: "no", period: "2026-10", form: "10-K"}});
+  const rows = [sepCard, oct8K, oct10K];
+  const options = [
+    {value: "all", textContent: "All time"},
+    {value: "2026-10", textContent: "October 2026"},
+    {value: "2026-08", textContent: "August 2026"},
+  ];
+  const period = el({value: "all", options, selectedIndex: 0,
+    addEventListener(type, cb) { if (type === "change") this.onChange = cb; },
+    change(value) {
+      this.value = value;
+      this.selectedIndex = options.findIndex(o => o.value === value);
+      this.onChange();
+    },
+  });
+  const anyForm = button({form: "all"}, "Any", true);
+  const eightK = button({form: "8-K"}, "8-K");
+  const tenK = button({form: "10-K"}, "10-K");
+  const forms = group([anyForm, eightK, tenK]);
+  const allSignal = button({filter: "all"}, "All", true);
+  const restatementSignal = button({filter: "restatement"}, "Restatements");
+  const signals = group([allSignal, restatementSignal]);
+  const anySize = button({size: "all"}, "Any", true);
+  const megaSize = button({size: "mega"}, "$10B+");
+  const sizes = group([anySize, megaSize]);
+  const routines = group([
+    button({routine: "hide"}, "Hidden", true),
+    button({routine: "show"}, "Shown"),
+  ]);
+  const scope = el();
+  for (const id of Object.keys(byId)) delete byId[id];
+  Object.assign(byId, {
+    feed: el({querySelectorAll: () => rows}), period, chips: signals,
+    sizechips: sizes, formchips: forms,
+    routinechips: routines, "chart-data": chartData, "chart-scope": scope,
+  });
+  chartSvg.children.length = 0;
+  chartData.textContent = JSON.stringify({
+    days: ["2026-09-30", "2026-10-01", "2026-10-02"],
+    order: ["restatement", "late_filing"],
+    labels: {restatement: "Restatement", late_filing: "Late filing"},
+    vars: {restatement: "--series-1", late_filing: "--series-muted"},
+    rows: [
+      {d: "2026-09-30", s: "late_filing", z: "small", r: true, f: "NT"},
+      {d: "2026-10-01", s: "restatement", z: "mega", r: false, f: "8-K"},
+      {d: "2026-10-02", s: "restatement", z: "mega", r: false, f: "10-K"},
+    ],
+  });
+  (0, eval)(fs.readFileSync("site/static/chart.js", "utf8"));
+  (0, eval)(fs.readFileSync("site/static/filter.js", "utf8"));
+
+  const barDates = () => chartSvg.children.filter(n => n.tagName === "path")
+    .map(n => n.children[0].textContent.slice(0, 10));
+  const axisDates = () => chartSvg.children.filter(n => n.tagName === "text"
+    && /^\d\d-\d\d$/.test(n.textContent)).map(n => n.textContent);
+  check("default chart scope names its days and hidden routine notices",
+        scope.textContent.includes("3 filing days")
+        && scope.textContent.includes("routine notices hidden"));
+
+  period.change("2026-10");
+  check("October chart excludes September bars and axis dates",
+        barDates().join(",") === "2026-10-01,2026-10-02"
+        && axisDates().join(",") === "10-01,10-02");
+  check("October scope and SVG title name its two filing days",
+        scope.textContent.includes("2 filing days · October 2026")
+        && chartSvg.getAttribute("aria-label").includes(scope.textContent)
+        && chartSvg.firstChild.tagName === "title"
+        && chartSvg.firstChild.textContent.includes(scope.textContent));
+
+  forms.click(eightK);
+  check("Form filter removes the nonmatching chart bar and names the form",
+        barDates().join(",") === "2026-10-01"
+        && axisDates().join(",") === "10-01,10-02"
+        && scope.textContent.includes("8-K"));
+  signals.click(restatementSignal);
+  sizes.click(megaSize);
+  check("chart scope names active signal, size, form and period together",
+        scope.textContent.includes("October 2026")
+        && scope.textContent.includes("Restatements")
+        && scope.textContent.includes("$10B+")
+        && scope.textContent.includes("8-K")
+        && scope.textContent.includes("routine notices hidden"));
+
+  period.change("2026-08");
+  check("an older period has a clear empty chart and zero-day scope",
+        barDates().length === 0 && scope.textContent.includes("0 filing days")
+        && chartSvg.children.some(n => n.textContent.includes("No filing days for this period")));
+  check("an empty period produces no invalid SVG coordinates",
+        chartSvg.children.every(n => Object.values(n.attributes)
+          .every(v => !/NaN|Infinity/.test(String(v)))));
 }
 
 process.exit(failed);

@@ -591,6 +591,7 @@ def build(second_pass: bool = False) -> None:
 
     activity_svg = charts.activity_chart(events)
     activity_data = charts.chart_data(events)
+    activity_days = charts.activity_days(events)
     mix_svg = charts.mix_bar(events)
 
     health = publish.load_health()
@@ -709,7 +710,7 @@ def build(second_pass: bool = False) -> None:
             last_run=state.get("last_processed"),
             truncated=truncated,
             shown_events=len(home_events), activity_chart=activity_svg,
-            activity_data=activity_data, mix_bar=mix_svg,
+            activity_data=activity_data, activity_days=activity_days, mix_bar=mix_svg,
             **common,
         ),
     )
