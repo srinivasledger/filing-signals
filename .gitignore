@@ -7,6 +7,8 @@ __pycache__/
 .DS_Store
 .claude/
 backups/
+node_modules/
+artifacts/
 us-listed-companies-by-public-float.csv
 
 # Derived exports — regenerate rather than commit; an early version of this

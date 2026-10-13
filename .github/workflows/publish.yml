@@ -13,6 +13,10 @@ on:
     paths:
       - "site/**"
       - "pipeline/**"
+      - "tests/browser/**"
+      - "package*.json"
+      - "requirements*.txt"
+      - ".github/actions/verify-site/**"
       - ".github/workflows/publish.yml"
   workflow_dispatch:
 
@@ -29,7 +33,7 @@ permissions:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -48,9 +52,33 @@ jobs:
           REPO_URL: ${{ vars.REPO_URL }}
         run: python -m pipeline.render
 
+      # A broken render must never replace a working Pages deployment.
+      - name: Verify rendered site before deployment
+        uses: ./.github/actions/verify-site
+        with:
+          phase: publish-predeploy
+
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
           path: public
       - id: deployment
         uses: actions/deploy-pages@v5
+      - name: Verify deployed site
+        id: verify_live
+        env:
+          BASE_URL: ${{ steps.deployment.outputs.page_url }}
+          VERIFY_DEPLOYED_BUILD: '1'
+          CHECK_PHASE: publish-live
+        run: |
+          test -n "$BASE_URL"
+          for engine in chromium firefox webkit; do
+            BROWSER_ENGINE="$engine" node tests/browser/check-site.cjs
+          done
+      - name: Save live browser failure evidence
+        if: failure() && steps.verify_live.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-check-publish-live-${{ github.run_attempt }}
+          path: artifacts/browser-check
+          if-no-files-found: ignore

@@ -12,7 +12,31 @@ you what to ask for.
 
 ## First: how the site tells you
 
-You do not need to watch the Actions tab. The site reports on itself.
+The site reports data freshness. A failed scan or browser check is recorded in
+GitHub Actions; its diagnostics may not appear on the last successful site.
+
+**Browser checks before and after publication.** Tests, page rebuilds and daily
+scans run the same browser check in Chromium, Firefox and WebKit. It checks the
+activity graph's data and filters, mobile widths, script/asset failures and the
+no-JavaScript view. A failure stops a rebuild before deployment, and stops a
+daily scan before its new data is committed, leaving the published site intact.
+
+After deployment, the check reads the actual Pages URL and confirms it serves
+the build just generated. A failed live check makes the workflow fail and saves
+diagnostics under **Artifacts → browser-check-…** on that run's Actions page.
+Use those screenshots and logs to reproduce the problem. GitHub sends workflow
+failure notifications according to your account's notification settings.
+
+These checks cover observable failures and the regressions they test. They do
+not establish the correctness of every filing interpretation or eliminate SEC,
+network, browser and hosting outages. The browser dependency and Ubuntu runner
+are pinned; test their replacements before updating them.
+
+To run the browser check locally after rendering: `npm ci`,
+`npx playwright install chromium`, then `npm run test:browser`. Set `BROWSER_ENGINE`
+to `firefox` or `webkit` after installing that engine to check it too. Set `BASE_URL`
+to check an existing site instead. Deployment workflows also set
+`VERIFY_DEPLOYED_BUILD=1` to compare its build metadata with `public/index.html`.
 
 **In the bar at the top of every page.** Normally it shows the source, when the
 pages were compiled, and how the self-checks went. If the data has stopped
