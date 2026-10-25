@@ -51,6 +51,13 @@ _ICFR_EFFECTIVENESS_DENIED = re.compile(
     re.I,
 )
 
+_GC_INVESTMENT_RECOVERABILITY_DOUBT = re.compile(
+    r"\b(?:raise[sd]?|indicate[sd]?)\s+(?:a\s+)?substantial\s+doubt"
+    r"[^.!?;]{0,180}\b(?:ability\s+to\s+recover|recoverability\s+of|"
+    r"carrying\s+value\s+of)",
+    re.I,
+)
+
 
 def _known_quote_contradictions(events) -> list:
     """Find published claims refuted by known patterns in their own excerpts."""
@@ -64,9 +71,21 @@ def _known_quote_contradictions(events) -> list:
             # A conditional future warning is not a present substantial-doubt
             # conclusion. If the quote also contains an affirmative conclusion,
             # let the ordinary classifier resolve the two statements.
-            if ((sections._GC_NEGATED.search(quote) or
-                 sections._GC_CONDITIONAL.search(quote)) and
+            if ((_GC_INVESTMENT_RECOVERABILITY_DOUBT.search(quote) and
+                 not sections._GC_FALLBACK_CONCLUSION.search(quote)) or
+                ((sections._GC_NEGATED.search(quote) or
+                  sections._GC_CONDITIONAL.search(quote)) and
+                 sections.classify_going_concern(quote) != state)):
+                contradictions.append(e)
+        elif e.signal_type == GOING_CONCERN and state == sections.GC_DOUBT_ALLEVIATED:
+            if ((sections._GC_UNCERTAIN_ALLEVIATION.search(quote) or
+                 sections._GC_NEGATIVE_ALLEVIATION.search(quote)) and
                     sections.classify_going_concern(quote) != state):
+                contradictions.append(e)
+        elif e.signal_type == GOING_CONCERN and state in sections.GC_NO_CONCLUSION:
+            if (sections._GC_REMAINS.search(quote) and
+                    sections._GC_FALLBACK_CONCLUSION.search(quote) and
+                    sections.classify_going_concern(quote) == sections.GC_SUBSTANTIAL_DOUBT):
                 contradictions.append(e)
         elif e.signal_type == MATERIAL_WEAKNESS:
             if state == sections.ICFR_EFFECTIVE and _ICFR_EFFECTIVENESS_DENIED.search(quote):
@@ -156,6 +175,16 @@ def run_checks(events, state: Dict, today: dt.date,
             f"most recently for {last}. The next run resumes from there."))
     else:
         checks.append(_check("SEC access", OK, "no refusals in the last 10 runs"))
+
+    pending_days = state.get("pending_dates") or []
+    if pending_days:
+        checks.append(_check(
+            "Incomplete filing days", WARN,
+            f"{len(pending_days)} day(s) queued for another scan; "
+            f"oldest {min(pending_days)}. Temporary document failures and "
+            "unusable indexes are retried on the next scheduled run."))
+    else:
+        checks.append(_check("Incomplete filing days", OK, "no days awaiting retry"))
 
     # --- every published claim is citable ---
     total = len(events)

@@ -16,52 +16,57 @@
       "status": "ok"
     },
     {
-      "detail": "4476/4476 link to the accession they report",
+      "detail": "1 day(s) queued for another scan; oldest 2026-10-22. Temporary document failures and unusable indexes are retried on the next scheduled run.",
+      "name": "Incomplete filing days",
+      "status": "warn"
+    },
+    {
+      "detail": "4457/4457 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "4476/4476 name a detection method the pipeline implements",
+      "detail": "4457/4457 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "545 entries from SEC item codes, 0 carrying the wrong code for their signal",
+      "detail": "534 entries from SEC item codes, 0 carrying the wrong code for their signal",
       "name": "Item codes match the signal they produced",
       "status": "ok"
     },
     {
-      "detail": "1023/1023 compare the same form type against an earlier filing",
+      "detail": "1015/1015 compare the same form type against an earlier filing",
       "name": "Comparisons are like-for-like",
       "status": "ok"
     },
     {
-      "detail": "4476 unique entries across 4476 rows",
+      "detail": "4457 unique entries across 4457 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 2763 begin mid-sentence, 0 do not open at the substance",
+      "detail": "0 of 2755 begin mid-sentence, 0 do not open at the substance",
       "name": "Quotes open with the substance",
       "status": "ok"
     },
     {
-      "detail": "0 of 2763 end mid-sentence with no ellipsis to mark the cut",
+      "detail": "0 of 2755 end mid-sentence with no ellipsis to mark the cut",
       "name": "Quotes end where the filing does",
       "status": "ok"
     },
     {
-      "detail": "0 of 938 going-concern and material-weakness entries match a known wording pattern that conflicts with their reported state",
+      "detail": "0 of 930 going-concern and material-weakness entries match a known wording pattern that conflicts with their reported state",
       "name": "Known quote contradictions",
       "status": "ok"
     },
     {
-      "detail": "469 firm names across 96 firms; 14 spelled more than one way by filers",
+      "detail": "461 firm names across 97 firms; 14 spelled more than one way by filers",
       "name": "Auditor names are firm-shaped",
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 4476, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 4457, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -71,7 +76,7 @@
       "status": "ok"
     },
     {
-      "detail": "5,204 companies, refreshed 0 day(s) ago",
+      "detail": "5,204 companies, refreshed 1 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
@@ -86,33 +91,33 @@
       "status": "ok"
     },
     {
-      "detail": "96 firms on the auditors page, one label each",
+      "detail": "97 firms on the auditors page, one label each",
       "name": "Firm labels are consistent",
       "status": "ok"
     },
     {
-      "detail": "822 pages with a period or form filter, 0 option(s) that filter to nothing",
+      "detail": "820 pages with a period or form filter, 0 option(s) that filter to nothing",
       "name": "Filter options match the page",
       "status": "ok"
     },
     {
-      "detail": "heaviest file events.json is 900 KB over the wire (limit 4096 KB), 7 file(s) checked",
+      "detail": "heaviest file events.json is 897 KB over the wire (limit 4096 KB), 7 file(s) checked",
       "name": "Data file weight",
       "status": "ok"
     },
     {
-      "detail": "all 2518 pages built 2026-10-24 13:24 UTC, data through 2026-10-23, 4,476 events",
+      "detail": "all 2518 pages built 2026-10-25 17:18 UTC, data through 2026-10-23, 4,457 events",
       "name": "Pages agree",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-10-24T13:24:41+00:00",
+  "generated_at": "2026-10-25T17:18:11+00:00",
   "summary": {
     "fail": 0,
     "ok": 21,
-    "overall": "ok",
-    "total": 21,
+    "overall": "warn",
+    "total": 22,
     "unknown": 0,
-    "warn": 0
+    "warn": 1
   }
 }

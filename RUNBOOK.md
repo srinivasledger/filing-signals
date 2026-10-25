@@ -132,6 +132,13 @@ runners are cloud machines. The pipeline treats a refusal as expected: it stops
 cleanly, commits nothing, and the next run picks up where it left off. **These
 usually clear on their own within a day.**
 
+**Temporary document failures.** Exhausted timeouts and SEC server errors also
+stop that filing day before any of its events are written. The date stays in
+the retry queue even if a newer day was previously processed. The status page
+shows **Coverage recheck pending** until a complete scan succeeds. PDF letters
+use the same retry and rate limits as HTML filings. A pending day that keeps
+failing needs investigation; a green workflow alone does not clear that queue.
+
 **(b) EDGAR changed.** A URL, a file format, or the rules about identifying
 yourself. This needs code changes. (One kind of change is already covered: the
 daily index is read from two separate EDGAR files in two formats, so a single

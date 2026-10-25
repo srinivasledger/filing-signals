@@ -6,9 +6,10 @@ polite rate limit, and an on-disk cache so backfills never refetch.
 """
 from __future__ import annotations
 
-import gzip
 import datetime as _dt
+import gzip
 import hashlib
+import http.client
 import logging
 import random
 import zlib
@@ -30,6 +31,10 @@ class SECBlocked(RuntimeError):
 
 class NotFound(RuntimeError):
     """404 - for daily indexes this normally just means a weekend or holiday."""
+
+
+class TransientFetchError(RuntimeError):
+    """A temporary SEC/network failure exhausted retries; retry the whole day."""
 
 
 class _RateLimiter:
@@ -83,13 +88,13 @@ def _is_stale(url: str, cache_file: Path) -> bool:
     return age > _MUTABLE_TTL
 
 
-def get(
+def get_bytes(
     url: str,
     byte_range: Optional[str] = None,
     use_cache: bool = True,
     accept_404: bool = False,
-) -> Optional[str]:
-    """Fetch a URL as text.
+) -> Optional[bytes]:
+    """Fetch SEC content as bytes, with the same cache and retry policy for PDFs.
 
     `byte_range` takes an HTTP Range value such as "0-4000" - used heavily to
     read filing headers without downloading whole documents.
@@ -99,9 +104,9 @@ def get(
     cache_file = _cache_path(url, byte_range)
     if use_cache and cache_file.exists() and not _is_stale(url, cache_file):
         try:
-            with gzip.open(cache_file, "rt", encoding="utf-8") as fh:
+            with gzip.open(cache_file, "rb") as fh:
                 return fh.read()
-        except OSError:
+        except (OSError, EOFError, zlib.error):
             cache_file.unlink(missing_ok=True)  # corrupt entry, refetch
 
     headers = {"User-Agent": config.require_user_agent()}
@@ -122,18 +127,15 @@ def get(
             with urllib.request.urlopen(req, timeout=config.SEC_TIMEOUT) as resp:
                 raw = resp.read()
                 if resp.headers.get("Content-Encoding") == "gzip":
-                    try:
-                        raw = gzip.decompress(raw)
-                    except (OSError, EOFError):
-                        # Truncated stream: recover what decoded cleanly.
-                        raw = zlib.decompressobj(16 + zlib.MAX_WBITS).decompress(raw)
-                body = raw.decode("utf-8", errors="ignore")
+                    raw = gzip.decompress(raw)
+                elif resp.headers.get("Content-Encoding") == "deflate":
+                    raw = zlib.decompress(raw)
 
             if use_cache:
                 cache_file.parent.mkdir(parents=True, exist_ok=True)
-                with gzip.open(cache_file, "wt", encoding="utf-8") as fh:
-                    fh.write(body)
-            return body
+                with gzip.open(cache_file, "wb") as fh:
+                    fh.write(raw)
+            return raw
 
         except urllib.error.HTTPError as exc:
             last_error = exc
@@ -148,19 +150,34 @@ def get(
                     "acceptable 'Name email' contact string, or this IP is "
                     "temporarily blocked."
                 ) from exc
-            if exc.code in (429, 500, 502, 503, 504):
-                backoff = (2 ** attempt) + random.uniform(0, 1)
-                log.warning("HTTP %s from %s, retry in %.1fs", exc.code, url, backoff)
-                time.sleep(backoff)
+            if exc.code in (408, 429, 500, 502, 503, 504):
+                if attempt + 1 < config.SEC_MAX_RETRIES:
+                    backoff = (2 ** attempt) + random.uniform(0, 1)
+                    log.warning("HTTP %s from %s, retry in %.1fs", exc.code, url, backoff)
+                    time.sleep(backoff)
                 continue
             raise
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        except (urllib.error.URLError, TimeoutError, OSError,
+                http.client.IncompleteRead, EOFError, zlib.error) as exc:
             last_error = exc
-            backoff = (2 ** attempt) + random.uniform(0, 1)
-            log.warning("network error %s on %s, retry in %.1fs", exc, url, backoff)
-            time.sleep(backoff)
+            if attempt + 1 < config.SEC_MAX_RETRIES:
+                backoff = (2 ** attempt) + random.uniform(0, 1)
+                log.warning("network error %s on %s, retry in %.1fs", exc, url, backoff)
+                time.sleep(backoff)
 
-    raise RuntimeError(f"giving up on {url}: {last_error}")
+    raise TransientFetchError(f"giving up on {url}: {last_error}") from last_error
+
+
+def get(
+    url: str,
+    byte_range: Optional[str] = None,
+    use_cache: bool = True,
+    accept_404: bool = False,
+) -> Optional[str]:
+    """Fetch a URL as UTF-8 text; preserve the byte transport's failure types."""
+    raw = get_bytes(url, byte_range=byte_range, use_cache=use_cache,
+                    accept_404=accept_404)
+    return raw.decode("utf-8", errors="ignore") if raw is not None else None
 
 
 def get_json(url: str, accept_404: bool = False):

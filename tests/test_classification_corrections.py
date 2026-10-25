@@ -75,6 +75,86 @@ def test_alleviation_after_initial_conditional_sentence_governs():
     assert "alleviate the substantial doubt" in result["quote"]
 
 
+def test_investment_recoverability_doubt_is_not_going_concern():
+    # Penguin's 2026-01-06 10-Q and 2026-10-20 10-K discuss ASC 321
+    # investment impairment. Neither filing contains a going-concern claim.
+    investment = (
+        "Other Non-Marketable Equity Investments\nThe Company identified "
+        "significant qualitative impairment indicators related to an equity "
+        "investment. Collectively, these factors raised substantial doubt "
+        "regarding the Company's ability to recover the carrying value of the "
+        "investment. In accordance with ASC 321, the Company assessed its "
+        "fair value."
+    )
+    assert sections.going_concern_state(investment)["state"] == sections.GC_NONE
+    assert sections.going_concern_state(investment)["quote"] == ""
+
+    # An unrelated investment sentence cannot hide a later real conclusion.
+    real_doubt = ("Current losses raise substantial doubt about our ability "
+                  "to continue as a going concern.")
+    result = sections.going_concern_state(investment + " " + real_doubt)
+    assert result["state"] == sections.GC_SUBSTANTIAL_DOUBT
+    assert real_doubt in result["quote"]
+
+
+def test_no_assurance_plans_will_alleviate_preserves_present_doubt():
+    # Dankon's 2026-10-15 10-Q and ZRCN's 2026-09-28 10-K both expressly
+    # concluded substantial doubt, then warned that their plans might fail.
+    doubt = ("These conditions raise substantial doubt about the Company's "
+             "ability to continue as a going concern. ")
+    caveats = (
+        "There can be no assurance that such financing will be available on "
+        "acceptable terms, or at all, or that management's plans will "
+        "alleviate the substantial doubt.",
+        "There can be no assurance these actions will alleviate the "
+        "substantial doubt.",
+    )
+    for caveat in caveats:
+        note = "Note 2 - Going Concern\n" + doubt + caveat + " " * 200
+        result = sections.going_concern_state(note)
+        assert result["state"] == sections.GC_SUBSTANTIAL_DOUBT
+        assert "raise substantial doubt" in result["quote"]
+        assert sections.classify_going_concern(caveat) == sections.GC_NONE
+
+    affirmative = ("Management concluded that its completed financing has "
+                   "alleviated the substantial doubt.")
+    assert sections.classify_going_concern(doubt + caveats[0] + " " + affirmative) == (
+        sections.GC_DOUBT_ALLEVIATED)
+
+
+def test_substantial_doubt_remains_is_an_affirmative_conclusion():
+    # GROOVY's 2026-03-12 10-Q says doubt about its survival "remains".
+    # Its prior 10-Q also disclosed doubt, so there was no easing.
+    conclusion = ("Substantial doubt about the Company's ability to continue "
+                  "as a going concern remains.")
+    assert sections.classify_going_concern(conclusion) == sections.GC_SUBSTANTIAL_DOUBT
+    assert sections.going_concern_state(
+        "Going Concern\n" + conclusion + " " * 200)["state"] == sections.GC_SUBSTANTIAL_DOUBT
+    for word in ("persists", "continues to exist"):
+        assert sections.classify_going_concern(conclusion.replace("remains", word)) == (
+            sections.GC_SUBSTANTIAL_DOUBT)
+    assert sections.classify_going_concern(
+        "There remains substantial doubt about our ability to continue as a going concern.") == (
+            sections.GC_SUBSTANTIAL_DOUBT)
+    for phrase in ("no longer remains", "may remain"):
+        assert sections.classify_going_concern(conclusion.replace("remains", phrase)) == (
+            sections.GC_NONE)
+
+
+def test_negative_alleviation_remains_doubt_and_later_completed_alleviation_wins():
+    # Envoy's current 10-Q says management's plans "do not alleviate" doubt.
+    doubt = ("These matters raise substantial doubt about the Company's "
+             "ability to continue as a going concern and although management "
+             "has developed plans, such plans do not alleviate the substantial "
+             "doubt.")
+    assert sections.classify_going_concern(doubt) == sections.GC_SUBSTANTIAL_DOUBT
+    result = sections.going_concern_state("Going Concern\n" + doubt + " " * 200)
+    assert result["state"] == sections.GC_SUBSTANTIAL_DOUBT
+    assert "do not alleviate" in result["quote"]
+    later = " Subsequent completed financing alleviates the substantial doubt."
+    assert sections.classify_going_concern(doubt + later) == sections.GC_DOUBT_ALLEVIATED
+
+
 def test_icfr_denial_and_historical_weakness_do_not_become_remediation():
     abundia = ("ITEM 9A. CONTROLS AND PROCEDURES\nManagement concluded that "
                "internal control over financial reporting was not effective. "
@@ -137,6 +217,47 @@ def test_known_quote_check_resolves_mixed_past_and_present_conclusions():
     assert health._known_quote_contradictions([denied]) == [denied]
 
 
+def test_known_quote_check_rejects_investment_and_uncertain_alleviation_claims():
+    investment = _event(models.GOING_CONCERN,
+                        "These factors raised substantial doubt regarding the "
+                        "Company's ability to recover the carrying value of "
+                        "the investment. In accordance with ASC 321, the "
+                        "investment was impaired.",
+                        sections.GC_SUBSTANTIAL_DOUBT, "0001-26-000005")
+    uncertain = _event(models.GOING_CONCERN,
+                       "These conditions raise substantial doubt about the "
+                       "Company's ability to continue as a going concern. "
+                       "There can be no assurance these actions will alleviate "
+                       "the substantial doubt.",
+                       sections.GC_DOUBT_ALLEVIATED, "0001-26-000006")
+    real = _event(models.GOING_CONCERN,
+                  "These conditions raise substantial doubt about the "
+                  "Company's ability to continue as a going concern.",
+                  sections.GC_SUBSTANTIAL_DOUBT, "0001-26-000007")
+    assert health._known_quote_contradictions([investment, uncertain, real]) == [
+        investment, uncertain]
+
+
+def test_known_quote_check_rejects_false_easing_but_accepts_ongoing_doubt():
+    remains = ("Substantial doubt about the Company's ability to continue "
+               "as a going concern remains.")
+    not_alleviated = ("These matters raise substantial doubt about the Company's "
+                      "ability to continue as a going concern. Management's "
+                      "plans do not alleviate the substantial doubt.")
+    groovy = _event(models.GOING_CONCERN, remains, sections.GC_NONE,
+                    "0001-26-000008")
+    false_alleviation = _event(models.GOING_CONCERN, not_alleviated,
+                               sections.GC_DOUBT_ALLEVIATED, "0001-26-000009")
+    envoy = _event(models.GOING_CONCERN, not_alleviated,
+                   sections.GC_SUBSTANTIAL_DOUBT, "0001-26-000010")
+    negative_control = _event(models.GOING_CONCERN,
+                              remains.replace("remains", "no longer remains"),
+                              sections.GC_NONE, "0001-26-000011")
+    assert health._known_quote_contradictions(
+        [groovy, false_alleviation, envoy, negative_control]) == [
+            groovy, false_alleviation]
+
+
 def test_withdrawn_ids_cannot_reappear_after_rescan_or_merge(tmp_path, monkeypatch):
     events_dir = tmp_path / "events"
     events_dir.mkdir()
@@ -170,7 +291,11 @@ def test_published_corrections_agree_with_the_event_record():
             assert id not in events
         else:
             assert events[id].headline == correction["new_headline"]
-            assert events[id].evidence["current_state"] == correction["new_state"]
+            if correction.get("new_evidence"):
+                for key, value in correction["new_evidence"].items():
+                    assert events[id].evidence[key] == value
+            else:
+                assert events[id].evidence["current_state"] == correction["new_state"]
     assert health._known_quote_contradictions(events.values()) == []
 
 

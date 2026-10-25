@@ -139,6 +139,33 @@ LIMB_LABELS = {
 
 
 # --- Item 4.01 ---------------------------------------------------------------
+def item_body(text: str, code: str) -> str:
+    """Use the operative item, excluding explanatory notes and other items.
+
+    A note may describe the decision that an amendment reverses. Keep the
+    longest headed section so a short table-of-contents entry does not win.
+    Plain excerpts without item headings retain their existing behavior.
+    """
+    not_reference = r"(?!\s+(?:of|in|under|and|or)\b)"
+    heading = re.compile(r"^[ \t]*Item\s+" + re.escape(code) + r"\b" + not_reference, re.I | re.M)
+    boundary = re.compile(r"^[ \t]*Item\s+\d\.\d{2}\b" + not_reference
+                          + r"|^[ \t]*SIGNATURES\b", re.I | re.M)
+    candidates = []
+    for match in heading.finditer(text):
+        end = boundary.search(text, match.end())
+        candidates.append(text[match.end():end.start() if end else len(text)])
+    return max(candidates, key=len) if candidates else text
+
+
+def item_disclosure_withdrawn(text: str, code: str) -> bool:
+    """An explicit withdrawal of all prior item disclosures is not a change."""
+    body = " ".join(item_body(text, code).split())
+    return bool(re.search(
+        r"\b(?:rescinds?|withdraws?)\s+(?:(?:and\s+)?(?:rescinds?|withdraws?)\s+)?"
+        r"all\s+disclosures?\s+(?:contained|made)\s+(?:in|under)\s+Item\s*"
+        + re.escape(code) + r"\b", body, re.I))
+
+
 _RESIGNED = re.compile(r"\bresign(?:ed|ation|s)\b", re.I)
 # "terminated" alone fires on anything a company ends. Greenland Mines filed
 # an Item 4.01 whose text terminated an At-the-Market Sales Agreement with a
@@ -148,7 +175,9 @@ _AUDITOR_NOUN = (r"(?:independent\s+)?(?:registered\s+public\s+)?"
                  r"(?:accounting\s+firm|accountants?|auditors?)")
 _DISMISSED = re.compile(
     r"\bdismiss(?:ed|al|es)\b|\bdisengag(?:ed|e|ement)\b"
-    r"|\bterminat(?:ed|ion)\b[^.]{0,80}?" + _AUDITOR_NOUN +
+    # A full firm name plus its parenthetical alias can exceed 80 characters
+    # before the accountant role (BestGofer's Sadler Gibb termination).
+    r"|\bterminat(?:ed|ion)\b[^.]{0,160}?" + _AUDITOR_NOUN +
     r"|" + _AUDITOR_NOUN + r"[^.]{0,80}?\bterminat(?:ed|ion)\b"
     r"|will\s+no\s+longer\s+be\s+(?:retain|engag)", re.I)
 _DECLINED = re.compile(r"declined\s+to\s+stand\s+for\s+re-?appointment", re.I)
@@ -177,17 +206,25 @@ _SUFFIX_ALT = (r"(?:PLLC|P\.L\.L\.C\.|LLP|L\.L\.P\.?|LLC|L\.L\.C\.|"
 _FIRM_TOKEN = (r"[A-Z][A-Za-z&.,'’\- ]{2,60}?" + _SUFFIX_ALT
                + r"(?:\s*,?\s*" + _SUFFIX_ALT + r")*")
 _LEAD = r"(?:\s+(?:that|by|of|with|the|its|our|as|a|an|new|former|previous))*\s+"
+_TERMINATED_ENGAGEMENT = r"(?:\s+(?i:the\s+)?(?i:engagement)\s+(?i:of|with))?"
 _DISMISS_CTX = re.compile(
-    r"(?i:Dismissal of|dismissed|disengage[d]?|notified|terminated)" + _LEAD
+    r"(?i:Dismissal of|dismissed|disengage[d]?|terminated)" + _TERMINATED_ENGAGEMENT + _LEAD
     + r"(" + _FIRM_TOKEN + r")")
+_NOTICE_CTX = re.compile(r"(?i:notified)" + _LEAD + r"(" + _FIRM_TOKEN + r")")
 # The outgoing firm is often the one doing the telling: "was advised by Ham,
 # Langston & Brezina, LLP ... that HL&B completed a transaction". Two audit
 # firm mergers were recorded with neither side named because of this.
 _ADVISED_BY_CTX = re.compile(
     r"(?i:advised|notified|informed)\s+by" + _LEAD + r"(" + _FIRM_TOKEN + r")")
 _ENGAGE_CTX = re.compile(
-    r"(?i:Engagement of|engaged|appointed|retained)" + _LEAD
+    r"(?i:Engagement of|appointment of|engaged|re-?appointed|appointed|retained)" + _LEAD
     + r"(?:(?i:firm)\s+)?(" + _FIRM_TOKEN + r")")
+_DISMISS_ALIAS_CTX = re.compile(
+    r"(?i:dismissed|disengaged|terminated)" + _TERMINATED_ENGAGEMENT + _LEAD
+    + r"([A-Z][A-Z0-9&]{1,15})\b")
+_ENGAGE_ALIAS_CTX = re.compile(
+    r"(?i:engagement of|appointment of|engaged|re-?appointed|appointed|retained)"
+    + _LEAD + r"([A-Z][A-Z0-9&]{1,15})\b")
 
 # Words that mark a name as something other than the audit firm. A law firm,
 # counsel or an underwriter is frequently named in the same Item 4.01 text,
@@ -225,9 +262,32 @@ def _looks_like_an_auditor(name: str, text: str, company: str = "") -> bool:
 def _first_firm(pattern: re.Pattern, text: str, company: str = "") -> str:
     """The first candidate in the text that survives the rejections."""
     for m in pattern.finditer(text):
+        if pattern is _ENGAGE_CTX and re.search(
+                r"\bterminat(?:ed|ion)\s+(?:the\s+)?$", text[:m.start()], re.I):
+            continue  # terminating the engagement is an outgoing firm
         name = " ".join(m.group(1).split()).strip(" .,")
         if _looks_like_an_auditor(name, text, company):
             return name
+    return ""
+
+
+def _first_alias_firm(pattern: re.Pattern, text: str, company: str = "") -> str:
+    """Resolve an action's defined abbreviation, such as dismissed BCRG.
+
+    The earlier firm in a merger introduction may be the successor, so an
+    explicit dismissal takes precedence over a generic notification mention.
+    Only a name defined in this item can supply the expansion.
+    """
+    for action in pattern.finditer(text):
+        alias = action.group(1)
+        definition = re.search(
+            r"([A-Z][A-Za-z&.,'’\-]*(?:\s+(?:[A-Z][A-Za-z&.,'’\-]*|&|and)){0,10})"
+            r"\s*\(\s*[\"“]"
+            + re.escape(alias) + r"[\"”]\s*\)", text)
+        if definition:
+            name = definition.group(1).strip(" .,")
+            if _looks_like_an_auditor(name, text, company):
+                return name
     return ""
 
 
@@ -238,7 +298,11 @@ def classify_401(text: str, company: str = "") -> Dict[str, object]:
     filing published "Starfighters Space" as Starfighters Space's predecessor
     auditor.
     """
-    if _RESIGNED.search(text):
+    text = " ".join(item_body(text, "4.01").split())
+    withdrawn = item_disclosure_withdrawn(text, "4.01")
+    if withdrawn:
+        direction = "disclosure_withdrawn"
+    elif _RESIGNED.search(text):
         direction = "resigned"
     elif _DECLINED.search(text):
         direction = "declined_reappointment"
@@ -247,7 +311,9 @@ def classify_401(text: str, company: str = "") -> Dict[str, object]:
     else:
         direction = None
 
-    if _HAD_DISAGREEMENTS.search(text):
+    if withdrawn:
+        disagreements = None
+    elif _HAD_DISAGREEMENTS.search(text):
         disagreements = True
     elif _NO_DISAGREEMENTS.search(text):
         disagreements = False
@@ -255,8 +321,13 @@ def classify_401(text: str, company: str = "") -> Dict[str, object]:
         disagreements = None
 
     outgoing = (_first_firm(_DISMISS_CTX, text, company)
+                or _first_alias_firm(_DISMISS_ALIAS_CTX, text, company)
+                or _first_firm(_NOTICE_CTX, text, company)
                 or _first_firm(_ADVISED_BY_CTX, text, company))
-    incoming = _first_firm(_ENGAGE_CTX, text, company)
+    incoming = (_first_firm(_ENGAGE_CTX, text, company)
+                or _first_alias_firm(_ENGAGE_ALIAS_CTX, text, company))
+    if withdrawn:
+        outgoing = incoming = ""
     # Identical firms on both sides means the loose firm-name pattern matched
     # the same mention twice, not that a company re-hired its own auditor.
     # Publishing "dismissed PwC and engaged PwC" is worse than saying nothing.
@@ -281,6 +352,7 @@ def classify_401(text: str, company: str = "") -> Dict[str, object]:
 
 
 DIRECTION_LABELS = {
+    "disclosure_withdrawn": "The company withdrew its previous auditor-change disclosure",
     "resigned": "The auditor resigned",
     "dismissed": "The company dismissed the auditor",
     "declined_reappointment": "The auditor declined to stand for reappointment",
