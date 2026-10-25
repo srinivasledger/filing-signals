@@ -49,22 +49,41 @@ last_complete_day = config.last_complete_day
 
 def days_to_process(state: dict, today_et: dt.date,
                     end: Optional[dt.date] = None) -> List[dt.date]:
-    """Every unprocessed business day through the last complete day, capped."""
+    """Unprocessed days plus failed explicit rescans, through the last complete day."""
     if end is None:
         end = today_et - dt.timedelta(days=1)
+    pending = []
+    for value in state.get("pending_dates") or []:
+        try:
+            day = dt.date.fromisoformat(value)
+        except (TypeError, ValueError):
+            log.warning("ignoring invalid retry day %r", value)
+            continue
+        if day <= end and day.weekday() < 5:
+            pending.append(day)
     last = state.get("last_processed")
     if last:
         start = dt.date.fromisoformat(last) + dt.timedelta(days=1)
     else:
         start = end - dt.timedelta(days=config.COLD_START_DAYS)
-    if start > end:
-        return []
-    days = business_days(start, end)
+    days = business_days(start, end) if start <= end else []
     if len(days) > config.MAX_BACKFILL_DAYS:
-        log.warning("%d days pending; processing the most recent %d",
+        log.warning("%d days pending; processing the oldest %d",
                     len(days), config.MAX_BACKFILL_DAYS)
-        days = days[-config.MAX_BACKFILL_DAYS:]
-    return days
+        # Advancing last_processed past an omitted day would erase the gap.
+        # Walk forward in batches so a long outage can be caught up fully.
+        days = days[:config.MAX_BACKFILL_DAYS]
+    return sorted(set(pending + days))
+
+
+def _queue_retry_day(state: dict, day: dt.date) -> None:
+    state["pending_dates"] = sorted(set(state.get("pending_dates") or []) | {day.isoformat()})
+
+
+def _clear_retry_day(state: dict, day: dt.date) -> None:
+    if state.get("pending_dates"):
+        state["pending_dates"] = [value for value in state["pending_dates"]
+                                  if value != day.isoformat()]
 
 
 HISTORY_MAX_AGE_DAYS = 3
@@ -129,7 +148,7 @@ def process_day(day: dt.date) -> tuple:
         if filing.form.upper() in universe.LATE_FORMS:
             try:
                 events.extend(late.analyse_late_filing(filing))
-            except fetch.SECBlocked:
+            except (fetch.SECBlocked, fetch.TransientFetchError):
                 raise
             except Exception as exc:                 # noqa: BLE001
                 log.warning("  late-filing parse failed for %s: %s", filing.company, exc)
@@ -142,7 +161,7 @@ def process_day(day: dt.date) -> tuple:
             try:
                 events.extend(
                     letters.analyse_letter(filing, disclosed_on=day.isoformat()))
-            except fetch.SECBlocked:
+            except (fetch.SECBlocked, fetch.TransientFetchError):
                 raise
             except Exception as exc:             # noqa: BLE001
                 log.warning("  letter parse failed for %s: %s", filing.company, exc)
@@ -162,7 +181,7 @@ def process_day(day: dt.date) -> tuple:
         log.info("  [%d/%d] comparing %s %s", i, len(periodic), filing.form, filing.company)
         try:
             events.extend(compare.analyse_periodic(filing))
-        except fetch.SECBlocked:
+        except (fetch.SECBlocked, fetch.TransientFetchError):
             raise
         except Exception as exc:                 # noqa: BLE001
             log.warning("  comparison failed for %s: %s", filing.company, exc)
@@ -294,6 +313,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             # Leave the day exactly as it was: not processed, not a holiday.
             # The next run asks again, and EDGAR will have finished writing.
             log.warning("%s; leaving the day for the next run", exc)
+            _queue_retry_day(state, day)
             continue
         except fetch.SECBlocked as exc:
             # Expected failure mode, not a crash. Stop cleanly; the next run
@@ -301,10 +321,24 @@ def main(argv: Optional[List[str]] = None) -> int:
             log.error("SEC access blocked: %s", exc)
             log.error("stopping; the next run will resume from %s", day)
             blocked = True
+            _queue_retry_day(state, day)
             publish.record_run(state, {
                 "date": day.isoformat(), "index_rows": 0, "candidates": 0,
                 "operating": 0, "events": 0, "events_written": 0,
-                "blocked": True, "analysis": "blocked",
+                "blocked": True, "failure_kind": "sec_refusal",
+                "analysis": "blocked",
+            })
+            break
+        except fetch.TransientFetchError as exc:
+            log.error("SEC document fetch failed: %s", exc)
+            log.error("stopping; %s is queued for the next run", day)
+            blocked = True  # also skip the optional history pass after an incomplete scan
+            _queue_retry_day(state, day)
+            publish.record_run(state, {
+                "date": day.isoformat(), "index_rows": 0, "candidates": 0,
+                "operating": 0, "events": 0, "events_written": 0,
+                "retryable": True, "failure_kind": "transient_fetch",
+                "analysis": "retryable_fetch_failure",
             })
             break
 
@@ -312,7 +346,11 @@ def main(argv: Optional[List[str]] = None) -> int:
             # No index for a day that should have one: the SEC was closed.
             # Recorded rather than silently skipped, so the currency check can
             # tell a holiday apart from a scan that is falling behind.
-            if day.weekday() < 5:
+            # A date queued after a failed scan is different: a later 403 can
+            # still be mistaken for an absent index, so retain it for review.
+            if day.isoformat() in (state.get("pending_dates") or []):
+                log.warning("%s: no index on retry; retaining pending date", day)
+            elif day.weekday() < 5:
                 publish.record_non_filing_day(state, day.isoformat())
             continue
 
@@ -324,6 +362,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         stats["events_written"] = written
         stats["analysis"] = "claude" if analyzer.enabled else "deterministic-only"
         publish.record_run(state, stats)
+        _clear_retry_day(state, day)
+        if day.isoformat() in (state.get("no_filings") or []):
+            state["no_filings"] = [value for value in state["no_filings"]
+                                   if value != day.isoformat()]
 
         last = state.get("last_processed")
         if not last or day.isoformat() > last:

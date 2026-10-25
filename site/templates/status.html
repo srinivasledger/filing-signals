@@ -27,6 +27,13 @@ events means.</p>
   <div><dt>Automated checks</dt><dd class="dd-date">{{ (health.summary.overall if health and health.summary else '—')|upper }}</dd></div>
 </dl>
 
+{% if pending_dates %}
+<p class="notice"><strong>Coverage recheck pending.</strong> A full scan still
+needs to complete for {{ pending_dates|join(', ') }}. These dates are queued
+for automatic retry. The latest filing date shown above does not establish
+that these earlier dates have been completely checked.</p>
+{% endif %}
+
 {# Always rendered, hidden unless the data really is behind, so the script can
    reveal or hide it on the reader's own clock. Without JavaScript it says what
    the build found, which is the honest fallback.

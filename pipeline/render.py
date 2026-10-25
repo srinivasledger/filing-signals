@@ -863,6 +863,7 @@ def build(second_pass: bool = False) -> None:
     _write(config.PUBLIC / "status.html",
            env.get_template("status.html").render(
                rel="", page_path="status.html", runs=runs, last_run=state.get("last_processed"),
+               pending_dates=state.get("pending_dates") or [],
                last_success=_last_success(runs), **_currency(state, built_at),
                analysis_on=analysis_on, health=health, **common))
 

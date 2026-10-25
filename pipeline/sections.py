@@ -59,6 +59,17 @@ _GC_CONCLUSION = re.compile(
     re.I,
 )
 
+# Without a going-concern heading, "raised substantial doubt" can describe a
+# different accounting question. Penguin Solutions used it for recoverability
+# of an equity investment (ASC 321), not its ability to stay in business. The
+# fallback therefore requires the survival question in the same sentence.
+_GC_FALLBACK_CONCLUSION = re.compile(
+    r"(?:\b(?:raise[sd]?|indicate[sd]?)\s+(?:a\s+)?substantial\s+doubt"
+    r"|\bsubstantial\s+doubt(?:\s+exist(?:s|ed))?)"
+    r"[^.!?;]{0,180}?\b(?:ability\s+to\s+continue|continue\s+as\s+a\s+going\s+concern)",
+    re.I,
+)
+
 # Classification must key on the *conclusion sentence*, not on nearby words.
 # Every ASC 205-40 note opens with methodology boilerplate that recites both
 # outcomes ("...if it concludes substantial doubt exists and it is not
@@ -66,6 +77,16 @@ _GC_CONCLUSION = re.compile(
 # doubt..."), so proximity matching returns whichever word happens to be
 # closer. Verified against Cyclerion, whose note contains "Management's plans
 # to alleviate the conditions" and then concludes the opposite way.
+# GROOVY's note makes the same affirmative conclusion with "substantial doubt
+# ... remains" instead of "raises substantial doubt".
+_GC_REMAINS_PATTERN = (
+    r"\bsubstantial\s+doubt\b[^.!?;]{0,160}?\b"
+    r"(?:remain(?:s|ed)|persist(?:s|ed)|continue(?:s|d)\s+to\s+exist)\b"
+    r"|\b(?:remain(?:s|ed)|persist(?:s|ed)|continue(?:s|d)\s+to\s+exist)"
+    r"\s+substantial\s+doubt\b"
+)
+_GC_REMAINS = re.compile(_GC_REMAINS_PATTERN, re.I)
+
 _GC_CONCLUDES_DOUBT = re.compile(
     r"raise[sd]?\s+(?:a\s+)?substantial\s+doubt"
     r"|conclude[ds]?\s+(?:that\s+)?substantial\s+doubt\s+exist(?:s|ed)"
@@ -74,7 +95,8 @@ _GC_CONCLUDES_DOUBT = re.compile(
     r"|disclose[ds]?\s+that\s+substantial\s+doubt\s+exist(?:s|ed)"
     r"|substantial\s+doubt[^.]{0,140}?(?:has\s+)?not\s+been\s+alleviated"
     r"|do(?:es)?\s+not\s+alleviate\s+(?:the\s+)?substantial\s+doubt"
-    r"|(?:is|are)\s+not\s+sufficient\s+to\s+alleviate",
+    r"|(?:is|are)\s+not\s+sufficient\s+to\s+alleviate"
+    r"|" + _GC_REMAINS_PATTERN,
     re.I,
 )
 
@@ -93,6 +115,12 @@ _GC_NEGATED = re.compile(
     r"|substantial\s+doubt[^.]{0,160}?\bis\s+not\s+raised"
     r"|substantial\s+doubt[^.]{0,160}?\b(?:is|was)\s+no\s+longer\s+present"
     r"|alleviat\w+[^.]{0,60}?\bsubstantial\s+doubt[^.]{0,60}?\bno\s+longer"
+    r"|substantial\s+doubt[^.!?;]{0,160}?\b(?:do|does|did)\s+not\s+"
+    r"(?:remain|persist|continue\s+to\s+exist)\b"
+    r"|substantial\s+doubt[^.!?;]{0,160}?\bno\s+longer\s+"
+    r"(?:remain(?:s)?|persist(?:s)?|continue(?:s)?\s+to\s+exist)\b"
+    r"|\bno\s+longer\s+(?:remain(?:s)?|persist(?:s)?|"
+    r"continue(?:s)?\s+to\s+exist)\s+substantial\s+doubt\b"
     # The negation can govern the *conditions*, not the words "substantial
     # doubt": "no conditions or events ... raise substantial doubt". Keep
     # this inside one sentence so a later affirmative conclusion survives.
@@ -110,7 +138,32 @@ _GC_CONDITIONAL = re.compile(
     r"\b(?:may|might|could|would|will)\s+(?:\w+ly\s+)?"
     r"raise\s+(?:a\s+)?substantial\s+doubt"
     r"|\b(?:may|might|could|would|will)\s+be\s+raised\s+"
-    r"(?:as\s+)?substantial\s+doubt",
+    r"(?:as\s+)?substantial\s+doubt"
+    r"|\b(?:may|might|could|would|will)\s+(?:still\s+)?"
+    r"(?:remain|persist|continue\s+to\s+exist)\b",
+    re.I,
+)
+
+# A disclaimer that plans *might not* work is not a conclusion that they have
+# alleviated doubt. Dankon and ZRCN each said there was "no assurance" the
+# plans would alleviate it after expressly concluding substantial doubt.
+_GC_UNCERTAIN_ALLEVIATION = re.compile(
+    r"\b(?:no\s+assurance|cannot\s+assure|no\s+guarantee|cannot\s+guarantee)"
+    r"[^.!?;]{0,360}?\b(?:alleviat\w+|eliminat\w+)\s+"
+    r"(?:the\s+)?substantial\s+doubt\b",
+    re.I,
+)
+
+# The word "alleviate" also appears in explicit *negative* conclusions.
+# Envoy's plans "do not alleviate the substantial doubt" supports ongoing
+# doubt; the later word "alleviate" must not win merely by position.
+_GC_NEGATIVE_ALLEVIATION = re.compile(
+    r"\b(?:do|does|did|can|could|will|would)\s+not\s+alleviat\w+\s+"
+    r"(?:the\s+)?substantial\s+doubt\b"
+    r"|\bsubstantial\s+doubt\b[^.!?;]{0,140}?"
+    r"\b(?:has|have|had)\s+not\s+been\s+alleviated\b"
+    r"|\b(?:is|are|was|were)\s+not\s+sufficient\s+to\s+"
+    r"alleviat\w+\s+(?:the\s+)?substantial\s+doubt\b",
     re.I,
 )
 
@@ -151,9 +204,13 @@ def classify_going_concern(note: str) -> str:
     negated = list(_GC_NEGATED.finditer(note))
     cleaned = _GC_NEGATED.sub(lambda m: " " * len(m.group(0)), note)
     cleaned = _GC_CONDITIONAL.sub(lambda m: " " * len(m.group(0)), cleaned)
+    cleaned = _GC_UNCERTAIN_ALLEVIATION.sub(lambda m: " " * len(m.group(0)), cleaned)
 
-    doubt = _last(_GC_CONCLUDES_DOUBT, cleaned)
-    alleviated = _last(_GC_CONCLUDES_ALLEVIATED, cleaned)
+    doubt = max(_last(_GC_CONCLUDES_DOUBT, cleaned),
+                _last(_GC_NEGATIVE_ALLEVIATION, cleaned))
+    alleviation_text = _GC_NEGATIVE_ALLEVIATION.sub(
+        lambda m: " " * len(m.group(0)), cleaned)
+    alleviated = _last(_GC_CONCLUDES_ALLEVIATED, alleviation_text)
 
     if negated and negated[-1].start() > max(doubt, alleviated):
         return GC_NONE
@@ -172,13 +229,18 @@ def _gc_conclusion_position(note: str, state: str) -> Optional[int]:
     """Find the statement that supports a classified conclusion for the quote."""
     cleaned = _GC_NEGATED.sub(lambda m: " " * len(m.group(0)), note)
     cleaned = _GC_CONDITIONAL.sub(lambda m: " " * len(m.group(0)), cleaned)
-    pattern = (_GC_CONCLUDES_DOUBT if state == GC_SUBSTANTIAL_DOUBT else
-               _GC_CONCLUDES_ALLEVIATED if state == GC_DOUBT_ALLEVIATED else None)
-    if pattern is None:
+    cleaned = _GC_UNCERTAIN_ALLEVIATION.sub(lambda m: " " * len(m.group(0)), cleaned)
+    if state == GC_SUBSTANTIAL_DOUBT:
+        return max(_last(_GC_CONCLUDES_DOUBT, cleaned),
+                   _last(_GC_NEGATIVE_ALLEVIATION, cleaned))
+    if state == GC_DOUBT_ALLEVIATED:
+        alleviation_text = _GC_NEGATIVE_ALLEVIATION.sub(
+            lambda m: " " * len(m.group(0)), cleaned)
+        pos = _last(_GC_CONCLUDES_ALLEVIATED, alleviation_text)
+        return pos if pos >= 0 else None
+    else:
         negated = list(_GC_NEGATED.finditer(note))
         return negated[-1].start() if negated else None
-    matches = list(pattern.finditer(cleaned))
-    return matches[-1].start() if matches else None
 
 
 # --- policy sections ---------------------------------------------------------
@@ -568,7 +630,7 @@ def going_concern_state(text: str) -> Dict[str, object]:
         }
 
     substantive = _strip_forward_looking(strip_risk_factors(text))
-    match = _GC_CONCLUSION.search(substantive)
+    match = _GC_FALLBACK_CONCLUSION.search(substantive)
     if match:
         # The conclusion can follow the first ASC 205-40 sentence by several
         # paragraphs. Classifying only the 900-character displayed window
@@ -585,8 +647,8 @@ def going_concern_state(text: str) -> Dict[str, object]:
             "source": "filing body",
         }
 
-    if _GC_CONCLUSION.search(text):
-        m2 = _GC_CONCLUSION.search(text)
+    if _GC_FALLBACK_CONCLUSION.search(text):
+        m2 = _GC_FALLBACK_CONCLUSION.search(text)
         return {
             "state": GC_RISK_FACTOR_ONLY,
             "quote": close_quote(truncate_words(_context(text, m2.start()), 600)),

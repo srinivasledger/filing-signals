@@ -24,7 +24,7 @@ import logging
 import re
 from typing import Dict, List, Optional
 
-from . import compare, config, fetch
+from . import compare, fetch
 from .models import (COMMENT_LETTER, DERIVED, SIGNAL_BLURBS, Event,
                      mid_sentence)
 
@@ -100,9 +100,9 @@ def _pdf_text(url: str) -> str:
     optional for anyone not enabling this signal."""
     from pypdf import PdfReader
 
-    import urllib.request
-    req = urllib.request.Request(url, headers={"User-Agent": config.require_user_agent()})
-    raw = urllib.request.urlopen(req, timeout=config.SEC_TIMEOUT).read()
+    raw = fetch.get_bytes(url)
+    if raw is None:
+        return ""
     reader = PdfReader(io.BytesIO(raw))
     return " ".join(" ".join((p.extract_text() or "") for p in reader.pages).split())
 
@@ -113,7 +113,7 @@ def load_letter(url: str) -> Optional[str]:
             return _pdf_text(url)
         text = compare.load_text(url)
         return " ".join(text.split()) if text else None
-    except fetch.SECBlocked:
+    except (fetch.SECBlocked, fetch.TransientFetchError):
         raise
     except Exception as exc:                     # noqa: BLE001
         log.warning("could not read letter %s: %s", url, exc)
