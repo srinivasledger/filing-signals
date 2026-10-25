@@ -6,7 +6,7 @@
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 34,778 index rows read",
+      "detail": "10 runs recorded, 34,667 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -16,9 +16,9 @@
       "status": "ok"
     },
     {
-      "detail": "1 day(s) queued for another scan; oldest 2026-10-22. Temporary document failures and unusable indexes are retried on the next scheduled run.",
+      "detail": "no days awaiting retry",
       "name": "Incomplete filing days",
-      "status": "warn"
+      "status": "ok"
     },
     {
       "detail": "4457/4457 link to the accession they report",
@@ -106,18 +106,18 @@
       "status": "ok"
     },
     {
-      "detail": "all 2518 pages built 2026-10-25 17:18 UTC, data through 2026-10-23, 4,457 events",
+      "detail": "all 2518 pages built 2026-10-25 17:40 UTC, data through 2026-10-23, 4,457 events",
       "name": "Pages agree",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-10-25T17:18:11+00:00",
+  "generated_at": "2026-10-25T17:40:06+00:00",
   "summary": {
     "fail": 0,
-    "ok": 21,
-    "overall": "warn",
+    "ok": 22,
+    "overall": "ok",
     "total": 22,
     "unknown": 0,
-    "warn": 1
+    "warn": 0
   }
 }
