@@ -1,12 +1,12 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-10-23, which is everything EDGAR has published",
+      "detail": "last complete filing day 2026-10-26, which is everything EDGAR has published",
       "name": "Pipeline is current",
       "status": "ok"
     },
     {
-      "detail": "10 runs recorded, 34,667 index rows read",
+      "detail": "10 runs recorded, 33,678 index rows read",
       "name": "Recent runs completed",
       "status": "ok"
     },
@@ -21,37 +21,37 @@
       "status": "ok"
     },
     {
-      "detail": "4457/4457 link to the accession they report",
+      "detail": "4468/4468 link to the accession they report",
       "name": "Every entry links to its own filing",
       "status": "ok"
     },
     {
-      "detail": "4457/4457 name a detection method the pipeline implements",
+      "detail": "4468/4468 name a detection method the pipeline implements",
       "name": "Every entry states how it was found",
       "status": "ok"
     },
     {
-      "detail": "534 entries from SEC item codes, 0 carrying the wrong code for their signal",
+      "detail": "537 entries from SEC item codes, 0 carrying the wrong code for their signal",
       "name": "Item codes match the signal they produced",
       "status": "ok"
     },
     {
-      "detail": "1015/1015 compare the same form type against an earlier filing",
+      "detail": "1017/1017 compare the same form type against an earlier filing",
       "name": "Comparisons are like-for-like",
       "status": "ok"
     },
     {
-      "detail": "4457 unique entries across 4457 rows",
+      "detail": "4468 unique entries across 4468 rows",
       "name": "No duplicated entries",
       "status": "ok"
     },
     {
-      "detail": "0 of 2755 begin mid-sentence, 0 do not open at the substance",
+      "detail": "0 of 2757 begin mid-sentence, 0 do not open at the substance",
       "name": "Quotes open with the substance",
       "status": "ok"
     },
     {
-      "detail": "0 of 2755 end mid-sentence with no ellipsis to mark the cut",
+      "detail": "0 of 2757 end mid-sentence with no ellipsis to mark the cut",
       "name": "Quotes end where the filing does",
       "status": "ok"
     },
@@ -66,7 +66,7 @@
       "status": "ok"
     },
     {
-      "detail": "showing the most recent 150 of 4457, as stated on the page; the full record is on the signals pages",
+      "detail": "showing the most recent 150 of 4468, as stated on the page; the full record is on the signals pages",
       "name": "Home page window",
       "status": "ok"
     },
@@ -76,17 +76,17 @@
       "status": "ok"
     },
     {
-      "detail": "5,204 companies, refreshed 1 day(s) ago",
+      "detail": "5,204 companies, refreshed 3 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
     {
-      "detail": "2501 company archives, 18,888 historical events; 4749 mature eligible observations across rate rows",
+      "detail": "2508 company archives, 18,897 historical events; 4754 mature eligible observations across rate rows",
       "name": "Follow-on rates computed",
       "status": "ok"
     },
     {
-      "detail": "heaviest page companies.html is 91 KB over the wire (limit 250 KB), 2518 pages checked",
+      "detail": "heaviest page companies.html is 91 KB over the wire (limit 250 KB), 2525 pages checked",
       "name": "Page weight",
       "status": "ok"
     },
@@ -96,22 +96,22 @@
       "status": "ok"
     },
     {
-      "detail": "820 pages with a period or form filter, 0 option(s) that filter to nothing",
+      "detail": "821 pages with a period or form filter, 0 option(s) that filter to nothing",
       "name": "Filter options match the page",
       "status": "ok"
     },
     {
-      "detail": "heaviest file events.json is 897 KB over the wire (limit 4096 KB), 7 file(s) checked",
+      "detail": "heaviest file events.json is 898 KB over the wire (limit 4096 KB), 7 file(s) checked",
       "name": "Data file weight",
       "status": "ok"
     },
     {
-      "detail": "all 2518 pages built 2026-10-25 17:40 UTC, data through 2026-10-23, 4,457 events",
+      "detail": "all 2525 pages built 2026-10-27 09:06 UTC, data through 2026-10-26, 4,468 events",
       "name": "Pages agree",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-10-25T17:40:06+00:00",
+  "generated_at": "2026-10-27T09:06:28+00:00",
   "summary": {
     "fail": 0,
     "ok": 22,
