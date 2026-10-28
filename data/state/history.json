@@ -1,59 +1,59 @@
 {
-  "as_of": "2026-10-26",
-  "built_on": "2026-10-27",
-  "companies": 2508,
+  "as_of": "2026-10-27",
+  "built_on": "2026-10-28",
+  "companies": 2512,
   "event_counts": {
-    "auditor_change": 4690,
-    "late_filing": 13015,
-    "restatement": 1192
+    "auditor_change": 4696,
+    "late_filing": 13020,
+    "restatement": 1194
   },
   "methodology_version": 2,
   "observation_start": "2004-08-23",
   "omitted_ciks": [],
   "omitted_companies": 0,
-  "requested_companies": 2508,
+  "requested_companies": 2512,
   "rows": [
     {
-      "eligible": 1346,
+      "eligible": 1349,
       "first": "auditor_change",
-      "followed": 151,
-      "immature": 190,
+      "followed": 152,
+      "immature": 188,
       "label": "An auditor change was followed by a non-reliance filing",
       "rate": "11%",
       "second": "restatement",
-      "with_first": 1536
+      "with_first": 1537
     },
     {
-      "eligible": 1380,
+      "eligible": 1381,
       "first": "late_filing",
-      "followed": 217,
+      "followed": 218,
       "immature": 199,
       "label": "A late filing was followed by a non-reliance filing",
       "rate": "16%",
       "second": "restatement",
-      "with_first": 1579
+      "with_first": 1580
     },
     {
-      "eligible": 1380,
+      "eligible": 1381,
       "first": "late_filing",
-      "followed": 482,
+      "followed": 483,
       "immature": 199,
       "label": "A late filing was followed by an auditor change",
       "rate": "35%",
       "second": "auditor_change",
-      "with_first": 1579
+      "with_first": 1580
     },
     {
-      "eligible": 648,
+      "eligible": 649,
       "first": "restatement",
-      "followed": 262,
+      "followed": 263,
       "immature": 72,
       "label": "A non-reliance filing was followed by an auditor change",
-      "rate": "40%",
+      "rate": "41%",
       "second": "auditor_change",
-      "with_first": 720
+      "with_first": 721
     }
   ],
-  "total_historical_events": 18897,
+  "total_historical_events": 18910,
   "window_days": 540
 }
