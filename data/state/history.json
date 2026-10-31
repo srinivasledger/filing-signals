@@ -1,59 +1,59 @@
 {
-  "as_of": "2026-10-29",
-  "built_on": "2026-10-30",
-  "companies": 2527,
+  "as_of": "2026-10-30",
+  "built_on": "2026-10-31",
+  "companies": 2542,
   "event_counts": {
-    "auditor_change": 4709,
-    "late_filing": 13065,
-    "restatement": 1200
+    "auditor_change": 4717,
+    "late_filing": 13089,
+    "restatement": 1202
   },
   "methodology_version": 2,
   "observation_start": "2004-08-23",
   "omitted_ciks": [],
   "omitted_companies": 0,
-  "requested_companies": 2527,
+  "requested_companies": 2542,
   "rows": [
     {
-      "eligible": 1356,
+      "eligible": 1359,
       "first": "auditor_change",
       "followed": 152,
-      "immature": 186,
+      "immature": 187,
       "label": "An auditor change was followed by a non-reliance filing",
       "rate": "11%",
       "second": "restatement",
-      "with_first": 1542
+      "with_first": 1546
     },
     {
-      "eligible": 1385,
+      "eligible": 1389,
       "first": "late_filing",
       "followed": 218,
-      "immature": 200,
+      "immature": 206,
       "label": "A late filing was followed by a non-reliance filing",
       "rate": "16%",
       "second": "restatement",
-      "with_first": 1585
+      "with_first": 1595
     },
     {
-      "eligible": 1385,
+      "eligible": 1389,
       "first": "late_filing",
       "followed": 483,
-      "immature": 200,
+      "immature": 206,
       "label": "A late filing was followed by an auditor change",
       "rate": "35%",
       "second": "auditor_change",
-      "with_first": 1585
+      "with_first": 1595
     },
     {
-      "eligible": 654,
+      "eligible": 655,
       "first": "restatement",
-      "followed": 265,
+      "followed": 266,
       "immature": 71,
       "label": "A non-reliance filing was followed by an auditor change",
       "rate": "41%",
       "second": "auditor_change",
-      "with_first": 725
+      "with_first": 726
     }
   ],
-  "total_historical_events": 18974,
+  "total_historical_events": 19008,
   "window_days": 540
 }
