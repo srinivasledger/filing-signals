@@ -15,7 +15,7 @@ import sys
 from typing import List, Optional
 
 from . import (analyze, compare, config, enrich, fetch, health, history, ingest,
-               late, letters, publish, size, triage, universe)
+               late, letters, publish, review, size, triage, universe)
 
 EASTERN = config.EASTERN
 from .models import Event
@@ -24,12 +24,9 @@ log = logging.getLogger("pipeline")
 
 # Bound the work a single run can attempt, so an unusual day cannot stall CI.
 #
-# Measured at 0.7s per comparison, so 120 was costing 1.3 minutes of a run that
-# has six hours - and quietly dropping 39 companies on a 159-report day at
-# quarter end, on a day already marked processed and never revisited. 400 is
-# still a bound and still cheap: under five minutes on the heaviest day the
-# record has seen.
-MAX_PERIODIC_PER_DAY = int(__import__("os").getenv("MAX_PERIODIC_PER_DAY", "400"))
+# The 400-report limit skipped filings on days with 659 and 428 candidates.
+# Keep a bound while allowing ordinary quarterly filing peaks to complete.
+MAX_PERIODIC_PER_DAY = int(__import__("os").getenv("MAX_PERIODIC_PER_DAY", "1000"))
 
 
 def business_days(start: dt.date, end: dt.date) -> List[dt.date]:
@@ -357,9 +354,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         events = tag_size(events)
         if events:
             events = analyzer.enrich(events)
+        events, held = review.screen_incoming(events, day.isoformat())
         written = publish.append_events(day.isoformat(), events)
         total_new += written
         stats["events_written"] = written
+        stats["events_held_for_review"] = held
         stats["analysis"] = "claude" if analyzer.enabled else "deterministic-only"
         publish.record_run(state, stats)
         _clear_retry_day(state, day)
@@ -377,6 +376,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         log.info("%s: %d new event(s)", day, written)
 
+    # Also reconcile quiet runs: an explicit withdrawal may have resolved a
+    # hold without any new filing day. Queue errors remain hard failures.
+    review.reconcile_published()
     publish.save_state(state)
     log.info("run complete: %d new event(s) recorded", total_new)
 

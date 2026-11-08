@@ -195,7 +195,7 @@ whether something is a signal.
 | `HISTORY_CHUNK` | `12` | Older days added per run while filling |
 | `HISTORY_BUDGET_SECONDS` | `10800` | Fill stops after this; the day's own filings never do |
 | `COLD_START_DAYS` | `5` | Reach-back on a first run |
-| `MAX_PERIODIC_PER_DAY` | `120` | Bound on the expensive comparison path |
+| `MAX_PERIODIC_PER_DAY` | `1000` | Maximum periodic report comparisons per filing day; hitting it raises a coverage warning |
 | `POLICY_SIMILARITY_THRESHOLD` | `0.60` | Revenue-note rewrite sensitivity |
 
 `pypdf` is required: SEC staff comment letters are PDFs, unlike every other
