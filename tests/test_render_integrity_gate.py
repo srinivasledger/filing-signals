@@ -61,6 +61,15 @@ def test_saved_health_failure_stops_render_before_output(isolated_render):
     assert not public.exists()
 
 
+def test_corrupt_review_queue_stops_standalone_render(isolated_render, tmp_path, monkeypatch):
+    public, _ = isolated_render
+    monkeypatch.setattr(config, "STATE_DIR", tmp_path)
+    (tmp_path / "review_queue.json").write_text('{"version": 1, "pending": []}')
+    with pytest.raises(ValueError, match="malformed incoming review queue"):
+        render.build()
+    assert not public.exists()
+
+
 def test_empty_synthetic_render_still_succeeds(isolated_render):
     public, box = isolated_render
     render.build()
