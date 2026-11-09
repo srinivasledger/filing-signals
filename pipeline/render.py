@@ -19,6 +19,7 @@ from xml.sax.saxutils import escape as xml_escape
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import charts, config, health as health_mod, preview, publish, size as size_mod
+from . import review
 from .models import (AUDITOR_CHANGE, COMMENT_LETTER, FORM_FAMILY_LABELS,
                      FORM_FAMILY_ORDER, GOING_CONCERN, LATE_FILING,
                      MATERIAL_WEAKNESS, OFFICER_DEPARTURE, POLICY_CHANGE,
@@ -565,6 +566,8 @@ def build(second_pass: bool = False) -> None:
     # the actual events before touching public/. Nor may an already-failing
     # report be rendered into a new deployment merely because it is cached.
     if not second_pass:
+        # Standalone publication skips the scan's review queue preflight.
+        review.load_pending()
         contradictions = health_mod._known_quote_contradictions(events)
         if contradictions:
             examples = ", ".join(

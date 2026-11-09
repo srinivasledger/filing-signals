@@ -88,11 +88,19 @@ def _known_quote_contradictions(events) -> list:
                     sections.classify_going_concern(quote) == sections.GC_SUBSTANTIAL_DOUBT):
                 contradictions.append(e)
         elif e.signal_type == MATERIAL_WEAKNESS:
-            if state == sections.ICFR_EFFECTIVE and _ICFR_EFFECTIVENESS_DENIED.search(quote):
+            # A restated filing may quote its original *effective* assessment
+            # before the new *not effective* reassessment. Read the last
+            # conclusion, using the same negative masking as the extractor.
+            not_effective = sections._last(sections._ICFR_NOT_EFFECTIVE, quote)
+            affirmative = sections._ICFR_NOT_EFFECTIVE.sub(
+                lambda m: " " * len(m.group(0)), quote)
+            effective = sections._last(sections._ICFR_EFFECTIVE, affirmative)
+            if (state == sections.ICFR_EFFECTIVE and
+                    _ICFR_EFFECTIVENESS_DENIED.search(quote) and
+                    not_effective > effective):
                 contradictions.append(e)
             elif (state == sections.ICFR_MATERIAL_WEAKNESS and
-                  re.search(r"concluded[^.]{0,80}?internal\s+control[^.]{0,60}?"
-                            r"\b(?:was|were|is|are)\s+effective", quote, re.I)):
+                  effective >= 0 and effective > not_effective):
                 contradictions.append(e)
     return contradictions
 
@@ -185,6 +193,22 @@ def run_checks(events, state: Dict, today: dt.date,
             "unusable indexes are retried on the next scheduled run."))
     else:
         checks.append(_check("Incomplete filing days", OK, "no days awaiting retry"))
+
+    # Holds are unpublished interpretations, not a reason to block valid new
+    # filings. Published contradictions below remain hard failures.
+    from . import review
+
+    try:
+        pending_review = review.load_pending()
+        checks.append(_check(
+            "Incoming candidates awaiting review", WARN if pending_review else OK,
+            (f"{len(pending_review)} candidate(s) withheld pending source review; "
+             f"oldest scan {min(r['scan_day'] for r in pending_review.values())}. "
+             "These candidates are excluded from published event totals."
+             if pending_review else "no incoming candidates awaiting review")))
+    except (OSError, ValueError) as exc:
+        checks.append(_check("Incoming candidates awaiting review", FAIL,
+                             f"Review queue cannot be read: {type(exc).__name__}"))
 
     # --- every published claim is citable ---
     total = len(events)
@@ -405,18 +429,23 @@ def run_checks(events, state: Dict, today: dt.date,
     # trims is a day whose periodic reports were never compared, and the day is
     # marked processed and never revisited. Truncating is defensible; doing it
     # silently is not - the same rule the home page window follows.
-    capped = [r for r in runs if r.get("periodic_skipped")]
+    # A complete recheck supersedes a capped attempt for the same filing day.
+    # An aborted attempt has no coverage and cannot clear that warning.
+    latest_scan = {r["date"]: r for r in runs if r.get("date")
+                   and r.get("index_rows") and not r.get("blocked")
+                   and not r.get("retryable")}
+    capped = [r for r in latest_scan.values() if r.get("periodic_skipped")]
     if capped:
         worst = max(r["periodic_skipped"] for r in capped)
         checks.append(_check(
             "Days scanned in full", WARN,
-            f"{len(capped)} of the last {len(runs)} days hit the per-day cap; "
+            f"{len(capped)} of {len(latest_scan)} recent filing days hit the per-day cap; "
             f"up to {worst} periodic report(s) not compared - raise "
             "MAX_PERIODIC_PER_DAY"))
     else:
         checks.append(_check(
             "Days scanned in full", OK,
-            f"{len(runs)} recent day(s) compared every periodic report filed"))
+            f"{len(latest_scan)} recent day(s) did not hit the periodic report cap"))
 
     # --- size index ---
     checks.append(_size_check(today))

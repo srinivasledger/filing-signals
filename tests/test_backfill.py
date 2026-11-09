@@ -180,7 +180,14 @@ def test_a_day_scanned_only_in_part_says_so():
     assert scanned["status"] == health.WARN
     assert "39" in scanned["detail"]
 
-    state["runs"][0].pop("periodic_skipped")
+    state["runs"].append({"date": "2026-04-28", "index_rows": 0,
+                          "blocked": True})
+    failed_retry = next(c for c in health.run_checks([event], state, dt.date(2026, 9, 8))["checks"]
+                        if c["name"] == "Days scanned in full")
+    assert failed_retry["status"] == health.WARN
+
+    state["runs"].append({"date": "2026-04-28", "index_rows": 1, "candidates": 1,
+                          "operating": 1, "events": 0})
     ok = next(c for c in health.run_checks([event], state, dt.date(2026, 9, 8))["checks"]
               if c["name"] == "Days scanned in full")
     assert ok["status"] == health.OK

@@ -433,6 +433,16 @@ def strip_risk_factors(text: str) -> str:
 # causes false positives is always mid-sentence in a long paragraph.
 _MAX_HEADING_LEN = 70
 
+# Reissued annual reports can label the actual update more fully. Optimum's
+# 2025 10-K/A uses this 75-character standalone heading above its new ASC
+# 205-40 conclusion; the ordinary length guard skipped it and read earlier
+# historical discussion instead.
+_GC_EMERGENCE_HEADING = re.compile(
+    r"Emergence\s+of\s+Substantial\s+Doubt\s+About\s+"
+    r"(?:the\s+Company[\u2019']s\s+)?Ability\s+to\s+Continue\s+as\s+a\s+Going\s+Concern",
+    re.I,
+)
+
 # Forward-looking-statements sections recite going-concern risk in prose and
 # are excluded alongside Risk Factors on the fallback path.
 _FLS_HEADING = re.compile(
@@ -468,7 +478,7 @@ def find_going_concern_note(text: str) -> Optional[Tuple[int, int]]:
     best: Optional[Tuple[int, int]] = None
     for m in re.finditer(r"^[^\n]*going\s+concern[^\n]*$", text, re.I | re.M):
         line = m.group(0).strip()
-        if not _looks_like_heading(line):
+        if not (_looks_like_heading(line) or _GC_EMERGENCE_HEADING.fullmatch(line)):
             continue
         if re.match(r"\s*\.{2,}|\s*\d{1,3}\s*$", text[m.end(): m.end() + 40]):
             continue          # table-of-contents row

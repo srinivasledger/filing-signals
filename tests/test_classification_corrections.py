@@ -155,6 +155,38 @@ def test_negative_alleviation_remains_doubt_and_later_completed_alleviation_wins
     assert sections.classify_going_concern(doubt + later) == sections.GC_DOUBT_ALLEVIATED
 
 
+def test_reissued_report_reads_long_emergence_heading_and_new_conclusion():
+    # A 2025 annual amendment filed by Optimum in November 2026 has this
+    # standalone heading. It exceeds the generic 70-character heading limit.
+    heading = "Emergence of Substantial Doubt About Ability to Continue as a Going Concern"
+    prior = ("Liquidity note. Failure to refinance may raise substantial doubt "
+             "about our ability to continue as a going concern in the future.")
+    liquidity_detail = (
+        "The reissuance assessment considers debt coming due, forecast cash "
+        "from operations, committed funding, and cash available across the "
+        "business. Management compared these sources with obligations due in "
+        "the following twelve months, including spring and summer maturities. "
+        "Possible refinancing and restructuring transactions remain under "
+        "discussion. None has become a committed source of funding, so the "
+        "assessment uses present liquidity and financing arrangements. "
+    )
+    current = (
+        "Other financial discussion.\n" + heading + "\n"
+        "At the original issuance, management found no substantial doubt. "
+        + liquidity_detail
+        + "Those obligations exceed committed resources. Substantial doubt "
+        "exists about its ability to continue as a going concern. "
+        "Management is pursuing financing without assurance of success.\n"
+        "NOTE 4. OTHER INFORMATION\nAdditional financial detail follows."
+    )
+    assert sections.going_concern_state(prior)["state"] == sections.GC_NONE
+    result = sections.going_concern_state(current)
+    assert result["state"] == sections.GC_SUBSTANTIAL_DOUBT
+    assert result["source"] == "going-concern note"
+    assert "Substantial doubt exists" in result["quote"]
+    assert "no substantial doubt" not in result["quote"]
+
+
 def test_icfr_denial_and_historical_weakness_do_not_become_remediation():
     abundia = ("ITEM 9A. CONTROLS AND PROCEDURES\nManagement concluded that "
                "internal control over financial reporting was not effective. "
@@ -256,6 +288,25 @@ def test_known_quote_check_rejects_false_easing_but_accepts_ongoing_doubt():
     assert health._known_quote_contradictions(
         [groovy, false_alleviation, envoy, negative_control]) == [
             groovy, false_alleviation]
+
+
+def test_quote_health_uses_latest_icfr_conclusion_in_amended_report():
+    original = ("The original assessment concluded that internal control "
+                "over financial reporting was effective. ")
+    reassessed = ("Management later concluded that internal control over "
+                  "financial reporting was not effective.")
+    newly_weak = _event(models.MATERIAL_WEAKNESS, original + reassessed,
+                        sections.ICFR_MATERIAL_WEAKNESS, "0001-26-000012")
+    false_weak = _event(models.MATERIAL_WEAKNESS, reassessed + " " + original,
+                        sections.ICFR_MATERIAL_WEAKNESS, "0001-26-000013")
+    currently_effective = _event(models.MATERIAL_WEAKNESS,
+                                 reassessed + " " + original,
+                                 sections.ICFR_EFFECTIVE, "0001-26-000014")
+    false_effective = _event(models.MATERIAL_WEAKNESS, original + reassessed,
+                             sections.ICFR_EFFECTIVE, "0001-26-000015")
+    assert health._known_quote_contradictions(
+        [newly_weak, false_weak, currently_effective, false_effective]) == [
+            false_weak, false_effective]
 
 
 def test_withdrawn_ids_cannot_reappear_after_rescan_or_merge(tmp_path, monkeypatch):

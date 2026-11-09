@@ -181,12 +181,20 @@ An email titled "Run failed". The site keeps showing the last good data and
 does not update.
 
 ### Why
-Every run ends by asserting the things the site depends on — that known
-contradictions between entries and their quoted filing text are rejected,
-that nothing is duplicated, that every
-entry links to the filing it reports. **If any of those fail, the run commits
-nothing and publishes nothing.** You are looking at the last state that passed
-every check, rather than a partial or doubtful one.
+Before recording new entries, the scan holds candidates that conflict with
+their quoted filing text. The remaining entries can still publish. The status
+page shows the number held for review, and `data/state/review_queue.json`
+records the accession, scan date, and SEC source for each held candidate.
+Review the source and rescan the date after correcting the detector, or record
+an explicit withdrawal in `data/corrections.jsonl` if the candidate is invalid.
+
+The published record must still pass the integrity checks for contradictory
+quotes, duplicate events, and source links. **A hard failure in the published
+record or build stops the run before commit and deployment.**
+
+If the status page reports that a filing day hit the periodic comparison cap,
+raise `MAX_PERIODIC_PER_DAY` as needed and rescan the affected date. A complete
+rescan clears that day's cap warning.
 
 ### What to do — and this is the important distinction
 
