@@ -1,6 +1,6 @@
 {
   "earliest_processed": "2026-01-02",
-  "last_processed": "2026-11-09",
+  "last_processed": "2026-11-10",
   "no_filings": [
     "2026-01-01",
     "2026-01-19",
@@ -13,16 +13,6 @@
   ],
   "pending_dates": [],
   "runs": [
-    {
-      "analysis": "deterministic-only",
-      "candidates": 460,
-      "date": "2026-01-29",
-      "events": 11,
-      "events_written": 11,
-      "finished_at": "2026-09-10T14:38:13+00:00",
-      "index_rows": 5697,
-      "operating": 447
-    },
     {
       "analysis": "deterministic-only",
       "candidates": 370,
@@ -616,6 +606,17 @@
       "finished_at": "2026-11-10T11:08:31+00:00",
       "index_rows": 4891,
       "operating": 732
+    },
+    {
+      "analysis": "deterministic-only",
+      "candidates": 709,
+      "date": "2026-11-10",
+      "events": 37,
+      "events_held_for_review": 0,
+      "events_written": 36,
+      "finished_at": "2026-11-11T10:52:28+00:00",
+      "index_rows": 5429,
+      "operating": 658
     }
   ],
   "scan_days": {
@@ -1693,6 +1694,11 @@
       "candidates": 791,
       "index_rows": 4891,
       "operating": 732
+    },
+    "2026-11-10": {
+      "candidates": 709,
+      "index_rows": 5429,
+      "operating": 658
     }
   }
 }
