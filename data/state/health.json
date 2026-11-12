@@ -1,7 +1,7 @@
 {
   "checks": [
     {
-      "detail": "last complete filing day 2026-11-10, which is everything EDGAR has published",
+      "detail": "last complete filing day 2026-11-10, which is everything EDGAR has published (2026-11-11: the SEC published no index)",
       "name": "Pipeline is current",
       "status": "ok"
     },
@@ -81,7 +81,7 @@
       "status": "ok"
     },
     {
-      "detail": "5,206 companies, refreshed 2 day(s) ago",
+      "detail": "5,206 companies, refreshed 3 day(s) ago",
       "name": "Company size index",
       "status": "ok"
     },
@@ -111,12 +111,12 @@
       "status": "ok"
     },
     {
-      "detail": "all 2617 pages built 2026-11-11 17:17 UTC, data through 2026-11-10, 4,671 events",
+      "detail": "all 2617 pages built 2026-11-12 10:56 UTC, data through 2026-11-10, 4,671 events",
       "name": "Pages agree",
       "status": "ok"
     }
   ],
-  "generated_at": "2026-11-11T17:17:02+00:00",
+  "generated_at": "2026-11-12T10:56:51+00:00",
   "summary": {
     "fail": 0,
     "ok": 23,
