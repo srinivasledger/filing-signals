@@ -1,59 +1,59 @@
 {
-  "as_of": "2026-11-12",
-  "built_on": "2026-11-13",
-  "companies": 2609,
+  "as_of": "2026-11-13",
+  "built_on": "2026-11-14",
+  "companies": 2626,
   "event_counts": {
-    "auditor_change": 4771,
-    "late_filing": 13211,
-    "restatement": 1224
+    "auditor_change": 4797,
+    "late_filing": 13267,
+    "restatement": 1229
   },
   "methodology_version": 2,
   "observation_start": "2004-08-23",
   "omitted_ciks": [],
   "omitted_companies": 0,
-  "requested_companies": 2609,
+  "requested_companies": 2626,
   "rows": [
     {
-      "eligible": 1386,
+      "eligible": 1394,
       "first": "auditor_change",
-      "followed": 153,
-      "immature": 187,
+      "followed": 154,
+      "immature": 189,
       "label": "An auditor change was followed by a non-reliance filing",
       "rate": "11%",
       "second": "restatement",
-      "with_first": 1573
+      "with_first": 1583
     },
     {
-      "eligible": 1422,
+      "eligible": 1428,
       "first": "late_filing",
-      "followed": 224,
-      "immature": 211,
+      "followed": 225,
+      "immature": 214,
       "label": "A late filing was followed by a non-reliance filing",
       "rate": "16%",
       "second": "restatement",
-      "with_first": 1633
+      "with_first": 1642
     },
     {
-      "eligible": 1422,
+      "eligible": 1428,
       "first": "late_filing",
-      "followed": 488,
-      "immature": 211,
+      "followed": 490,
+      "immature": 214,
       "label": "A late filing was followed by an auditor change",
       "rate": "34%",
       "second": "auditor_change",
-      "with_first": 1633
+      "with_first": 1642
     },
     {
-      "eligible": 670,
+      "eligible": 671,
       "first": "restatement",
-      "followed": 270,
-      "immature": 73,
+      "followed": 271,
+      "immature": 74,
       "label": "A non-reliance filing was followed by an auditor change",
       "rate": "40%",
       "second": "auditor_change",
-      "with_first": 743
+      "with_first": 745
     }
   ],
-  "total_historical_events": 19206,
+  "total_historical_events": 19293,
   "window_days": 540
 }
