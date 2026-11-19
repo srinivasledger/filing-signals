@@ -1,23 +1,23 @@
 {
-  "as_of": "2026-11-17",
-  "built_on": "2026-11-18",
-  "companies": 2662,
+  "as_of": "2026-11-18",
+  "built_on": "2026-11-19",
+  "companies": 2666,
   "event_counts": {
     "auditor_change": 4882,
-    "late_filing": 13662,
-    "restatement": 1257
+    "late_filing": 13664,
+    "restatement": 1258
   },
   "methodology_version": 2,
   "observation_start": "2004-08-23",
   "omitted_ciks": [],
   "omitted_companies": 0,
-  "requested_companies": 2662,
+  "requested_companies": 2666,
   "rows": [
     {
-      "eligible": 1413,
+      "eligible": 1415,
       "first": "auditor_change",
-      "followed": 158,
-      "immature": 191,
+      "followed": 159,
+      "immature": 189,
       "label": "An auditor change was followed by a non-reliance filing",
       "rate": "11%",
       "second": "restatement",
@@ -54,6 +54,6 @@
       "with_first": 762
     }
   ],
-  "total_historical_events": 19801,
+  "total_historical_events": 19804,
   "window_days": 540
 }
