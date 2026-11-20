@@ -1,11 +1,11 @@
 {
-  "as_of": "2026-11-18",
-  "built_on": "2026-11-19",
+  "as_of": "2026-11-19",
+  "built_on": "2026-11-20",
   "companies": 2666,
   "event_counts": {
     "auditor_change": 4882,
     "late_filing": 13664,
-    "restatement": 1258
+    "restatement": 1259
   },
   "methodology_version": 2,
   "observation_start": "2004-08-23",
@@ -54,6 +54,6 @@
       "with_first": 762
     }
   ],
-  "total_historical_events": 19804,
+  "total_historical_events": 19805,
   "window_days": 540
 }
