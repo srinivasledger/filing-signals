@@ -175,7 +175,7 @@ jobs:
           path: public
       - id: deployment
         if: steps.commit.outputs.published != 'false'
-        uses: actions/deploy-pages@v5
+        uses: ./.github/actions/deploy-site
       - name: Verify deployed site
         id: verify_live
         if: steps.commit.outputs.published != 'false'

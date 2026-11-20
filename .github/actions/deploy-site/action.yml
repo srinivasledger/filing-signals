@@ -1,0 +1,71 @@
+name: Deploy site with bounded retries
+description: Retry the official Pages deployment against the already uploaded artifact.
+
+outputs:
+  page_url:
+    description: Site URL from the successful deployment attempt.
+    value: ${{ steps.confirm.outputs.page_url }}
+
+runs:
+  using: composite
+  steps:
+    # Metadata lookup happens before deploy-pages starts its status polling.
+    # Retry that lookup through the official action, without uploading again.
+    - name: Deploy Pages (attempt 1)
+      id: attempt_1
+      if: ${{ !cancelled() }}
+      continue-on-error: true
+      uses: actions/deploy-pages@v5
+
+    - name: Wait before second attempt
+      id: wait_1
+      if: ${{ !cancelled() && steps.attempt_1.outcome == 'failure' }}
+      shell: bash
+      run: sleep 15
+
+    - name: Deploy Pages (attempt 2)
+      id: attempt_2
+      if: ${{ !cancelled() && steps.attempt_1.outcome == 'failure' && steps.wait_1.outcome == 'success' }}
+      continue-on-error: true
+      uses: actions/deploy-pages@v5
+
+    - name: Wait before third attempt
+      id: wait_2
+      if: ${{ !cancelled() && steps.attempt_2.outcome == 'failure' }}
+      shell: bash
+      run: sleep 45
+
+    - name: Deploy Pages (attempt 3)
+      id: attempt_3
+      if: ${{ !cancelled() && steps.attempt_2.outcome == 'failure' && steps.wait_2.outcome == 'success' }}
+      continue-on-error: true
+      uses: actions/deploy-pages@v5
+
+    - name: Confirm deployment succeeded
+      id: confirm
+      if: ${{ !cancelled() }}
+      shell: bash
+      env:
+        FIRST_OUTCOME: ${{ steps.attempt_1.outcome }}
+        FIRST_URL: ${{ steps.attempt_1.outputs.page_url }}
+        SECOND_OUTCOME: ${{ steps.attempt_2.outcome }}
+        SECOND_URL: ${{ steps.attempt_2.outputs.page_url }}
+        THIRD_OUTCOME: ${{ steps.attempt_3.outcome }}
+        THIRD_URL: ${{ steps.attempt_3.outputs.page_url }}
+      run: |
+        set -euo pipefail
+        if [[ "$FIRST_OUTCOME" == 'success' ]]; then
+          page_url="$FIRST_URL"
+        elif [[ "$SECOND_OUTCOME" == 'success' ]]; then
+          page_url="$SECOND_URL"
+        elif [[ "$THIRD_OUTCOME" == 'success' ]]; then
+          page_url="$THIRD_URL"
+        else
+          echo '::error::GitHub Pages deployment did not succeed after the bounded attempts.'
+          exit 1
+        fi
+        if [[ -z "${page_url//[[:space:]]/}" ]]; then
+          echo '::error::GitHub Pages reported success without a site URL.'
+          exit 1
+        fi
+        printf 'page_url=%s\n' "$page_url" >> "$GITHUB_OUTPUT"

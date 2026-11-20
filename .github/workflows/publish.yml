@@ -17,6 +17,7 @@ on:
       - "package*.json"
       - "requirements*.txt"
       - ".github/actions/verify-site/**"
+      - ".github/actions/deploy-site/**"
       - ".github/workflows/publish.yml"
   workflow_dispatch:
 
@@ -63,7 +64,7 @@ jobs:
         with:
           path: public
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: ./.github/actions/deploy-site
       - name: Verify deployed site
         id: verify_live
         env:
