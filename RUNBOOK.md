@@ -212,7 +212,21 @@ rescan clears that day's cap warning.
 
 ---
 
-## 6. A run says it discarded its work
+## 6. Pages cannot see a just-uploaded artifact
+
+An upload can succeed while GitHub's deployment service temporarily reports
+that no `github-pages` artifact exists. Both publication workflows use the
+same deployment guard: up to three attempts with waits of 15 and 45 seconds.
+It reuses the uploaded build and runs the official GitHub deployment action.
+It does not repeat the SEC scan or bypass the pre-deployment checks.
+
+The run succeeds only if deployment succeeds and supplies a site URL. The
+live browser checks then verify that URL and build. If every attempt fails,
+the run remains failed. After checking the Actions/Pages service status, use
+**Publish site → Run workflow** to rebuild and publish already committed data;
+a failed deployment alone does not require another SEC scan.
+
+## 7. A run says it discarded its work
 
 ### What you will see
 A green run carrying a warning: *"another run committed first and this one
