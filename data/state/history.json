@@ -1,59 +1,59 @@
 {
-  "as_of": "2026-11-25",
-  "built_on": "2026-11-26",
-  "companies": 2679,
+  "as_of": "2026-11-27",
+  "built_on": "2026-11-28",
+  "companies": 2682,
   "event_counts": {
-    "auditor_change": 4910,
-    "late_filing": 13670,
-    "restatement": 1270
+    "auditor_change": 4918,
+    "late_filing": 13681,
+    "restatement": 1278
   },
   "methodology_version": 2,
   "observation_start": "2004-08-23",
   "omitted_ciks": [],
   "omitted_companies": 0,
-  "requested_companies": 2679,
+  "requested_companies": 2682,
   "rows": [
     {
-      "eligible": 1423,
+      "eligible": 1428,
       "first": "auditor_change",
-      "followed": 159,
-      "immature": 192,
+      "followed": 160,
+      "immature": 190,
       "label": "An auditor change was followed by a non-reliance filing",
       "rate": "11%",
       "second": "restatement",
-      "with_first": 1615
+      "with_first": 1618
     },
     {
-      "eligible": 1453,
+      "eligible": 1455,
       "first": "late_filing",
-      "followed": 230,
+      "followed": 231,
       "immature": 230,
       "label": "A late filing was followed by a non-reliance filing",
       "rate": "16%",
       "second": "restatement",
-      "with_first": 1683
+      "with_first": 1685
     },
     {
-      "eligible": 1453,
+      "eligible": 1455,
       "first": "late_filing",
-      "followed": 498,
+      "followed": 500,
       "immature": 230,
       "label": "A late filing was followed by an auditor change",
       "rate": "34%",
       "second": "auditor_change",
-      "with_first": 1683
+      "with_first": 1685
     },
     {
-      "eligible": 689,
+      "eligible": 691,
       "first": "restatement",
-      "followed": 277,
+      "followed": 279,
       "immature": 80,
       "label": "A non-reliance filing was followed by an auditor change",
       "rate": "40%",
       "second": "auditor_change",
-      "with_first": 769
+      "with_first": 771
     }
   ],
-  "total_historical_events": 19850,
+  "total_historical_events": 19877,
   "window_days": 540
 }
